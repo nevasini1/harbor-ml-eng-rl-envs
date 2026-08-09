@@ -1,0 +1,1 @@
+{"reward": 1.0, "spearman": 0.5708977403226608, "t_weak": 0.3887, "t_strong": 0.45, "n_test": 3427, "cosine_min": 0.9920478313094444, "n_tensors_compared": 108, "reason": "ok"}

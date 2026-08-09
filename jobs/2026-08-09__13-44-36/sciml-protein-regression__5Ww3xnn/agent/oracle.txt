@@ -1,0 +1,230 @@
+/usr/local/lib/python3.12/site-packages/transformers/utils/hub.py:106: FutureWarning: Using `TRANSFORMERS_CACHE` is deprecated and will be removed in v5 of Transformers. Use `HF_HOME` instead.
+  warnings.warn(
+oracle train=6000 val=1991 mean=51.197 std=10.840
+extracting frozen CLS features...
+Some weights of EsmModel were not initialized from the model checkpoint at /models/esm2_t6_8M_UR50D and are newly initialized: ['esm.pooler.dense.bias', 'esm.pooler.dense.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+/solution/solve.sh: line 228:    28 Killed                  python -u - <<'PY'
+import gzip
+import math
+import time
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+import torch
+import torch.nn as nn
+from scipy.stats import spearmanr
+from torch.utils.data import DataLoader, Dataset
+from transformers import AutoModel, AutoModelForSequenceClassification, AutoTokenizer
+
+BASE = "/models/esm2_t6_8M_UR50D"
+DATA = "/data/train.csv.gz"
+OUT = Path("/app/final_model")
+MAX_LEN = 512
+EPOCHS = 2
+BATCH = 8
+ACCUM = 2
+LR = 7e-5
+THREADS = 4
+MAX_TRAIN = 6000  # CPU budget; full Meltome train is larger
+
+torch.set_num_threads(THREADS)
+torch.set_num_interop_threads(1)
+torch.manual_seed(17)
+np.random.seed(17)
+
+with gzip.open(DATA, "rt") as fh:
+    df = pd.read_csv(fh)
+train = df[df["split"] == "train"].reset_index(drop=True)
+val = df[df["split"] == "val"].reset_index(drop=True)
+if len(train) > MAX_TRAIN:
+    train = train.sample(n=MAX_TRAIN, random_state=17).reset_index(drop=True)
+
+mean = float(train["target"].mean())
+std = float(train["target"].std())
+std = max(std, 1e-6)
+print(f"oracle train={len(train)} val={len(val)} mean={mean:.3f} std={std:.3f}", flush=True)
+
+tok = AutoTokenizer.from_pretrained(BASE)
+
+
+class SeqDS(Dataset):
+    def __init__(self, frame, mean, std):
+        self.seqs = frame["sequence"].astype(str).tolist()
+        self.y = ((frame["target"].to_numpy(dtype=np.float32) - mean) / std).astype(np.float32)
+        self.y_raw = frame["target"].to_numpy(dtype=np.float32)
+
+    def __len__(self):
+        return len(self.seqs)
+
+    def __getitem__(self, i):
+        return self.seqs[i], float(self.y[i]), float(self.y_raw[i])
+
+
+def collate(batch):
+    seqs, ys, _ = zip(*batch)
+    enc = tok(list(seqs), return_tensors="pt", padding=True, truncation=True, max_length=MAX_LEN)
+    enc["labels"] = torch.tensor(ys, dtype=torch.float32)
+    return enc
+
+
+tr_ds = SeqDS(train, mean, std)
+va_ds = SeqDS(val, mean, std)
+tr_loader = DataLoader(tr_ds, batch_size=BATCH, shuffle=True, collate_fn=collate)
+va_loader = DataLoader(va_ds, batch_size=BATCH * 2, shuffle=False, collate_fn=collate)
+
+
+@torch.no_grad()
+def extract_cls(model, loader):
+    model.eval()
+    xs, ys = [], []
+    for batch in loader:
+        labels = batch.pop("labels")
+        h = model(**batch).last_hidden_state[:, 0]
+        xs.append(h.cpu().numpy())
+        ys.append(labels.numpy())
+    return np.concatenate(xs).astype(np.float32), np.concatenate(ys).astype(np.float32)
+
+
+class Head(nn.Module):
+    def __init__(self, dim):
+        super().__init__()
+        self.dense = nn.Linear(dim, dim)
+        self.dropout = nn.Dropout(0.0)
+        self.out_proj = nn.Linear(dim, 1)
+
+    def forward(self, x):
+        x = self.dropout(x)
+        x = torch.tanh(self.dense(x))
+        return self.out_proj(self.dropout(x)).squeeze(-1)
+
+
+def fit_head(xtr, ytr, xva, yva):
+    head = Head(xtr.shape[1])
+    opt = torch.optim.AdamW(head.parameters(), lr=2e-3, weight_decay=1e-3)
+    xt = torch.from_numpy(xtr)
+    yt = torch.from_numpy(ytr)
+    xv = torch.from_numpy(xva)
+    best_rho, best_state, best_ep = -1.0, None, 0
+    t0 = time.time()
+    for epoch in range(80):
+        head.train()
+        order = torch.randperm(len(xt))
+        for start in range(0, len(xt), 256):
+            ii = order[start : start + 256]
+            pred = head(xt[ii])
+            loss = nn.functional.smooth_l1_loss(pred, yt[ii], beta=0.5)
+            opt.zero_grad()
+            loss.backward()
+            opt.step()
+        head.eval()
+        with torch.no_grad():
+            pred = head(xv).numpy()
+        rho = float(spearmanr(yva, pred).statistic)
+        if rho > best_rho:
+            best_rho, best_state, best_ep = rho, {k: v.detach().clone() for k, v in head.state_dict().items()}, epoch
+        if epoch % 10 == 0:
+            print(f"head epoch={epoch} rho={rho:.4f} best={best_rho:.4f}", flush=True)
+        if epoch - best_ep > 15:
+            break
+    head.load_state_dict(best_state)
+    print(f"head best rho={best_rho:.4f} epoch={best_ep} elapsed={time.time()-t0:.0f}s", flush=True)
+    return head
+
+
+@torch.no_grad()
+def eval_rho(model, loader, y_raw):
+    model.eval()
+    preds = []
+    for batch in loader:
+        batch.pop("labels")
+        preds.append(model(**batch).logits.squeeze(-1).cpu().numpy())
+    pred = np.concatenate(preds) * std + mean
+    return float(spearmanr(y_raw, pred).statistic)
+
+
+print("extracting frozen CLS features...", flush=True)
+backbone = AutoModel.from_pretrained(BASE)
+# Use non-shuffled loaders for feature extract alignment
+tr_loader_ext = DataLoader(tr_ds, batch_size=BATCH, shuffle=False, collate_fn=collate)
+va_loader_ext = DataLoader(va_ds, batch_size=BATCH * 2, shuffle=False, collate_fn=collate)
+xtr, ytr = extract_cls(backbone, tr_loader_ext)
+xva, yva = extract_cls(backbone, va_loader_ext)
+del backbone
+print(f"features ready tr={xtr.shape} va={xva.shape}", flush=True)
+
+head = fit_head(xtr, ytr, xva, yva)
+model = AutoModelForSequenceClassification.from_pretrained(BASE, num_labels=1)
+model.classifier.load_state_dict(head.state_dict())
+del head, xtr, xva
+
+backbone_params, head_params = [], []
+for name, p in model.named_parameters():
+    (head_params if name.startswith("classifier.") else backbone_params).append(p)
+opt = torch.optim.AdamW(
+    [
+        {"params": backbone_params, "lr": LR, "weight_decay": 0.01},
+        {"params": head_params, "lr": LR * 3.0, "weight_decay": 0.01},
+    ]
+)
+total_updates = math.ceil(len(tr_loader) / ACCUM) * EPOCHS
+warmup = max(1, int(total_updates * 0.06))
+
+
+def lr_factor(step):
+    if step < warmup:
+        return (step + 1) / warmup
+    progress = (step - warmup) / max(1, total_updates - warmup)
+    return max(0.08, 0.5 * (1.0 + math.cos(math.pi * progress)))
+
+
+sched = torch.optim.lr_scheduler.LambdaLR(opt, lr_factor)
+print(f"initial val spearman={eval_rho(model, va_loader, va_ds.y_raw):.4f}", flush=True)
+
+t0 = time.time()
+global_step = 0
+best_rho = -1.0
+best_state = None
+for epoch in range(1, EPOCHS + 1):
+    model.train()
+    opt.zero_grad(set_to_none=True)
+    total = 0.0
+    n = 0
+    for step, batch in enumerate(tr_loader, 1):
+        labels = batch.pop("labels")
+        pred = model(**batch).logits.squeeze(-1)
+        loss = nn.functional.smooth_l1_loss(pred, labels, beta=0.5) / ACCUM
+        loss.backward()
+        total += float(loss.item() * ACCUM) * len(labels)
+        n += len(labels)
+        if step % ACCUM == 0 or step == len(tr_loader):
+            nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+            opt.step()
+            sched.step()
+            opt.zero_grad(set_to_none=True)
+            global_step += 1
+        if step % 100 == 0:
+            print(
+                f"epoch {epoch} step {step}/{len(tr_loader)} "
+                f"loss={total/max(n,1):.4f} lr={sched.get_last_lr()[0]:.2g} "
+                f"elapsed={time.time()-t0:.0f}s",
+                flush=True,
+            )
+    rho = eval_rho(model, va_loader, va_ds.y_raw)
+    print(f"epoch {epoch}/{EPOCHS} val_spearman={rho:.4f} elapsed={time.time()-t0:.0f}s", flush=True)
+    if rho > best_rho:
+        best_rho = rho
+        best_state = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
+
+if best_state is not None:
+    model.load_state_dict(best_state)
+model.config.label_mean = mean
+model.config.label_std = std
+model.config.validation_spearman = best_rho
+OUT.mkdir(parents=True, exist_ok=True)
+model.save_pretrained(OUT)
+tok.save_pretrained(OUT)
+print(f"wrote {OUT} best_val_spearman={best_rho:.4f}", flush=True)
+PY
+

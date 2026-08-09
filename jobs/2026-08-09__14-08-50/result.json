@@ -1,0 +1,75 @@
+{
+    "id": "eec7cd60-d7ea-4ac8-af06-5e9abdf23bfb",
+    "started_at": "2026-08-09T14:08:51.160987",
+    "updated_at": "2026-08-09T14:57:35.427824",
+    "finished_at": "2026-08-09T14:57:35.427824",
+    "n_total_trials": 1,
+    "stats": {
+        "n_completed_trials": 1,
+        "n_errored_trials": 0,
+        "n_running_trials": 0,
+        "n_pending_trials": 0,
+        "n_cancelled_trials": 0,
+        "n_retries": 0,
+        "evals": {
+            "oracle__adhoc": {
+                "n_trials": 1,
+                "n_errors": 0,
+                "metrics": [
+                    {
+                        "cosine_min": 0.999790623737894,
+                        "n_tensors_compared": 108.0,
+                        "n_test": 3427.0,
+                        "reward": 0.5,
+                        "spearman": 0.4312160593525205,
+                        "t_strong": 0.45,
+                        "t_weak": 0.3887
+                    }
+                ],
+                "pass_at_k": {},
+                "reward_stats": {
+                    "reward": {
+                        "0.5": [
+                            "sciml-protein-regression__ZnpRu34"
+                        ]
+                    },
+                    "spearman": {
+                        "0.4312160593525205": [
+                            "sciml-protein-regression__ZnpRu34"
+                        ]
+                    },
+                    "t_weak": {
+                        "0.3887": [
+                            "sciml-protein-regression__ZnpRu34"
+                        ]
+                    },
+                    "t_strong": {
+                        "0.45": [
+                            "sciml-protein-regression__ZnpRu34"
+                        ]
+                    },
+                    "n_test": {
+                        "3427": [
+                            "sciml-protein-regression__ZnpRu34"
+                        ]
+                    },
+                    "cosine_min": {
+                        "0.999790623737894": [
+                            "sciml-protein-regression__ZnpRu34"
+                        ]
+                    },
+                    "n_tensors_compared": {
+                        "108": [
+                            "sciml-protein-regression__ZnpRu34"
+                        ]
+                    }
+                },
+                "exception_stats": {}
+            }
+        },
+        "n_input_tokens": null,
+        "n_cache_tokens": null,
+        "n_output_tokens": null,
+        "cost_usd": null
+    }
+}

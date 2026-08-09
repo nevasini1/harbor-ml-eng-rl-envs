@@ -1,0 +1,39 @@
+{
+    "id": "6e3d5bd9-a473-43f8-8928-f47aeefa8914",
+    "started_at": "2026-08-09T13:44:37.232572",
+    "updated_at": "2026-08-09T14:03:36.998543",
+    "finished_at": "2026-08-09T14:03:36.998543",
+    "n_total_trials": 1,
+    "stats": {
+        "n_completed_trials": 1,
+        "n_errored_trials": 0,
+        "n_running_trials": 0,
+        "n_pending_trials": 0,
+        "n_cancelled_trials": 0,
+        "n_retries": 0,
+        "evals": {
+            "oracle__adhoc": {
+                "n_trials": 1,
+                "n_errors": 0,
+                "metrics": [
+                    {
+                        "mean": 0.0
+                    }
+                ],
+                "pass_at_k": {},
+                "reward_stats": {
+                    "reward": {
+                        "0.0": [
+                            "sciml-protein-regression__5Ww3xnn"
+                        ]
+                    }
+                },
+                "exception_stats": {}
+            }
+        },
+        "n_input_tokens": null,
+        "n_cache_tokens": null,
+        "n_output_tokens": null,
+        "cost_usd": null
+    }
+}
