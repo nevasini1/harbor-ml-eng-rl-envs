@@ -1,9 +1,0 @@
-{
-    "job_name": "2026-08-08__22-44-40",
-    "n_concurrent_trials": 1,
-    "tasks": [
-        {
-            "path": "sciml-protein-regression"
-        }
-    ]
-}
