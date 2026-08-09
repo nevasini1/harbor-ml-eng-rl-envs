@@ -21,12 +21,12 @@
         "SR-p53"
       ],
       "n_train": 6265,
-      "n_test": 1565,
-      "n_dropped_duplicates": 1,
+      "n_test": 1566,
+      "n_dropped_duplicates": 0,
       "train_test_inchikey_overlap": 0,
-      "test_mean_similarity_to_anchor": 0.13,
-      "train_pos_rate": 0.0674,
-      "test_pos_rate": 0.107
+      "test_mean_similarity_to_anchor": 0.1365,
+      "train_pos_rate": 0.0715,
+      "test_pos_rate": 0.0911
     }
   }
 }

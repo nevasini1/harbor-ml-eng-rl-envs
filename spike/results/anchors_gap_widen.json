@@ -1,0 +1,14 @@
+{
+  "tox21": {
+    "n_train": 6265,
+    "n_test": 1566,
+    "n_tasks": 12,
+    "anchor": 2576,
+    "frozen_probe_auc": 0.6783,
+    "head_only_auc": 0.6595,
+    "reference_auc": 0.701,
+    "reference_val_auc": 0.7851,
+    "gap_vs_probe": 0.0227,
+    "gap_vs_head_only": 0.0415
+  }
+}
