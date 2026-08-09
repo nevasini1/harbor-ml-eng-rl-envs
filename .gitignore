@@ -1,0 +1,25 @@
+# Third-party reference clones (harbor, frontier-bench, mle-bench, PostTrainBench,
+# RE-Bench and friends). Cloned for research, not authored here.
+.research/
+_research/
+
+# Virtualenvs and bytecode
+**/.venv/
+**/__pycache__/
+*.pyc
+
+# Regenerable artifacts: spike/data is rebuilt by fetch_flip2.py and moleculenet.py
+# against pinned checksums, spike/cache holds embedding matrices, and spike/fixtures
+# holds adversarial model checkpoints built by make_fixtures.py.
+spike/cache/
+spike/fixtures/
+
+# Exclude the downloaded datasets but keep PINS.json, which is the reproducibility
+# contract. Git cannot re-include a file whose parent directory is excluded, so the
+# path has to be reopened one level at a time.
+spike/data/*
+!spike/data/flip2/
+spike/data/flip2/*
+!spike/data/flip2/PINS.json
+
+.DS_Store

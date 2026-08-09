@@ -1,0 +1,63 @@
+{
+    "id": "734c6e46-3a20-4ac2-b82b-72214363328b",
+    "started_at": "2026-08-09T02:00:19.379330",
+    "updated_at": "2026-08-09T05:31:27.015252",
+    "finished_at": "2026-08-09T05:31:27.015252",
+    "n_total_trials": 1,
+    "stats": {
+        "n_completed_trials": 1,
+        "n_errored_trials": 0,
+        "n_running_trials": 0,
+        "n_pending_trials": 0,
+        "n_cancelled_trials": 0,
+        "n_retries": 0,
+        "evals": {
+            "codex__gpt-5.6-sol__adhoc": {
+                "n_trials": 1,
+                "n_errors": 0,
+                "metrics": [
+                    {
+                        "cosine_min": 0.9920478313094444,
+                        "n_tensors_compared": 108.0,
+                        "n_test": 3427.0,
+                        "reward": 0.7854488701613305,
+                        "spearman": 0.5708977403226608
+                    }
+                ],
+                "pass_at_k": {},
+                "reward_stats": {
+                    "reward": {
+                        "0.7854488701613305": [
+                            "sciml-protein-regression__BmGSL3y"
+                        ]
+                    },
+                    "spearman": {
+                        "0.5708977403226608": [
+                            "sciml-protein-regression__BmGSL3y"
+                        ]
+                    },
+                    "n_test": {
+                        "3427": [
+                            "sciml-protein-regression__BmGSL3y"
+                        ]
+                    },
+                    "cosine_min": {
+                        "0.9920478313094444": [
+                            "sciml-protein-regression__BmGSL3y"
+                        ]
+                    },
+                    "n_tensors_compared": {
+                        "108": [
+                            "sciml-protein-regression__BmGSL3y"
+                        ]
+                    }
+                },
+                "exception_stats": {}
+            }
+        },
+        "n_input_tokens": 25062549,
+        "n_cache_tokens": 24986000,
+        "n_output_tokens": 34921,
+        "cost_usd": 13.923374999999998
+    }
+}

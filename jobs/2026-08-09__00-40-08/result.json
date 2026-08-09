@@ -1,0 +1,63 @@
+{
+    "id": "135ffe6a-0e4c-4b65-9cf8-90a27a797b15",
+    "started_at": "2026-08-09T00:40:09.598959",
+    "updated_at": "2026-08-09T00:46:06.040559",
+    "finished_at": "2026-08-09T00:46:06.040559",
+    "n_total_trials": 1,
+    "stats": {
+        "n_completed_trials": 1,
+        "n_errored_trials": 0,
+        "n_running_trials": 0,
+        "n_pending_trials": 0,
+        "n_cancelled_trials": 0,
+        "n_retries": 0,
+        "evals": {
+            "oracle__adhoc": {
+                "n_trials": 1,
+                "n_errors": 0,
+                "metrics": [
+                    {
+                        "cosine_min": 0.999999999999936,
+                        "n_tensors_compared": 108.0,
+                        "n_test": 3427.0,
+                        "reward": 0.5563225396174917,
+                        "spearman": 0.11264507923498325
+                    }
+                ],
+                "pass_at_k": {},
+                "reward_stats": {
+                    "reward": {
+                        "0.5563225396174917": [
+                            "sciml-protein-regression__Th9yACz"
+                        ]
+                    },
+                    "spearman": {
+                        "0.11264507923498325": [
+                            "sciml-protein-regression__Th9yACz"
+                        ]
+                    },
+                    "n_test": {
+                        "3427": [
+                            "sciml-protein-regression__Th9yACz"
+                        ]
+                    },
+                    "cosine_min": {
+                        "0.999999999999936": [
+                            "sciml-protein-regression__Th9yACz"
+                        ]
+                    },
+                    "n_tensors_compared": {
+                        "108": [
+                            "sciml-protein-regression__Th9yACz"
+                        ]
+                    }
+                },
+                "exception_stats": {}
+            }
+        },
+        "n_input_tokens": null,
+        "n_cache_tokens": null,
+        "n_output_tokens": null,
+        "cost_usd": null
+    }
+}

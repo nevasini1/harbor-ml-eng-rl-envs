@@ -1,0 +1,12 @@
+{
+    "task": {
+        "path": "sciml-protein-regression"
+    },
+    "trial_name": "sciml-protein-regression__ivkNdSx",
+    "trials_dir": "jobs/2026-08-09__00-46-16",
+    "agent": {
+        "name": "codex",
+        "model_name": "openai/gpt-5.6-sol"
+    },
+    "job_id": "93508dc9-0687-48ac-930e-41f0d12df3a8"
+}

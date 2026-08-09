@@ -1,0 +1,14 @@
+{
+  "tox21": {
+    "n_train": 6265,
+    "n_test": 1565,
+    "n_tasks": 12,
+    "base_auc": 0.7231,
+    "morgan_rf_auc": 0.711,
+    "reference_auc": 0.746,
+    "reference_best_epoch": 15,
+    "reference_val_auc": 0.814,
+    "reference_seconds": 1429.8,
+    "gap": 0.023
+  }
+}

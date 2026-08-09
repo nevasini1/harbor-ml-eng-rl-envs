@@ -1,0 +1,4 @@
+Skipping image OS validation for hb__90ecae915dbb5730eba0d59c56e690d4: docker inspect returned 1
+Collecting main service artifacts
+Trial sciml-protein-regression__hJuHVGd failed: network_mode='no-network' is not supported by EnvironmentType.DOCKER environment. Environment providers must enforce the requested network policy or reject the task.
+Not retrying trial because the maximum number of retries has been reached

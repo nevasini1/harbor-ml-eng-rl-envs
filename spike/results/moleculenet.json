@@ -1,0 +1,41 @@
+[
+  {
+    "dataset": "bbbp",
+    "n": 2050,
+    "n_tasks": 1,
+    "n_scaffolds": 1025,
+    "sha256": "d07a38487aeac5cee5508413e468043ef3097451d2a112701c2d60be9ec6b662",
+    "n_train": 1631,
+    "n_test": 204,
+    "morgan-logreg": 0.6722,
+    "morgan-rf": 0.705,
+    "chemberta-frozen": 0.7264,
+    "embed_seconds": 14.1
+  },
+  {
+    "dataset": "bace",
+    "n": 1513,
+    "n_tasks": 1,
+    "n_scaffolds": 671,
+    "sha256": "f3fb9ce90bada3e2bd6148b0df13f8f8145a357bf87df0dd5b391ede974fc737",
+    "n_train": 1210,
+    "n_test": 152,
+    "morgan-logreg": 0.8342,
+    "morgan-rf": 0.8774,
+    "chemberta-frozen": 0.7835,
+    "embed_seconds": 6.1
+  },
+  {
+    "dataset": "clintox",
+    "n": 1484,
+    "n_tasks": 2,
+    "n_scaffolds": 784,
+    "sha256": "7324a84a180ad9068d3847677c85d58e8432e82b3ae6ac95cf0e98b3a58d9697",
+    "n_train": 1184,
+    "n_test": 148,
+    "morgan-logreg": 0.8219,
+    "morgan-rf": 0.7216,
+    "chemberta-frozen": 0.9867,
+    "embed_seconds": 8.7
+  }
+]

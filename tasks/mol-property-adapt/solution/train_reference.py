@@ -1,0 +1,114 @@
+"""Reference fine-tune. Defines the upper anchor of the reward scale.
+
+Recipe: discriminative learning rates (higher for the fresh head than the
+pretrained encoder), one-cycle warmup and linear decay, masked BCE so missing
+labels are excluded from the loss rather than treated as negatives, and epoch
+selection on a validation slice held out of the agent's own training data.
+"""
+
+import os
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+import torch
+from sklearn.metrics import roc_auc_score
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+
+BASE = os.environ.get("BASE_MODEL_DIR", "/app/base_model")
+DATA = Path(os.environ.get("DATA_DIR", "/app/data"))
+OUT = Path(os.environ.get("OUTPUT_DIR", "/app/final_model"))
+EVAL_SETS = ["tox21"]
+EPOCHS = int(os.environ.get("EPOCHS", "20"))
+SEED = 0
+
+
+def mean_auc(y, p) -> float:
+    aucs = []
+    for t in range(y.shape[1]):
+        m = ~np.isnan(y[:, t])
+        if m.sum() and len(np.unique(y[m, t])) == 2:
+            aucs.append(roc_auc_score(y[m, t], p[m, t]))
+    return float(np.mean(aucs)) if aucs else float("nan")
+
+
+@torch.no_grad()
+def predict(model, tok, smiles, bs=64):
+    model.eval()
+    out = []
+    for i in range(0, len(smiles), bs):
+        enc = tok(smiles[i : i + bs], return_tensors="pt", padding=True,
+                  truncation=True, max_length=256)
+        out.append(model(**enc).logits.float().numpy())
+    model.train()
+    return np.concatenate(out)
+
+
+def train(name: str) -> None:
+    torch.manual_seed(SEED)
+    np.random.seed(SEED)
+    torch.set_num_threads(int(os.environ.get("OMP_NUM_THREADS", "8")))
+
+    df = pd.read_csv(DATA / f"{name}_train.csv")
+    labels = [c for c in df.columns if c != "smiles"]
+    smiles = df["smiles"].tolist()
+    Y = df[labels].to_numpy(dtype=np.float64)
+    print(f"{name}: {len(df)} molecules, {len(labels)} tasks", flush=True)
+
+    rng = np.random.default_rng(SEED)
+    order = rng.permutation(len(smiles))
+    n_val = int(0.1 * len(order))
+    val_idx, fit_idx = order[:n_val], order[n_val:]
+
+    tok = AutoTokenizer.from_pretrained(BASE)
+    model = AutoModelForSequenceClassification.from_pretrained(
+        BASE, num_labels=len(labels), problem_type="multi_label_classification")
+
+    yfit = torch.tensor(np.nan_to_num(Y[fit_idx], nan=0.0), dtype=torch.float32)
+    wfit = torch.tensor(~np.isnan(Y[fit_idx]), dtype=torch.float32)
+    fit_smiles = [smiles[i] for i in fit_idx]
+    val_smiles = [smiles[i] for i in val_idx]
+
+    head = [p for n, p in model.named_parameters() if n.startswith("classifier")]
+    body = [p for n, p in model.named_parameters() if not n.startswith("classifier")]
+    opt = torch.optim.AdamW([{"params": body, "lr": 5e-5},
+                             {"params": head, "lr": 1e-3}], weight_decay=0.01)
+    bs = 32
+    steps = EPOCHS * max(1, len(fit_smiles) // bs)
+    sched = torch.optim.lr_scheduler.OneCycleLR(
+        opt, max_lr=[5e-5, 1e-3], total_steps=steps, pct_start=0.1,
+        anneal_strategy="linear")
+
+    best_val, best_state, step = -1.0, None, 0
+    for ep in range(EPOCHS):
+        model.train()
+        perm = torch.randperm(len(fit_smiles))
+        for i in range(0, len(fit_smiles), bs):
+            idx = perm[i : i + bs].tolist()
+            enc = tok([fit_smiles[j] for j in idx], return_tensors="pt",
+                      padding=True, truncation=True, max_length=256)
+            loss = torch.nn.functional.binary_cross_entropy_with_logits(
+                model(**enc).logits, yfit[idx], weight=wfit[idx])
+            loss.backward()
+            opt.step()
+            opt.zero_grad()
+            step += 1
+            if step < steps:
+                sched.step()
+        val = mean_auc(Y[val_idx], predict(model, tok, val_smiles))
+        print(f"  epoch {ep+1}/{EPOCHS} val_auc={val:.4f}", flush=True)
+        if val > best_val:
+            best_val = val
+            best_state = {k: v.detach().clone() for k, v in model.state_dict().items()}
+
+    model.load_state_dict(best_state)
+    dest = OUT / name
+    dest.mkdir(parents=True, exist_ok=True)
+    model.save_pretrained(dest)
+    tok.save_pretrained(dest)
+    print(f"  saved {dest} (best val_auc={best_val:.4f})", flush=True)
+
+
+if __name__ == "__main__":
+    for ds in EVAL_SETS:
+        train(ds)

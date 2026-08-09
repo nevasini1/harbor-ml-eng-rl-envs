@@ -1,0 +1,5 @@
+{
+  "reward": 0.0,
+  "status": "rejected",
+  "reason": "architecture mismatch vs base: {'hidden_size': (320, 480), 'num_hidden_layers': (6, 12), 'intermediate_size': (1280, 1920)}"
+}

@@ -1,0 +1,13 @@
+{
+    "job_name": "2026-08-08__23-28-23",
+    "n_concurrent_trials": 1,
+    "environment": {
+        "type": "docker",
+        "force_build": true
+    },
+    "tasks": [
+        {
+            "path": "sciml-protein-regression"
+        }
+    ]
+}

@@ -1,0 +1,45 @@
+{
+  "schema_version": "ATIF-v1.7",
+  "session_id": "019fe57c-ead7-72d1-b0a1-df31bd58a546",
+  "agent": {
+    "name": "codex",
+    "version": "0.147.0",
+    "model_name": "gpt-5.6-sol",
+    "extra": {
+      "originator": "codex_exec",
+      "cwd": "/app"
+    }
+  },
+  "steps": [
+    {
+      "step_id": 1,
+      "timestamp": "2026-08-09T07:46:37.306Z",
+      "source": "system",
+      "message": "<skills_instructions>\n## Skills\nA skill is a set of instructions provided through a `SKILL.md` source. Below is the list of skills that can be used. Each entry includes a name, description, and source locator. `file` locators are on the host filesystem, `environment resource` locators are owned by an execution environment, `orchestrator resource` locators are opaque non-filesystem resources, and `custom resource` locators use their provider's access mechanism.\n### Available skills\n- imagegen: Generate or edit raster images when the task benefits from AI-created bitmap visuals such as photos, illustrations, textures, sprites, mockups, or transparent-background cutouts. Use when Codex should create a brand-new image, transform an existing image, or derive visual variants from references, and the output should be a bitmap asset rather than repo-native code or vector. Do not use when the task is better handled by editing existing SVG/vector/code-native assets, extending an established icon or logo system, or building the visual directly in HTML/CSS/canvas. (file: /tmp/codex-home/skills/.system/imagegen/SKILL.md)\n- openai-docs: Use for Codex models/pricing, scheduled tasks, skills, settings, setup, troubleshooting, customization, automations, and self-knowledge\u2014including 'you,' 'your,' 'this app,' or 'this coding agent' when they refer to Codex\u2014and for OpenAI APIs/products and ChatGPT Work. Also use for model choice/migration, prompting, SDKs, Responses, Realtime, agents, evals, and Chat/Work/Codex comparisons. Do not use for generic app/software tasks that merely mention Codex. (file: /tmp/codex-home/skills/.system/openai-docs/SKILL.md)\n- plugin-creator: Create and scaffold plugin directories for Codex with a required `.codex-plugin/plugin.json`, optional plugin folders/files, valid manifest defaults, and personal-marketplace entries by default. Use when Codex needs to create a new personal plugin, add optional plugin structure, generate or update marketplace entries for plugin ordering and availability metadata, or update an existing local plugin during development with the CLI-driven cachebuster and reinstall flow. (file: /tmp/codex-home/skills/.system/plugin-creator/SKILL.md)\n- skill-creator: Guide for creating effective skills. This skill should be used when users want to create a new skill (or update an existing skill) that extends Codex's capabilities with specialized knowledge, workflows, or tool integrations. (file: /tmp/codex-home/skills/.system/skill-creator/SKILL.md)\n- skill-installer: Install Codex skills into $CODEX_HOME/skills from a curated list or a GitHub repo path. Use when a user asks to list installable skills, install a curated skill, or install a skill from another repo (including private repos). (file: /tmp/codex-home/skills/.system/skill-installer/SKILL.md)\n</skills_instructions><permissions instructions>\nFilesystem sandboxing defines which files can be read or written. `sandbox_mode` is `danger-full-access`: No filesystem sandboxing - all commands are permitted. Network access is enabled.\nApproval policy is currently never. Do not provide the `sandbox_permissions` for any reason, commands will be rejected.\n</permissions instructions>"
+    },
+    {
+      "step_id": 2,
+      "timestamp": "2026-08-09T07:46:37.307Z",
+      "source": "system",
+      "message": "You are `/root`, the primary agent in a team of agents collaborating to fulfill the user's goals.\n\nAt the start of your turn, you are the active agent.\nYou can spawn sub-agents to handle subtasks, and those sub-agents can spawn their own sub-agents.\nAll agents in the team, including the agents that you can assign tasks to, are equally intelligent and capable, and have access to the same set of tools.\n\nYou can use `spawn_agent` to create a new agent, `followup_task` to give an existing agent a new task and trigger a turn, and `send_message` to pass a message to a running agent without triggering a turn.\nChild agents can also spawn their own sub-agents.\nYou can decide how much context you want to propagate to your sub-agents with the `fork_turns` parameter.\n\nYou will receive messages in the analysis channel in the form:\n```\nMessage Type: MESSAGE | FINAL_ANSWER\nTask name: <recipient>\nSender: <author>\nPayload:\n<payload text>\n```\nThey may be addressed as to=/root\n\nNote that collaboration tools cannot be called from inside `functions.exec`. Call `spawn_agent`, `send_message`, `followup_task`, `wait_agent`, `interrupt_agent`, and `list_agents` only as direct tool calls using the recipient shown in their tool definitions, such as `to=functions.collaboration.spawn_agent`, since they are intentionally absent from the `functions.exec` `tools.*` namespace. Available tools in `functions.exec` are explicitly described with a `tools` namespace in the developer message.\n\nAll agents share the same directory. In detail:\n- All agents have access to the same container and filesystem as you.\n- All agents use the same current working directory.\n- As a result, edits made by one agent are immediately visible to all other agents.\n\nWhen calling `wait_agent`, prefer longer waits (minutes) to avoid busy polling.\n\nThere are 4 available concurrency slots, meaning that up to 4 agents can be active at once, including you.\n\nFull-history forks (`fork_turns` omitted or `\"all\"`) inherit the parent model and reasoning effort and do not accept overrides. Only set `model` or `reasoning_effort` when explicitly requested by the user, applicable `AGENTS.md` instructions, or skill instructions; when doing so, set `fork_turns` to `\"none\"` or a positive integer string."
+    },
+    {
+      "step_id": 3,
+      "timestamp": "2026-08-09T07:46:37.307Z",
+      "source": "system",
+      "message": "<multi_agent_mode>Any earlier instruction enabling proactive multi-agent delegation no longer applies. Do not spawn sub-agents unless the user or applicable AGENTS.md/skill instructions explicitly ask for sub-agents, delegation, or parallel agent work.</multi_agent_mode>"
+    },
+    {
+      "step_id": 4,
+      "timestamp": "2026-08-09T07:46:37.307Z",
+      "source": "user",
+      "message": "<environment_context>\n  <cwd>/app</cwd>\n  <shell>bash</shell>\n  <current_date>2026-08-09</current_date>\n  <timezone>Etc/UTC</timezone>\n  <filesystem><workspace_roots><root>/app</root></workspace_roots><permission_profile type=\"disabled\"><file_system type=\"unrestricted\" /></permission_profile></filesystem>\n</environment_context>"
+    },
+    {
+      "step_id": 5,
+      "timestamp": "2026-08-09T07:46:37.316Z",
+      "source": "user",
+      "message": "# Task: improve ESM-2-8M on Meltome thermostability prediction\n\nYou are given a pretrained protein language model and a training/validation table of protein sequences with melting-temperature labels. Improve the model. Your submission is scored automatically on a **private held-out test set you cannot see**.\n\n## Budget\n\n- **CPU only** (no GPU)\n- **4 hours** wall-clock, all-inclusive (setup, data work, training, packaging)\n- Network access is available in this environment for downloading training resources if you choose\n\n## Provided assets\n\n- Base model (pinned Hugging Face revision, already cached under `/models/esm2_t6_8M_UR50D`):\n  - `facebook/esm2_t6_8M_UR50D`\n- Labeled data at `/data/train.csv.gz` with columns:\n  - `sequence` (amino-acid string, already truncated to length \u2264 512)\n  - `target` (melting temperature in Celsius)\n  - `split` \u2208 {`train`, `val`}\n\nYou may use only the provided base model family as the starting checkpoint. Do **not** substitute a different public checkpoint.\n\n## Submission contract\n\nWhen finished, write a Hugging Face `save_pretrained` directory to:\n\n```text\n/app/final_model\n```\n\nRequirements:\n\n1. Loadable with `AutoModelForSequenceClassification.from_pretrained(\"/app/final_model\")`\n2. `num_labels = 1` (regression head)\n3. Same architecture as the provided ESM-2-8M base (anti-substitution checks will reject swapped models)\n4. Tokenizer files should be present in `/app/final_model` as well\n\n## Scoring\n\nThe verifier computes **Spearman correlation** between your model\u2019s predictions and private ground-truth temperatures, then maps that to a scalar reward in `[0, 1]`. Higher is better. Malformed / unloadable / architecture-mismatched submissions score `0`.\n\n## Rules\n\n- Do not attempt to access, download, or reconstruct the private test set.\n- Do not modify verifier code (you cannot see it anyway).\n- Paid external model APIs are not allowed in the solution path.\n- Objective is model quality on held-out ground truth, not pleasing a judge.\n"
+    }
+  ]
+}

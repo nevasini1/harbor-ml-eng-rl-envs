@@ -1,0 +1,15 @@
+{
+  "submission_bytes": 31376736,
+  "arch_sha256": "e321010be37e87e398d2c23f92c9fa99778f2738d7c28cccbbdbdeefaaa27bf6",
+  "public_hash_matches": 0,
+  "min_tensor_cosine": 1.0,
+  "min_tensor_name": "esm.encoder.layer.0.attention.self.rotary_embeddings.inv_freq",
+  "tensors_compared": 110,
+  "tensors_missing_from_submission": 0,
+  "base_tensor_count": 112,
+  "spearman": 0.020018,
+  "base_spearman": 0.1,
+  "ref_spearman": 0.6,
+  "reward": 0.0,
+  "status": "ok"
+}

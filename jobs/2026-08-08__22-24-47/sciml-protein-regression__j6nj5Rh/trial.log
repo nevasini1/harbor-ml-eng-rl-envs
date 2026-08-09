@@ -1,0 +1,17 @@
+Skipping image OS validation for hb__90ecae915dbb5730eba0d59c56e690d4: docker inspect returned 1
+Collecting main service artifacts
+Failed to download artifact '/app/final_model' from service 'main' (best-effort)
+Traceback (most recent call last):
+  File "/Users/jalajupadhyay/.local/share/uv/tools/harbor/lib/python3.12/site-packages/harbor/trial/artifact_handler.py", line 330, in _download_artifact
+    await source_env.service_download_file(
+  File "/Users/jalajupadhyay/.local/share/uv/tools/harbor/lib/python3.12/site-packages/harbor/environments/docker/docker.py", line 1052, in service_download_file
+    await self.download_file(source_path, target_path)
+  File "/Users/jalajupadhyay/.local/share/uv/tools/harbor/lib/python3.12/site-packages/harbor/environments/docker/docker.py", line 1037, in download_file
+    await self._platform.download_file(source_path, target_path)
+  File "/Users/jalajupadhyay/.local/share/uv/tools/harbor/lib/python3.12/site-packages/harbor/environments/docker/docker_unix.py", line 185, in download_file
+    await self._env._run_docker_compose_command(
+  File "/Users/jalajupadhyay/.local/share/uv/tools/harbor/lib/python3.12/site-packages/harbor/environments/docker/docker.py", line 656, in _run_docker_compose_command
+    raise RuntimeError(
+RuntimeError: Docker compose command failed for environment sciml-protein-regression. Command: docker compose --project-name sciml-protein-regression__j6nj5rh__env --project-directory /Users/jalajupadhyay/Documents/final/sciml-protein-regression/environment -f /private/var/folders/zm/_n624c8s6gv3_qpgtt9gkx100000gn/T/tmpww374nl8/sciml-protein-regression__j6nj5Rh__env-docker-compose-resources.json -f /Users/jalajupadhyay/.local/share/uv/tools/harbor/lib/python3.12/site-packages/harbor/environments/docker/docker-compose-build.yaml -f /private/var/folders/zm/_n624c8s6gv3_qpgtt9gkx100000gn/T/tmpb_j4sruz/docker-compose-environment.json -f /private/var/folders/zm/_n624c8s6gv3_qpgtt9gkx100000gn/T/tmphy7xan5n/docker-compose-mounts.json cp main:/app/final_model jobs/2026-08-08__22-24-47/sciml-protein-regression__j6nj5Rh/artifacts/app/final_model. Return code: 1. Stdout:  sciml-protein-regression__j6nj5rh__env-main-1 Copying sciml-protein-regression__j6nj5rh__env-main-1:/app/final_model to jobs/2026-08-08__22-24-47/sciml-protein-regression__j6nj5Rh/artifacts/app/final_model
+Error response from daemon: Could not find the file /app/final_model in container 8e7ca7524e4e78d336209b0feedc2a743fd400c0ebf6492c9811aea0bc385924
+. Stderr: None. 

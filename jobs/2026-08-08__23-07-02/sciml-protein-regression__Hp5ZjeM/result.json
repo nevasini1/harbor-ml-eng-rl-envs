@@ -1,0 +1,111 @@
+{
+    "id": "37b18115-de03-4813-bd73-9f1ff493ad42",
+    "task_name": "mleval/sciml-protein-regression",
+    "trial_name": "sciml-protein-regression__Hp5ZjeM",
+    "trial_uri": "file:///Users/jalajupadhyay/Documents/final/jobs/2026-08-08__23-07-02/sciml-protein-regression__Hp5ZjeM",
+    "task_id": {
+        "path": "sciml-protein-regression"
+    },
+    "source": null,
+    "task_checksum": "8d339d77b9c611b9f1d22eb82f284f5000555fd1328ecaeaeddf1e0cc695681b",
+    "config": {
+        "task": {
+            "path": "sciml-protein-regression",
+            "git_url": null,
+            "git_commit_id": null,
+            "name": null,
+            "ref": null,
+            "overwrite": false,
+            "download_dir": null,
+            "source": null
+        },
+        "trial_name": "sciml-protein-regression__Hp5ZjeM",
+        "trials_dir": "jobs/2026-08-08__23-07-02",
+        "install_only": false,
+        "timeout_multiplier": 1.0,
+        "agent_timeout_multiplier": null,
+        "verifier_timeout_multiplier": null,
+        "agent_setup_timeout_multiplier": null,
+        "environment_build_timeout_multiplier": null,
+        "agent": {
+            "name": "oracle",
+            "import_path": null,
+            "model_name": null,
+            "n_concurrent": null,
+            "concurrency_group": null,
+            "skills": [],
+            "override_timeout_sec": null,
+            "override_setup_timeout_sec": null,
+            "max_timeout_sec": null,
+            "resume_trajectory": false,
+            "load_trajectory": null,
+            "extra_allowed_hosts": [],
+            "kwargs": {},
+            "mcp_servers": []
+        },
+        "environment": {
+            "type": "docker",
+            "import_path": null,
+            "force_build": true,
+            "delete": true,
+            "cpu_enforcement_policy": "auto",
+            "memory_enforcement_policy": "auto",
+            "override_cpus": null,
+            "override_memory_mb": null,
+            "override_storage_mb": null,
+            "override_gpus": null,
+            "override_tpu": null,
+            "mounts": null,
+            "extra_docker_compose": [],
+            "kwargs": {},
+            "extra_allowed_hosts": []
+        },
+        "verifier": {
+            "override_timeout_sec": null,
+            "max_timeout_sec": null,
+            "disable": false
+        },
+        "artifacts": [],
+        "extra_instruction_paths": [],
+        "job_id": "a527c098-b956-4974-9519-c30959303b7c"
+    },
+    "agent_info": {
+        "name": "oracle",
+        "version": "1.0.0",
+        "model_info": null
+    },
+    "agent_result": {
+        "n_input_tokens": null,
+        "n_cache_tokens": null,
+        "n_output_tokens": null,
+        "cost_usd": null,
+        "rollout_details": null,
+        "metadata": null
+    },
+    "verifier_result": null,
+    "exception_info": {
+        "exception_type": "ValueError",
+        "exception_message": "network_mode='no-network' is not supported by EnvironmentType.DOCKER environment. Environment providers must enforce the requested network policy or reject the task.",
+        "exception_traceback": "Traceback (most recent call last):\n  File \"/Users/jalajupadhyay/.local/share/uv/tools/harbor/lib/python3.12/site-packages/harbor/trial/trial.py\", line 354, in run\n    await self._run()\n  File \"/Users/jalajupadhyay/.local/share/uv/tools/harbor/lib/python3.12/site-packages/harbor/trial/single_step.py\", line 52, in _run\n    await self._run_verifier()\n  File \"/Users/jalajupadhyay/.local/share/uv/tools/harbor/lib/python3.12/site-packages/harbor/trial/single_step.py\", line 98, in _run_verifier\n    self.result.verifier_result = await self._run_separate_verifier(\n                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/jalajupadhyay/.local/share/uv/tools/harbor/lib/python3.12/site-packages/harbor/trial/trial.py\", line 560, in _run_separate_verifier\n    async with self._separate_verifier_env(\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/jalajupadhyay/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/contextlib.py\", line 210, in __aenter__\n    return await anext(self.gen)\n           ^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/jalajupadhyay/.local/share/uv/tools/harbor/lib/python3.12/site-packages/harbor/trial/trial.py\", line 625, in _separate_verifier_env\n    env = EnvironmentFactory.create_environment_from_config(\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/jalajupadhyay/.local/share/uv/tools/harbor/lib/python3.12/site-packages/harbor/environments/factory.py\", line 357, in create_environment_from_config\n    return cls.create_environment(\n           ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/jalajupadhyay/.local/share/uv/tools/harbor/lib/python3.12/site-packages/harbor/environments/factory.py\", line 189, in create_environment\n    return environment_class(\n           ^^^^^^^^^^^^^^^^^^\n  File \"/Users/jalajupadhyay/.local/share/uv/tools/harbor/lib/python3.12/site-packages/harbor/environments/docker/docker.py\", line 196, in __init__\n    super().__init__(\n  File \"/Users/jalajupadhyay/.local/share/uv/tools/harbor/lib/python3.12/site-packages/harbor/environments/base.py\", line 219, in __init__\n    self._validate_network_policy_support()\n  File \"/Users/jalajupadhyay/.local/share/uv/tools/harbor/lib/python3.12/site-packages/harbor/environments/base.py\", line 834, in _validate_network_policy_support\n    self.validate_network_policy_support()\n  File \"/Users/jalajupadhyay/.local/share/uv/tools/harbor/lib/python3.12/site-packages/harbor/environments/docker/docker.py\", line 577, in validate_network_policy_support\n    super().validate_network_policy_support(network_policy)\n  File \"/Users/jalajupadhyay/.local/share/uv/tools/harbor/lib/python3.12/site-packages/harbor/environments/base.py\", line 777, in validate_network_policy_support\n    raise ValueError(\nValueError: network_mode='no-network' is not supported by EnvironmentType.DOCKER environment. Environment providers must enforce the requested network policy or reject the task.\n",
+        "occurred_at": "2026-08-08T23:08:51.099148"
+    },
+    "started_at": "2026-08-09T06:07:04.056930Z",
+    "finished_at": "2026-08-09T06:08:51.100506Z",
+    "environment_setup": {
+        "started_at": "2026-08-09T06:07:04.167743Z",
+        "finished_at": "2026-08-09T06:07:26.710806Z"
+    },
+    "agent_setup": {
+        "started_at": "2026-08-09T06:07:26.711243Z",
+        "finished_at": "2026-08-09T06:07:26.711514Z"
+    },
+    "agent_execution": {
+        "started_at": "2026-08-09T06:07:26.711925Z",
+        "finished_at": "2026-08-09T06:08:44.427369Z"
+    },
+    "verifier": {
+        "started_at": "2026-08-09T06:08:50.416510Z",
+        "finished_at": "2026-08-09T06:08:51.091946Z"
+    },
+    "step_results": null
+}

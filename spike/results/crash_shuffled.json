@@ -1,0 +1,5 @@
+{
+  "reward": 0.0,
+  "status": "rejected",
+  "reason": "weight lineage check failed: min per-tensor cosine -0.1249 < 0.9 on esm.encoder.layer.1.attention.self.query.bias"
+}

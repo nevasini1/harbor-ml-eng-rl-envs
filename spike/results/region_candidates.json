@@ -1,0 +1,198 @@
+{
+  "bbbp": [
+    {
+      "anchor": 294,
+      "frozen_probe_auc": 0.887,
+      "n_scoreable_tasks": 1,
+      "test_pos_rate": 0.8976,
+      "train_pos_rate": 0.7311,
+      "mean_sim_in_test": 0.2086
+    },
+    {
+      "anchor": 1740,
+      "frozen_probe_auc": 0.9053,
+      "n_scoreable_tasks": 1,
+      "test_pos_rate": 0.8927,
+      "train_pos_rate": 0.7323,
+      "mean_sim_in_test": 0.2005
+    },
+    {
+      "anchor": 761,
+      "frozen_probe_auc": 0.9183,
+      "n_scoreable_tasks": 1,
+      "test_pos_rate": 0.5634,
+      "train_pos_rate": 0.8146,
+      "mean_sim_in_test": 0.178
+    },
+    {
+      "anchor": 400,
+      "frozen_probe_auc": 0.923,
+      "n_scoreable_tasks": 1,
+      "test_pos_rate": 0.8537,
+      "train_pos_rate": 0.7421,
+      "mean_sim_in_test": 0.1499
+    },
+    {
+      "anchor": 315,
+      "frozen_probe_auc": 0.939,
+      "n_scoreable_tasks": 1,
+      "test_pos_rate": 0.6415,
+      "train_pos_rate": 0.7951,
+      "mean_sim_in_test": 0.156
+    },
+    {
+      "anchor": 1289,
+      "frozen_probe_auc": 0.941,
+      "n_scoreable_tasks": 1,
+      "test_pos_rate": 0.8293,
+      "train_pos_rate": 0.7482,
+      "mean_sim_in_test": 0.1885
+    },
+    {
+      "anchor": 877,
+      "frozen_probe_auc": 0.946,
+      "n_scoreable_tasks": 1,
+      "test_pos_rate": 0.5537,
+      "train_pos_rate": 0.8171,
+      "mean_sim_in_test": 0.1645
+    },
+    {
+      "anchor": 200,
+      "frozen_probe_auc": 0.9466,
+      "n_scoreable_tasks": 1,
+      "test_pos_rate": 0.622,
+      "train_pos_rate": 0.8,
+      "mean_sim_in_test": 0.1225
+    },
+    {
+      "anchor": 1331,
+      "frozen_probe_auc": 0.9466,
+      "n_scoreable_tasks": 1,
+      "test_pos_rate": 0.8317,
+      "train_pos_rate": 0.7476,
+      "mean_sim_in_test": 0.1524
+    },
+    {
+      "anchor": 1484,
+      "frozen_probe_auc": 0.9474,
+      "n_scoreable_tasks": 1,
+      "test_pos_rate": 0.7951,
+      "train_pos_rate": 0.7567,
+      "mean_sim_in_test": 0.197
+    },
+    {
+      "anchor": 1793,
+      "frozen_probe_auc": 0.9549,
+      "n_scoreable_tasks": 1,
+      "test_pos_rate": 0.7561,
+      "train_pos_rate": 0.7665,
+      "mean_sim_in_test": 0.1638
+    },
+    {
+      "anchor": 1365,
+      "frozen_probe_auc": 0.9623,
+      "n_scoreable_tasks": 1,
+      "test_pos_rate": 0.8,
+      "train_pos_rate": 0.7555,
+      "mean_sim_in_test": 0.1833
+    }
+  ],
+  "tox21": [
+    {
+      "anchor": 3357,
+      "frozen_probe_auc": 0.7232,
+      "n_scoreable_tasks": 12,
+      "test_pos_rate": 0.1069,
+      "train_pos_rate": 0.0674,
+      "mean_sim_in_test": 0.13
+    },
+    {
+      "anchor": 1528,
+      "frozen_probe_auc": 0.7254,
+      "n_scoreable_tasks": 12,
+      "test_pos_rate": 0.1006,
+      "train_pos_rate": 0.0689,
+      "mean_sim_in_test": 0.144
+    },
+    {
+      "anchor": 1207,
+      "frozen_probe_auc": 0.7349,
+      "n_scoreable_tasks": 12,
+      "test_pos_rate": 0.0705,
+      "train_pos_rate": 0.0764,
+      "mean_sim_in_test": 0.0482
+    },
+    {
+      "anchor": 5218,
+      "frozen_probe_auc": 0.74,
+      "n_scoreable_tasks": 12,
+      "test_pos_rate": 0.0774,
+      "train_pos_rate": 0.0747,
+      "mean_sim_in_test": 0.1723
+    },
+    {
+      "anchor": 765,
+      "frozen_probe_auc": 0.7434,
+      "n_scoreable_tasks": 12,
+      "test_pos_rate": 0.0899,
+      "train_pos_rate": 0.0714,
+      "mean_sim_in_test": 0.1395
+    },
+    {
+      "anchor": 5103,
+      "frozen_probe_auc": 0.7475,
+      "n_scoreable_tasks": 12,
+      "test_pos_rate": 0.0924,
+      "train_pos_rate": 0.0709,
+      "mean_sim_in_test": 0.171
+    },
+    {
+      "anchor": 6654,
+      "frozen_probe_auc": 0.7512,
+      "n_scoreable_tasks": 12,
+      "test_pos_rate": 0.0754,
+      "train_pos_rate": 0.0752,
+      "mean_sim_in_test": 0.134
+    },
+    {
+      "anchor": 4942,
+      "frozen_probe_auc": 0.7581,
+      "n_scoreable_tasks": 12,
+      "test_pos_rate": 0.0777,
+      "train_pos_rate": 0.0746,
+      "mean_sim_in_test": 0.2206
+    },
+    {
+      "anchor": 1127,
+      "frozen_probe_auc": 0.7696,
+      "n_scoreable_tasks": 12,
+      "test_pos_rate": 0.033,
+      "train_pos_rate": 0.0866,
+      "mean_sim_in_test": 0.1399
+    },
+    {
+      "anchor": 5684,
+      "frozen_probe_auc": 0.7739,
+      "n_scoreable_tasks": 12,
+      "test_pos_rate": 0.078,
+      "train_pos_rate": 0.0746,
+      "mean_sim_in_test": 0.1801
+    },
+    {
+      "anchor": 2920,
+      "frozen_probe_auc": 0.774,
+      "n_scoreable_tasks": 12,
+      "test_pos_rate": 0.1057,
+      "train_pos_rate": 0.0676,
+      "mean_sim_in_test": 0.1373
+    },
+    {
+      "anchor": 6866,
+      "frozen_probe_auc": 0.7842,
+      "n_scoreable_tasks": 12,
+      "test_pos_rate": 0.0675,
+      "train_pos_rate": 0.0772,
+      "mean_sim_in_test": 0.2314
+    }
+  ]
+}

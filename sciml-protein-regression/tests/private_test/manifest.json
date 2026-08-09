@@ -1,0 +1,14 @@
+{
+  "source": "FLIP2 Meltome-mixed (Zenodo 10.5281/zenodo.18433203)",
+  "license": "CC-BY-4.0",
+  "max_len": 512,
+  "test_fraction": 0.15,
+  "n_agent_rows": 19913,
+  "n_agent_train": 17922,
+  "n_agent_val": 1991,
+  "n_private_test": 3427,
+  "agent_sha256": "7110d848b19b3a9dad6688cd6124b32ea4150aa0a51862562b63b663b05e1f54",
+  "private_sha256": "8fb6b2ab50ba098a61ccb5b96bf989fc4c180ec9b295c6cc07a98c054217f5ca",
+  "overlap_sequences": 0,
+  "note": "Partition is a fresh unpublished resplit; seed not shipped to agent."
+}

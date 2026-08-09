@@ -1,0 +1,35 @@
+[
+  {
+    "split": "to_P06241",
+    "n_train": 14963,
+    "n_test": 9972,
+    "anchors": {
+      "onehot": {
+        "spearman": NaN,
+        "seconds": 0.2
+      },
+      "aa-comp": {
+        "spearman": 0.0917,
+        "seconds": 1.4
+      },
+      "zeroshot": {
+        "spearman": 0.2681,
+        "seconds": 0.3
+      },
+      "frozen-ridge": {
+        "spearman": 0.013,
+        "seconds": 0.6
+      },
+      "finetune-e4": {
+        "spearman": -0.0071,
+        "seconds": 1176.3,
+        "curve": [
+          0.0688,
+          0.1001,
+          0.0778,
+          -0.0071
+        ]
+      }
+    }
+  }
+]

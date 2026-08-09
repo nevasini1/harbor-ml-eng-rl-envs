@@ -1,0 +1,142 @@
+{
+  "facebook/esm2_t6_8M_UR50D": {
+    "sha": "c731040fcd8d73dceaa04b0a8e6329b345b0f5df",
+    "files": {
+      ".gitattributes": {
+        "size": 1438
+      },
+      "README.md": {
+        "size": 1705
+      },
+      "config.json": {
+        "size": 775
+      },
+      "model.safetensors": {
+        "size": 31384292,
+        "sha256": "24c5fa474c48f3b754b86efe752d5f189d2bcd88190fa2270fc92b2ef3034189"
+      },
+      "pytorch_model.bin": {
+        "size": 31406877,
+        "sha256": "9edcf393212f3a26684cd68ca8095ec43c2c341ee0fcc3ba7a4d3a47c5dc138f"
+      },
+      "special_tokens_map.json": {
+        "size": 125
+      },
+      "tf_model.h5": {
+        "size": 30256864,
+        "sha256": "bbb600f469925d93572cb238a475914a2d0846fb8a7814a98028a7a2e21a05a3"
+      },
+      "tokenizer_config.json": {
+        "size": 95
+      },
+      "vocab.txt": {
+        "size": 93
+      }
+    }
+  },
+  "facebook/esm2_t12_35M_UR50D": {
+    "sha": "6fbf070e65b0b7291e7bbcd451118c216cff79d8",
+    "files": {
+      ".gitattributes": {
+        "size": 1438
+      },
+      "README.md": {
+        "size": 1705
+      },
+      "config.json": {
+        "size": 778
+      },
+      "model.safetensors": {
+        "size": 136008798,
+        "sha256": "e35647818e0e064351d4531ed480d225a002567b4b2b93ad3a9246d753150fc0"
+      },
+      "pytorch_model.bin": {
+        "size": 136051985,
+        "sha256": "4e62e632f8e625ec86d5f82925afdab71fdf9f1378666a953ad3ab22f5f51b3e"
+      },
+      "special_tokens_map.json": {
+        "size": 125
+      },
+      "tf_model.h5": {
+        "size": 134360208,
+        "sha256": "47e662e7013343038e63bb8f88e2bec812c7983e5bffcbc89542e2b387e9c545"
+      },
+      "tokenizer_config.json": {
+        "size": 95
+      },
+      "vocab.txt": {
+        "size": 93
+      }
+    }
+  },
+  "facebook/esm2_t30_150M_UR50D": {
+    "sha": "a695f6045e2e32885fa60af20c13cb35398ce30c",
+    "files": {
+      ".gitattributes": {
+        "size": 1438
+      },
+      "README.md": {
+        "size": 1705
+      },
+      "config.json": {
+        "size": 779
+      },
+      "model.safetensors": {
+        "size": 595257706,
+        "sha256": "c3f1da8aea53bddd32c246c86168c23b9fd72341fb9db9a94436f855f5053566"
+      },
+      "pytorch_model.bin": {
+        "size": 595364077,
+        "sha256": "a88feb574b9f4e31c45762961d1b2ddba95796db86fb480d207b4d15e6ec8aab"
+      },
+      "special_tokens_map.json": {
+        "size": 125
+      },
+      "tf_model.h5": {
+        "size": 593355136,
+        "sha256": "78b04a25f0ded4bd3a7665d4589863984117384b239cee6de97c46aefec4a1b5"
+      },
+      "tokenizer_config.json": {
+        "size": 95
+      },
+      "vocab.txt": {
+        "size": 93
+      }
+    }
+  },
+  "facebook/esm2_t33_650M_UR50D": {
+    "sha": "08e4846e537177426273712802403f7ba8261b6c",
+    "files": {
+      ".gitattributes": {
+        "size": 1438
+      },
+      "README.md": {
+        "size": 1705
+      },
+      "config.json": {
+        "size": 724
+      },
+      "model.safetensors": {
+        "size": 2609506392,
+        "sha256": "a08adabb949fa67ad3c14b509d04fd60368b35007b0095e3358f81200c4f4db0"
+      },
+      "pytorch_model.bin": {
+        "size": 2609621831,
+        "sha256": "c874668852c7275a159e2c7ceb6069671d7b1ba2c7b52f59600b34ce0f721008"
+      },
+      "special_tokens_map.json": {
+        "size": 125
+      },
+      "tf_model.h5": {
+        "size": 2605109760,
+        "sha256": "3110b0ee07a47362ff90dc4d780b12287e06f2a09f56c8e117c4aed089fc96b8"
+      },
+      "tokenizer_config.json": {
+        "size": 95
+      },
+      "vocab.txt": {
+        "size": 93
+      }
+    }
+  }
+}

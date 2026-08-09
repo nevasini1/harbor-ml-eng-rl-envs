@@ -1,0 +1,5 @@
+{
+  "reward": 0.0,
+  "status": "rejected",
+  "reason": "symlink in submission: config.json"
+}

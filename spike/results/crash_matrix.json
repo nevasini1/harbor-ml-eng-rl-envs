@@ -1,0 +1,83 @@
+[
+  {
+    "case": "base",
+    "status": "ok",
+    "reward": 0.0,
+    "exit": 0,
+    "expected": "ok",
+    "pass": true,
+    "reason": ""
+  },
+  {
+    "case": "constant",
+    "status": "ok",
+    "reward": 0.0,
+    "exit": 0,
+    "expected": "ok",
+    "pass": true,
+    "reason": ""
+  },
+  {
+    "case": "swap-35M",
+    "status": "rejected",
+    "reward": 0.0,
+    "exit": 0,
+    "expected": "rejected",
+    "pass": true,
+    "reason": "architecture mismatch vs base: {'hidden_size': (320, 480), 'num_hidden_layers': (6, 12), '"
+  },
+  {
+    "case": "shuffled",
+    "status": "rejected",
+    "reward": 0.0,
+    "exit": 0,
+    "expected": "rejected",
+    "pass": true,
+    "reason": "weight lineage check failed: min per-tensor cosine -0.1249 < 0.9 on esm.encoder.layer.1.at"
+  },
+  {
+    "case": "corrupt",
+    "status": "error",
+    "reward": 0.0,
+    "exit": 0,
+    "expected": "error|rejected",
+    "pass": true,
+    "reason": "SafetensorError: Error while deserializing header: MetadataIncompleteBuffer"
+  },
+  {
+    "case": "empty",
+    "status": "rejected",
+    "reward": 0.0,
+    "exit": 0,
+    "expected": "rejected",
+    "pass": true,
+    "reason": "missing config.json"
+  },
+  {
+    "case": "no-config",
+    "status": "rejected",
+    "reward": 0.0,
+    "exit": 0,
+    "expected": "rejected",
+    "pass": true,
+    "reason": "missing config.json"
+  },
+  {
+    "case": "hostile-config",
+    "status": "rejected",
+    "reward": 0.0,
+    "exit": 0,
+    "expected": "rejected",
+    "pass": true,
+    "reason": "unparseable config.json: RecursionError"
+  },
+  {
+    "case": "symlink",
+    "status": "rejected",
+    "reward": 0.0,
+    "exit": 0,
+    "expected": "rejected",
+    "pass": true,
+    "reason": "symlink in submission: config.json"
+  }
+]

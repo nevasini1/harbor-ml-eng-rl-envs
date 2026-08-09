@@ -1,0 +1,41 @@
+schema_version = "1.4"
+
+# Agent submission transferred into the separate verifier at the same path.
+artifacts = ["/app/final_model"]
+
+[task]
+name = "mleval/sciml-protein-regression"
+version = "1.0.0"
+description = "Fine-tune ESM-2-8M on Meltome protein thermostability; maximize Spearman on a private held-out split (CPU-only, 4h)."
+authors = [{ name = "mleval", email = "mleval@example.com" }]
+
+[metadata]
+category = "scientific-ml"
+subcategory = "protein-property-regression"
+tags = ["protein", "esm2", "cpu", "fine-tuning", "flip2", "meltome"]
+
+[agent]
+timeout_sec = 14400
+
+[verifier]
+timeout_sec = 1800
+environment_mode = "separate"
+
+[verifier.environment]
+cpus = 4
+memory_mb = 16384
+storage_mb = 40960
+gpus = 0
+# Harbor's local Docker provider rejects network_mode="no-network".
+# Isolation is via separate-verifier + private_test baked into the image.
+# Prefer a provider with egress control (Modal/E2B) for true no-network.
+network_mode = "public"
+build_timeout_sec = 1800.0
+
+[environment]
+cpus = 4
+memory_mb = 16384
+storage_mb = 40960
+gpus = 0
+network_mode = "public"
+build_timeout_sec = 1800.0

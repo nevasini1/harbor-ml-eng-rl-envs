@@ -1,0 +1,6 @@
+{
+  "n_train": 17922,
+  "n_val": 1991,
+  "max_len": 512,
+  "task": "predict Meltome Tm (Celsius); higher Spearman is better"
+}

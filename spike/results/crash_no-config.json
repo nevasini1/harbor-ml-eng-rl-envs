@@ -1,0 +1,5 @@
+{
+  "reward": 0.0,
+  "status": "rejected",
+  "reason": "missing config.json"
+}

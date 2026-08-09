@@ -1,0 +1,69 @@
+schema_version = "1.3"
+
+# Copied from the agent container into the verifier container at identical
+# absolute paths. Nothing else crosses the boundary.
+artifacts = ["/app/final_model", "/logs/agent/train_log.txt"]
+
+[task]
+name = "mleval/mol-property-adapt"
+version = "1.0.0"
+description = """Adapt a pretrained SMILES language model (ChemBERTa, 3.4M params) to two \
+molecular property prediction tasks under a CPU-only 4-hour budget. Scored by mean \
+ROC-AUC on private Bemis-Murcko scaffold splits the agent never sees."""
+authors = []
+keywords = ["ml-engineering", "cheminformatics", "cpu-only", "fine-tuning", "moleculenet"]
+
+[metadata]
+category = "ML"
+subcategory = "Model adaptation"
+compute = "cpu-only"
+base_model = "DeepChem/ChemBERTa-77M-MLM"
+base_model_revision = "main"
+# Anchors are measured on the private split; see tests/private/anchors.json.
+# reward = mean over eval sets of clip((auc - base) / (reference - base), 0, 1)
+reward_definition = "normalized recovery vs frozen-probe base and tuned-fine-tune reference"
+
+[agent]
+timeout_sec = 14400  # 4h all-inclusive: setup, training, evaluation
+
+[environment]
+# The agent MAY download its own training data - that freedom is the point.
+# Contamination is controlled on the test side: the private split never enters
+# this container and the verifier runs with no network at all.
+network_mode = "public"
+build_timeout_sec = 1800.0
+os = "linux"
+cpus = 8
+memory_mb = 16000
+storage_mb = 20000
+gpus = 0
+
+[environment.env]
+OMP_NUM_THREADS = "8"
+PYTHONHASHSEED = "0"
+TOKENIZERS_PARALLELISM = "false"
+
+[verifier]
+timeout_sec = 3600.0
+environment_mode = "separate"
+
+[verifier.environment]
+# Baseline no-network, not a phase override: plain Docker does not support
+# dynamic network policy, so the verifier image must ship its data pre-baked.
+network_mode = "no-network"
+build_timeout_sec = 1800.0
+os = "linux"
+cpus = 8
+memory_mb = 16000
+storage_mb = 20000
+gpus = 0
+
+[verifier.environment.env]
+OMP_NUM_THREADS = "1"
+MKL_NUM_THREADS = "1"
+PYTHONHASHSEED = "0"
+TOKENIZERS_PARALLELISM = "false"
+HF_HUB_OFFLINE = "1"
+
+[solution.env]
+OMP_NUM_THREADS = "8"

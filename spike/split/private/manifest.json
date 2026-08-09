@@ -1,0 +1,32 @@
+{
+  "test_frac": 0.2,
+  "selection_rule": "lowest frozen-probe AUC among fully-scoreable candidates",
+  "datasets": {
+    "tox21": {
+      "dataset": "tox21",
+      "source_sha256": "45d09792492ce049039dd24aa27b07fc79ce20c573187d4d90bcd178c0c0d360",
+      "n_tasks": 12,
+      "labels": [
+        "NR-AR",
+        "NR-AR-LBD",
+        "NR-AhR",
+        "NR-Aromatase",
+        "NR-ER",
+        "NR-ER-LBD",
+        "NR-PPAR-gamma",
+        "SR-ARE",
+        "SR-ATAD5",
+        "SR-HSE",
+        "SR-MMP",
+        "SR-p53"
+      ],
+      "n_train": 6265,
+      "n_test": 1565,
+      "n_dropped_duplicates": 1,
+      "train_test_inchikey_overlap": 0,
+      "test_mean_similarity_to_anchor": 0.13,
+      "train_pos_rate": 0.0674,
+      "test_pos_rate": 0.107
+    }
+  }
+}

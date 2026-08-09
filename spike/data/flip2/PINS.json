@@ -1,0 +1,107 @@
+{
+  "record": "18433203",
+  "doi": "10.5281/zenodo.18433203",
+  "license": "cc-by-4.0",
+  "files": {
+    "hydro/README.md": {
+      "md5": "eb762cd877939c4cee891bdc1c159650",
+      "size": 430,
+      "url": "https://zenodo.org/api/records/18433203/files/hydro/README.md/content"
+    },
+    "hydro/random_split.csv.gz": {
+      "md5": "1007879548f6f414387ef474922308d9",
+      "size": 376954,
+      "url": "https://zenodo.org/api/records/18433203/files/hydro/random_split.csv.gz/content"
+    },
+    "hydro/low_to_high.csv.gz": {
+      "md5": "fb9cfaef56791b90f2ddd154b90da8ed",
+      "size": 372137,
+      "url": "https://zenodo.org/api/records/18433203/files/hydro/low_to_high.csv.gz/content"
+    },
+    "hydro/three_to_many.csv.gz": {
+      "md5": "a13b01d71faf2e76dd91dc57b7311972",
+      "size": 369389,
+      "url": "https://zenodo.org/api/records/18433203/files/hydro/three_to_many.csv.gz/content"
+    },
+    "hydro/to_P06241.csv.gz": {
+      "md5": "1b860081da084196b276804b573283cf",
+      "size": 357257,
+      "url": "https://zenodo.org/api/records/18433203/files/hydro/to_P06241.csv.gz/content"
+    },
+    "hydro/to_P01053.csv.gz": {
+      "md5": "5b7ade3bb837d2d8ade1e75f659d77f7",
+      "size": 361259,
+      "url": "https://zenodo.org/api/records/18433203/files/hydro/to_P01053.csv.gz/content"
+    },
+    "hydro/to_P0A9X9.csv.gz": {
+      "md5": "64d1690065aeb0ad90cd1e1b5dd7a581",
+      "size": 359737,
+      "url": "https://zenodo.org/api/records/18433203/files/hydro/to_P0A9X9.csv.gz/content"
+    },
+    "gb1/README.md": {
+      "md5": "bb27714130b19b7709068bdb465426c1",
+      "size": 360,
+      "url": "https://zenodo.org/api/records/18433203/files/gb1/README.md/content"
+    },
+    "gb1/sampled.csv.gz": {
+      "md5": "51cd0bab4996f56e2453d250eb57af06",
+      "size": 114095,
+      "url": "https://zenodo.org/api/records/18433203/files/gb1/sampled.csv.gz/content"
+    },
+    "gb1/one_vs_rest.csv.gz": {
+      "md5": "25bf9d438aac88b16476fee0dec9df3d",
+      "size": 111400,
+      "url": "https://zenodo.org/api/records/18433203/files/gb1/one_vs_rest.csv.gz/content"
+    },
+    "gb1/two_vs_rest.csv.gz": {
+      "md5": "90ff1d80eaab4a89560becdc76eede24",
+      "size": 111458,
+      "url": "https://zenodo.org/api/records/18433203/files/gb1/two_vs_rest.csv.gz/content"
+    },
+    "gb1/three_vs_rest.csv.gz": {
+      "md5": "52e25a76c3c88e091558393539ba7c18",
+      "size": 111900,
+      "url": "https://zenodo.org/api/records/18433203/files/gb1/three_vs_rest.csv.gz/content"
+    },
+    "gb1/low_vs_high.csv.gz": {
+      "md5": "c8f2fc4f725183d97a10ead2749d6c9a",
+      "size": 113943,
+      "url": "https://zenodo.org/api/records/18433203/files/gb1/low_vs_high.csv.gz/content"
+    },
+    "meltome/README.md": {
+      "md5": "e2492e2449d5be73fa10f3c1589f0d0e",
+      "size": 699,
+      "url": "https://zenodo.org/api/records/18433203/files/meltome/README.md/content"
+    },
+    "meltome/mixed_split.csv.gz": {
+      "md5": "d12bd0896dd37eae72de788f6eabf1f5",
+      "size": 7770617,
+      "url": "https://zenodo.org/api/records/18433203/files/meltome/mixed_split.csv.gz/content"
+    },
+    "pdz3/README.md": {
+      "md5": "76f1d8701e928758a4ae8a067f5ef040",
+      "size": 347,
+      "url": "https://zenodo.org/api/records/18433203/files/pdz3/README.md/content"
+    },
+    "pdz3/rand_split.csv.gz": {
+      "md5": "ab0369452d84251e06447940194be327",
+      "size": 8870,
+      "url": "https://zenodo.org/api/records/18433203/files/pdz3/rand_split.csv.gz/content"
+    },
+    "pdz3/single_to_double.csv.gz": {
+      "md5": "abfea50cbfdd9d101ffa8eef30239766",
+      "size": 8804,
+      "url": "https://zenodo.org/api/records/18433203/files/pdz3/single_to_double.csv.gz/content"
+    },
+    "rhomax/README.md": {
+      "md5": "c939aedfce875e6f94de794dd046fe43",
+      "size": 498,
+      "url": "https://zenodo.org/api/records/18433203/files/rhomax/README.md/content"
+    },
+    "rhomax/by_wild_type.csv.gz": {
+      "md5": "286781669d083104cc399ae8a561afc5",
+      "size": 18449,
+      "url": "https://zenodo.org/api/records/18433203/files/rhomax/by_wild_type.csv.gz/content"
+    }
+  }
+}

@@ -1,0 +1,114 @@
+{
+    "id": "ae30fbd0-c1a7-481e-ae13-c834f73d5110",
+    "task_name": "mleval/sciml-protein-regression",
+    "trial_name": "sciml-protein-regression__Th9yACz",
+    "trial_uri": "file:///Users/jalajupadhyay/Documents/final/jobs/2026-08-09__00-40-08/sciml-protein-regression__Th9yACz",
+    "task_id": {
+        "path": "sciml-protein-regression"
+    },
+    "source": null,
+    "task_checksum": "535227ff75c660db17dd3f661faa9e90edb962633864b129ed0443de3822d165",
+    "config": {
+        "task": {
+            "path": "sciml-protein-regression",
+            "git_url": null,
+            "git_commit_id": null,
+            "name": null,
+            "ref": null,
+            "overwrite": false,
+            "download_dir": null,
+            "source": null
+        },
+        "trial_name": "sciml-protein-regression__Th9yACz",
+        "trials_dir": "jobs/2026-08-09__00-40-08",
+        "install_only": false,
+        "timeout_multiplier": 1.0,
+        "agent_timeout_multiplier": null,
+        "verifier_timeout_multiplier": null,
+        "agent_setup_timeout_multiplier": null,
+        "environment_build_timeout_multiplier": null,
+        "agent": {
+            "name": "oracle",
+            "import_path": null,
+            "model_name": null,
+            "n_concurrent": null,
+            "concurrency_group": null,
+            "skills": [],
+            "override_timeout_sec": null,
+            "override_setup_timeout_sec": null,
+            "max_timeout_sec": null,
+            "resume_trajectory": false,
+            "load_trajectory": null,
+            "extra_allowed_hosts": [],
+            "kwargs": {},
+            "mcp_servers": []
+        },
+        "environment": {
+            "type": "docker",
+            "import_path": null,
+            "force_build": true,
+            "delete": true,
+            "cpu_enforcement_policy": "auto",
+            "memory_enforcement_policy": "auto",
+            "override_cpus": null,
+            "override_memory_mb": null,
+            "override_storage_mb": null,
+            "override_gpus": null,
+            "override_tpu": null,
+            "mounts": null,
+            "extra_docker_compose": [],
+            "kwargs": {},
+            "extra_allowed_hosts": []
+        },
+        "verifier": {
+            "override_timeout_sec": null,
+            "max_timeout_sec": null,
+            "disable": false
+        },
+        "artifacts": [],
+        "extra_instruction_paths": [],
+        "job_id": "135ffe6a-0e4c-4b65-9cf8-90a27a797b15"
+    },
+    "agent_info": {
+        "name": "oracle",
+        "version": "1.0.0",
+        "model_info": null
+    },
+    "agent_result": {
+        "n_input_tokens": null,
+        "n_cache_tokens": null,
+        "n_output_tokens": null,
+        "cost_usd": null,
+        "rollout_details": null,
+        "metadata": null
+    },
+    "verifier_result": {
+        "rewards": {
+            "reward": 0.5563225396174917,
+            "spearman": 0.11264507923498325,
+            "n_test": 3427,
+            "cosine_min": 0.999999999999936,
+            "n_tensors_compared": 108
+        }
+    },
+    "exception_info": null,
+    "started_at": "2026-08-09T07:40:09.640609Z",
+    "finished_at": "2026-08-09T07:46:06.031494Z",
+    "environment_setup": {
+        "started_at": "2026-08-09T07:40:09.673799Z",
+        "finished_at": "2026-08-09T07:40:20.444590Z"
+    },
+    "agent_setup": {
+        "started_at": "2026-08-09T07:40:20.444700Z",
+        "finished_at": "2026-08-09T07:40:20.444791Z"
+    },
+    "agent_execution": {
+        "started_at": "2026-08-09T07:40:20.444967Z",
+        "finished_at": "2026-08-09T07:40:43.867495Z"
+    },
+    "verifier": {
+        "started_at": "2026-08-09T07:40:47.051843Z",
+        "finished_at": "2026-08-09T07:46:06.031424Z"
+    },
+    "step_results": null
+}

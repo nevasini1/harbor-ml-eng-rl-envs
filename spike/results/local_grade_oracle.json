@@ -1,0 +1,8 @@
+{
+  "reward": 0.5577804002461525,
+  "spearman": 0.11556080049230505,
+  "n_test": 3427,
+  "cosine_min": 0.9999999999999358,
+  "n_tensors_compared": 108,
+  "reason": "ok"
+}

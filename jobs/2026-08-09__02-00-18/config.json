@@ -1,0 +1,15 @@
+{
+    "job_name": "2026-08-09__02-00-18",
+    "n_concurrent_trials": 1,
+    "agents": [
+        {
+            "name": "codex",
+            "model_name": "openai/gpt-5.6-sol"
+        }
+    ],
+    "tasks": [
+        {
+            "path": "sciml-protein-regression"
+        }
+    ]
+}

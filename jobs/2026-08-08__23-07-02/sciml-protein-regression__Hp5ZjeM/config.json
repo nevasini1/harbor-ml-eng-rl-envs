@@ -1,0 +1,12 @@
+{
+    "task": {
+        "path": "sciml-protein-regression"
+    },
+    "trial_name": "sciml-protein-regression__Hp5ZjeM",
+    "trials_dir": "jobs/2026-08-08__23-07-02",
+    "environment": {
+        "type": "docker",
+        "force_build": true
+    },
+    "job_id": "a527c098-b956-4974-9519-c30959303b7c"
+}
