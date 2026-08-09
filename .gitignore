@@ -23,3 +23,7 @@ spike/data/flip2/*
 !spike/data/flip2/PINS.json
 
 .DS_Store
+
+# Local calibration caches (do not ship embeddings)
+sciml-protein-regression/tests/private_test/calib_emb.npz
+sciml-protein-regression/tests/calibrate_tiers.log

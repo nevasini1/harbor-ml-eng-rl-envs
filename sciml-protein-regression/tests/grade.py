@@ -215,9 +215,22 @@ def spearman_safe(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     return float(rho)
 
 
-def reward_from_spearman(rho: float) -> float:
-    # Map Spearman [-1,1] → [0,1]; negative correlations collapse toward 0 utility.
-    return float(max(0.0, min(1.0, (rho + 1.0) / 2.0)))
+def load_tiers() -> dict:
+    """Fixed Spearman thresholds baked beside the grader (calibrated offline)."""
+    path = Path(__file__).resolve().parent / "tiers.json"
+    if path.exists():
+        return json.loads(path.read_text())
+    # Safe fallbacks if tiers.json is missing in a broken image.
+    return {"t_weak": 0.20, "t_strong": 0.45}
+
+
+def reward_from_spearman(rho: float, t_weak: float, t_strong: float) -> float:
+    """Tiered reward: 0 / 0.5 / 1.0 vs frozen-probe and strong-oracle bars."""
+    if rho < t_weak:
+        return 0.0
+    if rho < t_strong:
+        return 0.5
+    return 1.0
 
 
 def maybe_overlap_check(submission: Path, private_seqs: set[str]) -> dict:
@@ -292,7 +305,10 @@ def grade(submission: Path, base: Path, test_csv: Path, out: Path) -> int:
 
         preds = predict(submission, seqs)
         rho = spearman_safe(y, preds)
-        reward = reward_from_spearman(rho)
+        tiers = load_tiers()
+        t_weak = float(tiers["t_weak"])
+        t_strong = float(tiers["t_strong"])
+        reward = reward_from_spearman(rho, t_weak, t_strong)
     except Exception as e:
         return fail(
             out,
@@ -305,6 +321,8 @@ def grade(submission: Path, base: Path, test_csv: Path, out: Path) -> int:
     payload = {
         "reward": reward,
         "spearman": rho,
+        "t_weak": t_weak,
+        "t_strong": t_strong,
         "n_test": int(len(y)),
         "cosine_min": cos_min,
         "n_tensors_compared": n_tensors,

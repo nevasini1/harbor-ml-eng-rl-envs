@@ -1,0 +1,14 @@
+{
+  "metric": "spearman",
+  "t_weak": 0.3887,
+  "t_strong": 0.45,
+  "frozen_probe_spearman": 0.3887,
+  "definition": {
+    "0.0": "integrity fail OR spearman < t_weak",
+    "0.5": "t_weak <= spearman < t_strong  (meets or beats frozen probe)",
+    "1.0": "spearman >= t_strong  (meets or beats strong-oracle bar)"
+  },
+  "n_train_probe": 1500,
+  "n_test": 3427,
+  "notes": "T_weak equals the calibrated frozen mean-pool Ridge Spearman on the private test set. T_strong is a fixed strong-oracle bar below the successful Codex run (~0.57)."
+}

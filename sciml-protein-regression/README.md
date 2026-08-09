@@ -37,4 +37,5 @@ harbor run -p ./sciml-protein-regression -a codex -m openai/gpt-5.6-sol -n 1
 - Hydro was measured in `../spike/` and failed the headroom gate (combinatorial library; one-hot saturates / WT-transfer fine-tune does not climb). This task uses Meltome-mixed with a fresh unpublished resplit.
 - Harbor's local Docker provider rejects `network_mode="no-network"`. This task uses `network_mode="public"` plus a **separate verifier** with `private_test` baked into the verifier image. Use Modal/E2B if you need provider-enforced egress deny.
 - `reward.json` values must all be numeric (Harbor `VerifierResult`); string fields go to `reward_meta.json`.
-- Oracle smoke (2026-08-09): reward≈0.556, spearman≈0.113 on the private split (frozen-backbone head train).
+- Reward is tiered (`0` / `0.5` / `1.0`) from Spearman vs fixed `T_weak` / `T_strong` in `tests/tiers.json` (calibrated offline from a frozen ESM probe and a strong-oracle target).
+- Re-calibrate locally: `python scripts/calibrate_tiers.py` (writes `tests/tiers.json`).

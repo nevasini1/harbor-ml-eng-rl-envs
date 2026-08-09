@@ -36,7 +36,15 @@ Requirements:
 
 ## Scoring
 
-The verifier computes **Spearman correlation** between your model’s predictions and private ground-truth temperatures, then maps that to a scalar reward in `[0, 1]`. Higher is better. Malformed / unloadable / architecture-mismatched submissions score `0`.
+The verifier computes **Spearman correlation** between your model’s predictions and private ground-truth temperatures, then maps it to a **tiered** reward:
+
+| Reward | Meaning |
+|--------|---------|
+| `0.0` | Integrity failure, or Spearman below the frozen-probe bar (`T_weak`) |
+| `0.5` | Beats the frozen probe (`T_weak`) but below the strong-oracle bar (`T_strong`) |
+| `1.0` | Meets or exceeds the strong-oracle bar (`T_strong`) |
+
+Malformed / unloadable / architecture-mismatched submissions score `0`. Thresholds are fixed constants in the verifier (not recomputed at grade time).
 
 ## Rules
 

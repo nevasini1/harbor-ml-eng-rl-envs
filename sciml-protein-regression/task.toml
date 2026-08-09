@@ -18,7 +18,7 @@ tags = ["protein", "esm2", "cpu", "fine-tuning", "flip2", "meltome"]
 timeout_sec = 14400
 
 [verifier]
-timeout_sec = 1800
+timeout_sec = 3600
 environment_mode = "separate"
 
 [verifier.environment]
@@ -34,7 +34,7 @@ build_timeout_sec = 1800.0
 
 [environment]
 cpus = 4
-memory_mb = 16384
+memory_mb = 24576
 storage_mb = 40960
 gpus = 0
 network_mode = "public"

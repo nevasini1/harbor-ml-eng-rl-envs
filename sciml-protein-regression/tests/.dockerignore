@@ -1,3 +1,6 @@
 **/.git
 **/__pycache__
 **/*.pyc
+**/calib_emb.npz
+**/calibrate_tiers.log
+**/*.sample.txt
