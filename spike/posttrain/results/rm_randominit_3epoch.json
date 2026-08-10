@@ -1,0 +1,69 @@
+{
+  "config": {
+    "base_model": "distilroberta-base",
+    "max_len": 256,
+    "epochs": 3,
+    "lr": 2e-05,
+    "head_lr": 0.001,
+    "bs": 8,
+    "n_train": 0,
+    "eval_sets": [
+      "helpful_base",
+      "helpful_rs",
+      "online",
+      "harmless"
+    ],
+    "arms": [
+      "random_init"
+    ],
+    "metric": "acc"
+  },
+  "arms": {
+    "random_init": {
+      "helpful_base": {
+        "mean": 0.5542,
+        "std": 0.0088,
+        "seeds": [
+          0.5624,
+          0.5632,
+          0.5549,
+          0.5456,
+          0.5449
+        ]
+      },
+      "helpful_rs": {
+        "mean": 0.5569,
+        "std": 0.007,
+        "seeds": [
+          0.5598,
+          0.5647,
+          0.5606,
+          0.5522,
+          0.5474
+        ]
+      },
+      "online": {
+        "mean": 0.5192,
+        "std": 0.0078,
+        "seeds": [
+          0.5083,
+          0.5229,
+          0.5257,
+          0.5254,
+          0.5138
+        ]
+      },
+      "harmless": {
+        "mean": 0.458,
+        "std": 0.0082,
+        "seeds": [
+          0.45,
+          0.459,
+          0.4575,
+          0.4525,
+          0.4711
+        ]
+      }
+    }
+  }
+}

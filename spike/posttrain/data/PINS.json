@@ -1,0 +1,29 @@
+{
+  "hh": {
+    "rows": 87923,
+    "dropped_unusable": 629,
+    "subsets": {
+      "helpful-rejection-sampled": 22430,
+      "helpful-base": 22228,
+      "harmless-base": 22222,
+      "helpful-online": 21043
+    },
+    "sha256": "ef1bd6b2fe062377628c2661d747bada6c1520dd498843b412539c58a081c36a",
+    "source": "Anthropic/hh-rlhf"
+  },
+  "qa": {
+    "rows": 24833,
+    "dropped_unusable": 0,
+    "sources": {
+      "sciq": 13679,
+      "openbookqa": 5957,
+      "arc_easy": 5197
+    },
+    "sha256": "5103fad32a2d829233a907a150dea4d5cd892abe8c4fa0ef32a9ef7686c19f3f",
+    "sources_hf": {
+      "arc_easy": "allenai/ai2_arc",
+      "sciq": "allenai/sciq",
+      "openbookqa": "allenai/openbookqa"
+    }
+  }
+}

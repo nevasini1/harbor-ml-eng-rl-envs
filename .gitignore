@@ -22,6 +22,25 @@ spike/data/*
 spike/data/flip2/*
 !spike/data/flip2/PINS.json
 
+# Verifier model fixtures for the post-training tasks. The mol task commits its
+# base_model because ChemBERTa is 13 MB; distilroberta-base and two copies of
+# SmolLM2-135M are 850 MB, which does not belong in git. They are refetched at a
+# pinned revision by `python spike/posttrain/assemble_tasks.py`, which every task
+# tree needs before its verifier image can build.
+tasks/pref-reward-model/tests/grader/base_model/
+tasks/qa-sft-adapt/tests/grader/base_model/
+tasks/qa-sft-adapt/tests/grader/siblings/
+
+# Locked post-training splits and corpora. Both are regenerable and neither is
+# the artifact of record: `fetch_data.py` rebuilds the corpora against the sha256
+# pins in spike/posttrain/data/PINS.json, and `make_splits.py` re-cuts the split
+# deterministically from PRIVATE_SEED. What ships -- the agent's training file and
+# the held-out rows, anchors and fingerprints -- is copied into each task tree by
+# assemble_tasks.py and IS committed there.
+spike/posttrain/data/*.csv.gz
+spike/posttrain/split/
+spike/posttrain/fixtures/
+
 .DS_Store
 
 # Local calibration caches (do not ship embeddings)

@@ -1,0 +1,12 @@
+{
+  "helpful_rs": {
+    "base_acc": 0.6079,
+    "reference_acc": 0.6268,
+    "t_implausible": 0.85,
+    "base_arm": "frozen_head",
+    "base_definition": "ceiling of the no-adaptation arms ['length_only', 'frozen_probe', 'frozen_head']: frozen_head at 0.6079 +/- 0.0046 over 5 seeds",
+    "reference_definition": "finetune, 2 epochs, lr 2e-05, bs 8, best-val epoch; 5-seed mean 0.6268 +/- 0.0061",
+    "band": 0.0189,
+    "band_sigma": 3.1
+  }
+}

@@ -1,0 +1,73 @@
+schema_version = "1.3"
+
+# Copied from the agent container into the verifier container at identical
+# absolute paths. Nothing else crosses the boundary.
+artifacts = ["/app/final_model", "/logs/agent/train_log.txt"]
+
+[task]
+name = "mleval/qa-sft-adapt"
+version = "1.0.0"
+description = """Supervised-fine-tune a small pretrained causal LM (SmolLM2-135M) on \
+multiple-choice science QA under a CPU-only 4-hour budget. Scored by log-likelihood \
+ranking accuracy on private held-out items the agent never sees."""
+authors = []
+keywords = ["ml-engineering", "post-training", "sft", "causal-lm", "cpu-only", "multiple-choice"]
+
+[metadata]
+category = "ML"
+subcategory = "Post-training"
+compute = "cpu-only"
+base_model = "HuggingFaceTB/SmolLM2-135M"
+base_model_revision = "93efa2f097d58c2a74874c7e644dbc9b0cee75a2"
+# Anchors are measured on the private split; see tests/grader/private/anchors.json.
+# reward = mean over eval sets of clip((acc - base) / (reference - base), 0, 1)
+reward_definition = "normalized recovery vs the no-body-adaptation ceiling and a tuned SFT"
+
+[agent]
+timeout_sec = 14400  # 4h all-inclusive: setup, training, evaluation
+
+[environment]
+# The agent MAY download other QA or instruction data. What it may not do is
+# fetch the corpora this split was drawn from; see rule 3 in instruction.md and
+# the fingerprint check in tests/grade.py.
+network_mode = "public"
+build_timeout_sec = 1800.0
+os = "linux"
+cpus = 8
+memory_mb = 16000
+storage_mb = 20000
+gpus = 0
+
+[environment.env]
+OMP_NUM_THREADS = "8"
+PYTHONHASHSEED = "0"
+TOKENIZERS_PARALLELISM = "false"
+
+[verifier]
+timeout_sec = 3600.0
+environment_mode = "separate"
+
+[verifier.environment]
+network_mode = "no-network"
+build_timeout_sec = 1800.0
+os = "linux"
+cpus = 8
+memory_mb = 16000
+# Larger than the other two tasks: this verifier holds the submission, the base
+# and one same-architecture sibling checkpoint on disk for the nearest-ancestor
+# check, at ~540 MB each in fp32.
+storage_mb = 30000
+gpus = 0
+
+[verifier.environment.env]
+# Four threads, not one: this grader runs one forward pass per candidate answer,
+# ~4,800 of them. Pinned here and in tests/Dockerfile so it is constant across
+# regrades - which is what determinism requires, not that it equal 1.
+OMP_NUM_THREADS = "4"
+MKL_NUM_THREADS = "4"
+PYTHONHASHSEED = "0"
+TOKENIZERS_PARALLELISM = "false"
+HF_HUB_OFFLINE = "1"
+
+[solution.env]
+OMP_NUM_THREADS = "8"

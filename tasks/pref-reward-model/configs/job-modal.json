@@ -1,0 +1,17 @@
+{
+  "job_name": "rm-oracle-modal",
+  "n_concurrent_trials": 1,
+  "environment": {
+    "type": "modal"
+  },
+  "agents": [
+    {
+      "name": "oracle"
+    }
+  ],
+  "tasks": [
+    {
+      "path": "tasks/pref-reward-model"
+    }
+  ]
+}
