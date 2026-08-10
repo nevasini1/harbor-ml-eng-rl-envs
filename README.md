@@ -6,110 +6,106 @@ not whether it can call `fit()`.
 
 The hard part is not the task. It is the **reward**: making a number that goes up only
 when the agent does the work you meant to test, and that says the same thing twice in a
-row. Most of this repo is the evidence for two anchors per eval set.
+row. Most of this repo is the evidence behind the anchors that number is built from.
 
 ---
 
-## The two tasks
+## The four tasks
 
-| | [`tasks/mol-property-adapt`](tasks/mol-property-adapt/) | [`sciml-protein-regression`](sciml-protein-regression/) |
-|---|---|---|
-| **status** | **active — ships** | **repairable** (was shelved; see below) |
-| base model | ChemBERTa-77M-MLM (3.4M params) | ESM-2-8M |
-| data | Tox21 + BBBP, chemical-region holdouts | FLIP2 meltome-mixed |
-| metric | mean ROC-AUC | Spearman |
-| compute | **no GPU** — 8 CPUs, 16 GB, 4 h | **1 GPU** + 4 CPUs, 24 GB, 4 h |
-| reward | continuous recovery between two *measured* anchors | 3 discrete tiers on *fixed* thresholds |
-| why | ordered ladder, 6.5σ and 4.1σ separation | ordered under LP-FT at 3.9σ; **inverted under a naive fine-tune** |
+| | [`mol-property-adapt`](tasks/mol-property-adapt/) | [`qa-sft-adapt`](tasks/qa-sft-adapt/) | [`pref-reward-model`](tasks/pref-reward-model/) | [`sciml-protein-regression`](sciml-protein-regression/) |
+|---|---|---|---|---|
+| **status** | **active** | **active** | **active** | **shelved** |
+| what it tests | encoder adaptation | supervised fine-tuning | reward modelling (RLHF stage 2) | encoder adaptation |
+| base model | ChemBERTa-77M-MLM (3.4M) | SmolLM2-135M | distilroberta-base (82M) | ESM-2-8M |
+| data | Tox21 + BBBP, chemical-region holdouts | ARC-Easy / SciQ / OpenBookQA | hh-rlhf preference pairs | FLIP2 meltome-mixed |
+| metric | mean ROC-AUC | log-likelihood ranking accuracy | pairwise accuracy | Spearman |
+| compute | 8 CPU, 16 GB, 4 h | 8 CPU, 16 GB, 4 h | **1 GPU** + 8 CPU, 4 h | **1 GPU** + 4 CPU, 4 h |
+| reward | continuous recovery between two *measured* anchors | same | same | 3 discrete tiers on *fixed* thresholds |
+| eval sets | tox21, bbbp | arc_easy, sciq, openbookqa | helpful_rs | meltome-mixed |
+| separation | 6.5σ / 4.1σ | 6.0σ / 16.0σ / 5.6σ | 3.1σ — thin, see below | **inverted**: a frozen probe beats a fine-tune |
 
-The protein task's *reward* is still not usable — its three tiers are mis-set and a
-frozen probe scores 1.0. But the task itself now looks repairable, and the reason it
-was written off is instructive. See
-[The protein task was written off twice over](#the-protein-task-was-written-off-twice-over).
-
----
-
-## Two reward schemes
-
-The two tasks score in genuinely different ways. They were designed independently, and
-comparing them is most of what this repo learned.
-
-### `mol-property-adapt` — continuous, between measured anchors
-
-```
-recovery = clip((auc − base) / (reference − base), 0, 1)
-reward   = integrity_gate × mean(recovery over eval sets)
-```
-
-Both anchors are **measurements**, taken over 5 seeds on the private split, each
-re-derivable from a committed script. Integrity is a separate multiplicative gate, so a
-0 always carries an attributable reason instead of being indistinguishable from a weak
-model. The uncapped `recovery_raw` is recorded alongside the capped value.
-
-### `sciml-protein-regression` — three tiers, on fixed thresholds
-
-```
-reward = 0.0   if integrity fails, or spearman < t_weak          (0.3887)
-       = 0.5   if t_weak ≤ spearman < t_strong                   (0.45)
-       = 1.0   if spearman ≥ t_strong
-       = 0.0   if spearman ≥ t_implausible (0.75) — flagged, not scored
-```
-
-No `base`/`reference` pair, no recovery, no reference-training script. `t_weak` was
-calibrated (a frozen mean-pool Ridge probe); `t_strong` was **chosen** — its own note
-says "a fixed strong-oracle bar below the successful Codex run (~0.57)". Nothing
-produces it.
-
-### Why the tiered scheme lost
-
-Not taste — four concrete failures, all visible in this repo:
-
-1. **Quantization makes every calibration error maximal.** A submission 0.001 past
-   `t_strong` scores identically to one 0.1 past. With three levels, a mis-set threshold
-   costs the *entire* distinction rather than a proportional slice. Continuous recovery
-   degrades gracefully; tiers do not degrade at all.
-2. **Both thresholds are mis-set, and the file proves it.**
-   `scripts/probe_ceiling.json` records `tiers_json_claims_frozen_probe: 0.3887` beside a
-   mean-pool Ridge at **0.4586**, a nonlinear head at **0.4973**, and a trained head at
-   **0.546** — three frozen methods, none of which adapts the encoder, and two of which
-   clear `t_strong = 0.45` outright.
-3. **The upper anchor is unreproducible by construction.** `t_strong` is a round number
-   under an observed result; no script emits it. The mol task's `reference_auc` is
-   defined by a shipped solution — imperfectly, see Open questions, but the invariant at
-   least *exists* and can be checked.
-4. **Thresholds amplify noise instead of absorbing it.** A submission near a boundary
-   flips tiers between reruns, changing the reward by 0.5. Under recovery the same
-   wobble moves the score proportionally, and `band_sigma` makes the noise-to-signal
-   ratio an explicit, reportable number.
-
-The lesson generalises past this repo: **tiers look robust because they hide small
-errors, and are fragile for exactly that reason.** A continuous reward with recorded
-anchors tells you when it is wrong.
+The two post-training tasks are new and share the mol task's verifier machinery rather
+than reimplementing it — see [What is shared](#what-is-shared). The protein task is kept
+because its negative result is worth reading; its reward is not usable, see
+[Why the protein task is shelved](#why-the-protein-task-is-shelved).
 
 ---
 
-## How the mol reward works in detail
+## The reward
 
-Per eval set, the raw metric is normalized onto [0,1] between two measured anchors:
+Every active task scores the same way. Per eval set, the raw metric is normalized onto
+[0,1] between two measured anchors:
 
 ```
-recovery = clip((auc − base) / (reference − base), 0, 1)
+recovery = clip((metric − base) / (reference − base), 0, 1)
 reward   = integrity_gate × mean(recovery over eval sets)
 ```
 
 - **`base`** — the score that earns **0**: the *ceiling* of everything that does **not**
-  adapt the encoder. Not any single trivial method — the best of them.
-- **`reference`** — the score that earns **1**: a tuned fine-tune.
-- **`integrity_gate`** — 0 if provenance, contamination or shape checks fail.
+  adapt the model. Not any single trivial method — the best of them, including methods
+  that are not models at all.
+- **`reference`** — the score that earns **1**: a tuned, deliberately ordinary adaptation.
+- **`integrity_gate`** — 0 if provenance, contamination or shape checks fail, so a 0
+  always carries an attributable reason instead of being indistinguishable from a weak
+  model.
+
+Both anchors are **measurements**, taken over 5 seeds on the private split, each
+re-derivable from a committed script. The uncapped `recovery_raw` is recorded beside the
+capped value, because the clip is what hides a mis-set anchor.
 
 The band between the anchors is the entire scoring range, so its **width relative to
 seed noise** decides whether the reward measures the submission or the seed. That ratio
 is reported as `band_sigma`, and it is the criterion for whether an eval set ships.
 
-### Current anchors
+---
 
-Every arm below is a legal submission, measured over 5 seeds on the private split
-([`spike/results/anchors_private.json`](spike/results/anchors_private.json)):
+## What is shared
+
+The mol task's grader was the only one whose behaviour had been measured end to end
+through Harbor, so it became the library rather than being reimplemented three times.
+
+| | what it is |
+|---|---|
+| [`common/verifier_core.py`](common/verifier_core.py) | the integrity layers, the fail-closed anchor loader, the recovery normalization, and the driver that guarantees a reward is always written |
+| [`common/textmatch.py`](common/textmatch.py) | shingle-overlap contamination — the text analogue of the mol task's InChIKey check |
+| [`common/regrade.sh`](common/regrade.sh) | re-score a finished trial against a rebuilt verifier image, for every task |
+| [`common/sync.py`](common/sync.py) | copies the shared modules into each task's build context; `--check` fails if a copy has drifted |
+
+The extraction is behaviour-preserving, and that is checked rather than asserted:
+regrading `jobs/mol-oracle-modal` through the refactored grader returns **0.909654**,
+with byte-identical per-eval-set metrics to the original grader run on the same host.
+(The recorded 0.909661 came from x86 Modal; the 7×10⁻⁶ difference is arm64 float, and the
+*original* grader reproduces it too.)
+
+A Docker build context cannot reach outside itself, so each task's `tests/` holds a
+byte-identical copy of the shared modules. `python common/sync.py --check` is what makes
+drift loud.
+
+### Four integrity layers, failing on disjoint inputs
+
+1. **architecture-config hash** vs the provided base.
+2. **sha256** vs known public checkpoints — repo compared for *equality*, not prefix. A
+   prefix test would have waved `SmolLM2-135M-Instruct` through as the base
+   `SmolLM2-135M`.
+3. **per-tensor float64 cosine** vs the base body. This deliberately *allows* an
+   unmodified body: freezing the backbone and training only a head is a legitimate
+   strategy, so "weights must have moved" is not a valid requirement. The anchors are
+   what make laziness score zero.
+4. **nearest-ancestor** (`qa-sft-adapt` only, new): reject a submission closer to a
+   same-architecture public sibling than to the base. This is the only layer that catches
+   a *laundered instruct checkpoint* — identical config, weights moved by the agent's own
+   training, still correlated with the base. Verified: an `SmolLM2-135M-Instruct` copy
+   perturbed by 1e-4 is rejected with `mean cosine 1.000000` to the sibling against
+   `0.996951` to the base, while the honest base is accepted.
+
+---
+
+## Measured ladders
+
+Every arm below is a legal submission. Anchors come from 5 seeds on the private split;
+`base` is always the **best** no-adaptation arm on that eval set, never a nominated one.
+
+### `mol-property-adapt`
 
 | eval set | train | test | base | reference | band | separation |
 |---|---|---|---|---|---|---|
@@ -117,17 +113,79 @@ Every arm below is a legal submission, measured over 5 seeds on the private spli
 | `bbbp` (1 label) | 1,631 | 407 | 0.8978 | 0.9121 | 0.0143 | **4.09σ** |
 
 `base` comes from a different rung on each set — a trained head on tox21 (0.6341, beating
-a 0.5822 probe), a logistic probe on bbbp (0.8978, beating a 0.8934 head). That is the
-point of "ceiling, not any one method": taking the head on both would have set bbbp's
-base 0.0044 low and paid every head-only submission ~31% of the reward for free.
+a 0.5822 probe), a logistic probe on bbbp (0.8978, beating a 0.8934 head). Taking the head
+on both would have set bbbp's base 0.0044 low and paid every head-only submission ~31% of
+the reward for free.
 
 ![effort ladder](spike/results/anchor_ladder.png)
 
+### `qa-sft-adapt`
+
+| arm | arc_easy | sciq | openbookqa |
+|---|---|---|---|
+| `zero_shot` (submit the base unchanged) | 0.6017 | 0.6483 | 0.3150 |
+| `head_only` (output embedding only) | 0.6030 ± 0.0154 | 0.6960 ± 0.0067 | 0.3123 ± 0.0103 |
+| `sft_full` — **reference** | 0.6957 ± 0.0071 | 0.8270 ± 0.0082 | 0.3657 ± 0.0090 |
+| `random_init` | 0.2437 ± 0.0228 | 0.2390 ± 0.0038 | 0.2197 ± 0.0135 |
+
+| eval set | base | reference | band | separation | pretraining gain |
+|---|---|---|---|---|---|
+| `arc_easy` | 0.6030 (`head_only`) | 0.6957 | 0.0927 | **6.02σ** | +0.4520 |
+| `sciq` | 0.6960 (`head_only`) | 0.8270 | 0.1310 | **15.98σ** | +0.5880 |
+| `openbookqa` | 0.3150 (`zero_shot`) | 0.3657 | 0.0507 | **5.63σ** | +0.1460 |
+
+The mol task's seam, in a new place: `head_only` — training only the tied output
+embedding, never the transformer body — beats the untouched checkpoint by **+0.048** on
+sciq and *loses* to it on openbookqa. Pinning `base` to "the base model scored as-is"
+would have paid every head-only submission ~37% of sciq's reward.
+
+### `pref-reward-model`
+
+Length-balanced split, 38,420 training pairs, ~3,960 held-out pairs per eval set:
+
+| arm | helpful_base | helpful_rs | online | harmless |
+|---|---|---|---|---|
+| `length_only` (pick the longer response) | 0.5000 | 0.5000 | 0.5000 | 0.5000 |
+| `frozen_probe` (Bradley-Terry on frozen embeddings) | 0.6055 | 0.5976 | 0.5496 | 0.5696 |
+| `frozen_head` (trained MLP on those embeddings) | 0.6082 ± 0.0056 | 0.6079 ± 0.0046 | 0.5610 ± 0.0042 | 0.6219 ± 0.0101 |
+| `finetune` — **reference** | 0.6315 ± 0.0087 | 0.6268 ± 0.0061 | 0.5633 ± 0.0057 | 0.6390 ± 0.0064 |
+| `random_init` | 0.5496 ± 0.0061 | 0.5525 ± 0.0102 | 0.5174 ± 0.0040 | 0.4649 ± 0.0102 |
+
+| eval set | base | reference | band | separation | pretraining gain | ships |
+|---|---|---|---|---|---|---|
+| `helpful_base` | 0.6082 (`frozen_head`) | 0.6315 | 0.0233 | 2.68σ | +0.0819 | no |
+| `helpful_rs` | 0.6079 (`frozen_head`) | 0.6268 | 0.0189 | **3.10σ** | +0.0743 | **yes** |
+| `online` | 0.5610 (`frozen_head`) | 0.5633 | 0.0023 | 0.40σ | +0.0459 | no |
+| `harmless` | 0.6219 (`frozen_head`) | 0.6390 | 0.0171 | 1.69σ | +0.1741 | no |
+
+This task took three tries to become measurable, and the first two failures are the
+interesting part.
+
+**It did not measure the model.** The first cut used a natural sample of hh-rlhf. On it, a
+heuristic with no parameters — "pick the longer response" — scored **0.6031** on the
+helpful holdout, against **0.6042** for a full fine-tune and 0.5646 for the frozen-encoder
+ceiling. A randomly initialized encoder reached 0.5938, inside the seed noise of the
+pretrained one. The band was length, and nothing else. It also explains the strangest
+number in that table: every model arm scored *below* chance on `harmless`, because they
+learned "longer is better" from a training file where it held (0.5356) and it is
+backwards there (0.4116).
+
+The fix is in the split, not the grader: training file and every holdout are
+**length-balanced**, so the heuristic scores exactly 0.5000 by construction, and
+`length_only` is now a permanent rung of the ladder so it can never quietly become the
+ceiling again. Gate A then passes — the pretraining gain goes from +0.010 to +0.07…+0.17.
+
+**One eval set of four clears the bar, and only just.** What stands in the way is how good
+the *frozen* encoder is: a trained head on mean-pooled frozen embeddings gets to 0.6082
+where a full fine-tune gets 0.6315. That is the protein task's finding again, in a new
+domain. The task ships with `helpful_rs` at 3.10σ against a 3.0σ bar — honest, but thin,
+and both its weaknesses are in [Open questions](#open-questions).
+
 ---
 
-## Harbor results
+## What has actually been run
 
-### `tasks/mol-property-adapt` — oracle, Modal backend
+### `mol-property-adapt` — oracle through Harbor, Modal backend
 
 `jobs/mol-oracle-modal/`, eval key `oracle__adhoc`, 1 trial, 0 errors.
 
@@ -137,23 +195,17 @@ base 0.0044 low and paid every head-only submission ~31% of the reward for free.
 | `bbbp` | ok | 0.9158 | 1.0000 | **1.2575** | 0 | 53 |
 | | | | **reward 0.909661** | | | |
 
-Reading it:
-
 - **`raw` 1.2575 on bbbp** — the oracle beat the reference by 26%. The capped `recovery`
   shows 1.0000 and hides that. Recording the uncapped value is how a mis-set anchor
   becomes visible instead of silently flattening to 1.0.
 - **overlap 0** — the contamination check ran against a real Harbor artifact set,
-  including `logs/agent/train_log.txt`, and produced no false positives.
-- **53 tensors** — the lineage floor (`MIN_ENCODER_TENSORS = 50`) holds against a
-  genuinely Harbor-produced submission.
+  including `logs/agent/train_log.txt`, with no false positives.
 - **tox21 at 0.6896** is *below* the minimum of the five seeds that set
-  `reference_auc = 0.7019` (range 0.6967–0.7111). Unresolved — see
-  [Open questions](#open-questions).
+  `reference_auc = 0.7019`. Unresolved — see [Open questions](#open-questions).
 
 ### `sciml-protein-regression` — verifier regrade
 
-Both known artifacts, re-scored through the hardened grader on Linux
-(`sciml-protein-regression/scripts/regrade_modal.json`):
+Both known artifacts, re-scored through the hardened grader on Linux:
 
 | artifact | Spearman | reward | cosine_min | tensors |
 |---|---|---|---|---|
@@ -163,107 +215,123 @@ Both known artifacts, re-scored through the hardened grader on Linux
 Both reproduce their recorded values to the 7th decimal. The second row is the problem,
 not a pass: a submission that never touches the encoder takes the maximum reward.
 
-### `sciml-protein-regression` — oracle, GPU, Modal backend
+### `qa-sft-adapt` — oracle through Harbor, Modal backend
 
-`jobs/protein-oracle-gpu/`, 1 trial, 0 errors.
+`jobs/qa-sft-oracle-modal/`, eval key `oracle__adhoc`, 1 trial, 0 errors, 25m 16s total.
 
-| Spearman | reward | cosine_min | tensors | t_weak | t_strong |
+| eval set | status | accuracy | recovery | raw | shingle overlap |
 |---|---|---|---|---|---|
-| 0.5733 | **1.0** | 0.9838 | 108 | 0.3887 | 0.45 |
+| `arc_easy` | ok | 0.6967 | 1.0000 | 1.0104 | 0 |
+| `sciq` | ok | 0.8367 | 1.0000 | 1.0738 | 0 |
+| `openbookqa` | ok | 0.3700 | 1.0000 | 1.0848 | 0 |
+| | | | **reward 1.0** | | |
 
-`cosine_min = 0.9838` confirms the encoder moved — a real fine-tune, not the frozen
-submission that also scores 1.0. And that is the point: the frozen probe scores 1.0 at
-ρ=0.5358 and this oracle scores 1.0 at ρ=0.5733. **A genuine 0.0375 difference is
-invisible**, because both clear `t_strong` and quantize into the same tier.
+The row that matters is `raw`, on all three: **1.01–1.08**. The shipped
+`solution/train_reference.py`, run inside the agent container on hardware the anchors
+were not measured on, reproduces the `reference_acc` it claims and edges slightly past
+it. That is the invariant the mol task fails — its tox21 oracle lands *below* the anchor
+its own docstring claims (Open question 1) — and it is why the claim is stated as a
+number here rather than as prose.
 
-Getting here required three changes, only two of which were obvious: `gpus = 1` in
-`task.toml`, device handling in `solve.sh`, and — the one that actually bit — swapping
-the agent image's **CPU-only torch wheel** for `cu124`. The first GPU attempt ran the
-whole fine-tune on CPU with an L40S at 0% utilisation, visible in the log as 8,961
-steps/epoch (batch 2) instead of 2,241 (batch 8).
+The agent phase took 945 s of its 4-hour budget (3 epochs, best val_acc 0.7412 at epoch
+2), leaving ~3.7 h for an agent to actually experiment. Shingle overlap was 0 against a
+real Harbor artifact set including `logs/agent/train_log.txt` — no false positives.
+
+### The two post-training tasks — verifier regression suites
+
+Not Harbor runs: these are `spike/posttrain/verify_graders.py`, which builds each real
+verifier image and runs it under `--network none` against fixtures it constructs. The
+accept path is asserted first.
+
+| fixture | `qa-sft-adapt` | `pref-reward-model` |
+|---|---|---|
+| `base_unchanged` — provided base, fresh head | **accepted**, reward 0.0 (recovery_raw −0.014 / −0.364 / 0.0 recorded, not hidden) | **accepted**, reward 0.0 |
+| `shuffled` — one embedding tensor permuted | rejected: `min per-tensor cosine 0.0002 < 0.9` | rejected: `min per-tensor cosine 0.0071 < 0.9` |
+| `nan` — one tensor NaN'd | rejected: `non-finite weights in embed_tokens.weight` | rejected: `non-finite weights in embeddings.word_embeddings.weight` |
+| `truncated` — config.json deleted | rejected: `missing config.json` | rejected: `missing config.json` |
+| `public_twin` — bit-identical `all-distilroberta-v1` | n/a | rejected by **sha256**, the only layer that sees it |
+| `laundered` — `SmolLM2-135M-Instruct` + 1e-4 noise | rejected by **nearest-ancestor** | n/a |
+| `contaminated` — agent log quoting held-out rows | rejected: shingle overlap | rejected: shingle overlap |
+
+Every case wrote a `reward.json`, which is the invariant that matters most: a missing
+reward file is a trial error, not a zero.
 
 ---
 
-## The protein task was written off twice over
+## Why the protein task is shelved
 
-It was shelved as **inverted**: a frozen probe beats a fine-tune, so no threshold
-placement discriminates. Two measurements said so — `modal_variance.py` and
-`modal_cluster_split.py`, the latter at −7.5σ and −12.2σ across two splits.
+Not compute — **ordering**. Across two splits, 13 frozen seeds and 7 fine-tune seeds at
+std ~0.003:
 
-Both were right about what they measured and wrong about what it meant.
+| split | frozen probe | fine-tune | gap |
+|---|---|---|---|
+| shipped | 0.5494 ± 0.0033 | 0.5214 ± 0.0017 | −0.028 (−7.5σ) |
+| MMseqs2 cluster, 30% id | 0.5784 ± 0.0029 | 0.5257 ± 0.0032 | −0.053 (−12.2σ) |
 
-### Error 1 — the comparison arm was a naive fine-tune
+Fine-tuning reliably *loses*, so no threshold placement repairs it. Two independent
+confirmations: [Kumar et al. 2022](https://arxiv.org/abs/2202.10054) (fine-tuning
+distorts pretrained features under distribution shift) and
+[iScience 2025](https://pmc.ncbi.nlm.nih.gov/articles/PMC12481099/), which finds
+head-only *wins* on melting-point prediction specifically.
 
-Those arms unfreeze the **top two encoder layers** starting from a **randomly
-initialised head**. That is the exact configuration
-[Kumar et al. 2022](https://arxiv.org/abs/2202.10054) identify as pathological: early
-gradients are dominated by head error, so fine-tuning destroys good pretrained features
-before the head is any good. Their remedy is **LP-FT** — fit the head on frozen
-features first, then warm-start a full fine-tune from it.
-
-`solution/solve.sh` happens to do exactly that, and nobody had compared against it.
-
-### Error 2 — the frozen baseline was off-contract
-
-`variance.json`'s frozen arm used `pooling: mean`. But `EsmClassificationHead.forward`
-is `x = features[:, 0, :]` — the CLS token. **Mean-pooling is not expressible in a legal
-submission**, so 0.546 was a ceiling drawn over methods no agent could submit. Exactly
-the bug that made the mol anchors unreachable, in the other task.
-
-The legal CLS frozen head is **0.5332**, and that cross-checks: the real graded frozen
-artifact scored **0.5358**, inside the CLS arm's measured range of 0.5294–0.5406. The
-mean-pooled 0.546 sits outside it.
-
-### Re-measured, both arms, same seeds, same protocol
-
-[`scripts/lpft.json`](sciml-protein-regression/scripts/lpft.json):
-
-| arm | Spearman | n |
-|---|---|---|
-| frozen head, CLS — **base** | 0.5332 ± 0.0044 | 5 |
-| **LP-FT** — reference | **0.5627 ± 0.0061** | 5 |
-| | **band +0.0295, 3.92σ** | |
-| *naive top-2-layer fine-tune* | *0.5169 ± 0.0053* | *4* |
-
-**The task is not inverted. The naive recipe is.** At 3.92σ the band is comparable to
-bbbp's 4.09σ, which ships.
-
-What still needs doing before it could: replace the three tiers with continuous
-recovery, set `base = 0.5332` and `reference = 0.5627`, and add a `train_reference.py`
-so the upper anchor is reproducible from a shipped script rather than chosen. The
-current `t_weak = 0.3887` and `t_strong = 0.45` both sit *below* the frozen ceiling,
-which is why a frozen probe scores 1.0.
-
-### The finding that survives regardless
-
-MMseqs2 clustering at 30% identity cut prefix leakage from 89 sequences to 3 — and the
-frozen probe got **better**, 0.5494 → 0.5784. Assigning whole clusters to test groups
-related proteins with similar Tm together, which is *easier* to rank.
+The cluster-split row is the counter-intuitive one: MMseqs2 cut prefix leakage from 89
+sequences to 3 and the frozen probe got **better**. Assigning whole clusters to test
+groups related proteins with similar Tm together, which is easier to rank.
 **Removing near-duplicates and making a split harder are not the same thing.**
+
+Its reward is also the wrong shape. It uses three fixed tiers rather than a continuous
+recovery between measured anchors, and the repo proves both thresholds are mis-set:
+`scripts/probe_ceiling.json` records `tiers_json_claims_frozen_probe: 0.3887` beside a
+mean-pool Ridge at **0.4586**, a nonlinear head at **0.4973** and a trained head at
+**0.546** — three frozen methods, none of which adapts the encoder, two of which clear
+`t_strong = 0.45` outright. Quantization makes every calibration error maximal: a
+submission 0.001 past a threshold scores identically to one 0.1 past, and a run near a
+boundary flips tiers between reruns for a reward swing of 0.5. **Tiers look robust
+because they hide small errors, and are fragile for exactly that reason.**
 
 ---
 
 ## What this repo learned about reward design
 
-Recorded because all three eval sets failed differently, and the failures rhyme.
+Recorded because ten eval sets across four tracks failed in different ways, and the
+failures rhyme.
 
-1. **Measure the whole ladder, not two anchors.** random-init → classical baseline →
-   frozen probe → frozen + trained head → fine-tune. Check the ordering is monotone,
-   that adjacent rungs are separated by ≫ noise, and that the top rung exceeds what a
-   routine attempt reaches.
-2. **`base` is the ceiling of the trivial class, not one member of it.** The protein task
-   pinned its lower tier to a ridge probe at 0.3887 while a trained head reached 0.546 —
-   above the *top* tier. Same seam appeared twice on the mol side.
-3. **Anchors are functions of the split and the training size.** Re-measure after any
-   change to either. Both mol failures appeared *after* screening, when the split and
+1. **Measure the whole ladder, not two anchors.** random-init → trivial heuristic →
+   frozen probe → frozen + trained head → full adaptation. Check the ordering is
+   monotone, that adjacent rungs are separated by ≫ noise, and that the top rung exceeds
+   what a routine attempt reaches.
+2. **`base` is the ceiling of the trivial class, not one member of it — and the trivial
+   class includes things that are not models.** The protein task pinned its lower tier to
+   a ridge probe at 0.3887 while a trained head reached 0.546, above its *top* tier. The
+   same seam appeared on both mol eval sets and again on sciq. On the preference track
+   the ceiling turned out to be a heuristic with no parameters at all: "pick the longer
+   response" scored **0.6031** against a full fine-tune's 0.6042.
+3. **Always run the random-init arm, and require its gap to clear noise.** An eval set can
+   show a clean band while the pretrained weights contribute nothing, because both arms
+   are learning the same surface feature. On the first preference cut a randomly
+   initialized encoder scored 0.5938 against the pretrained fine-tune's 0.6042 — a gain
+   smaller than the seed noise. `finalize_anchors.py` now refuses to ship an eval set
+   whose pretraining gain is under 2σ.
+4. **The size of the held-out set is a reward parameter, not a detail.** It sets the noise
+   floor of every score the environment will ever produce. On the preference track the
+   seed-to-seed spread at n=1,000 was ~0.015 against a binomial floor of 0.0156 — the
+   noise was *measurement*, not training instability. Re-cutting the holdout at 4,000
+   costs the verifier three minutes and buys back a factor of two in `band_sigma`.
+5. **Anchors are functions of the split and the training size.** Re-measure after any
+   change to either. Every failure here appeared *after* screening, when the split and
    train size were locked.
-4. **Removing leakage ≠ increasing difficulty.** Both tracks found the principled split
-   made the task *easier* (protein above; BBBP scaffold shuffle 0.726 → 0.921).
-5. **Never clip silently.** Log the uncapped recovery. The clip is what hid a
+6. **Removing leakage ≠ increasing difficulty.** Both scientific tracks found the
+   principled split made the task *easier* (protein above; BBBP scaffold shuffle
+   0.726 → 0.921).
+7. **Never clip silently.** Log the uncapped recovery. The clip is what hid a
    mis-calibrated reference for an entire working session.
-6. **Fail closed on your own configuration.** Missing anchors or missing held-out keys
-   are a broken image, not a default. Robustness to *agent* input and robustness to
-   *your own* config are different problems.
+8. **Fail closed on your own configuration.** Missing anchors, missing held-out keys or a
+   missing sibling checkpoint are a broken image, not a default. Robustness to *agent*
+   input and robustness to *your own* config are different problems.
+9. **Separate measuring from deciding.** `modal_measure.py` records what every arm
+   scored; `finalize_anchors.py` turns that into anchors by stated rules. The rules can
+   then be re-read and re-run in a second without a GPU — which is the difference between
+   an anchor that is measured and one that was chosen once in a session nobody kept.
 
 ---
 
@@ -271,45 +339,54 @@ Recorded because all three eval sets failed differently, and the failures rhyme.
 
 | Path | What |
 |---|---|
-| [`tasks/mol-property-adapt/`](tasks/mol-property-adapt/) | The active Harbor task |
-| [`sciml-protein-regression/`](sciml-protein-regression/) | Shelved protein task; hardened verifier, measurement scripts |
-| [`spike/`](spike/) | Split construction, anchor measurement, [`SPIKE_RESULTS.md`](spike/SPIKE_RESULTS.md) |
+| [`common/`](common/) | verifier core, contamination matching, regrade driver, sync check |
+| [`tasks/mol-property-adapt/`](tasks/mol-property-adapt/) | molecular property adaptation |
+| [`tasks/qa-sft-adapt/`](tasks/qa-sft-adapt/) | supervised fine-tuning of a 135M causal LM |
+| [`tasks/pref-reward-model/`](tasks/pref-reward-model/) | reward modelling on human preferences |
+| [`sciml-protein-regression/`](sciml-protein-regression/) | shelved protein task; hardened verifier, measurement scripts |
+| [`spike/`](spike/) | mol/protein split construction and anchors, [`SPIKE_RESULTS.md`](spike/SPIKE_RESULTS.md) |
+| [`spike/posttrain/`](spike/posttrain/) | post-training corpora, splits, ladders, [`RESULTS.md`](spike/posttrain/RESULTS.md) |
 | [`jobs/`](jobs/) | Harbor run outputs |
 
 A Harbor task is two containers. `environment/` becomes the agent's (data, base model,
 network); `tests/` becomes the verifier's (private split, anchors, grader, **no
 network**). Only the paths listed in `task.toml`'s `artifacts` cross between them.
 
-Every anchor traces to a script and a result file under
-`sciml-protein-regression/scripts/` — `legal_anchors.json`, `bbbp_split_v2.json`,
-`reference_ablation.json`, `grader_hardening_check.json`, `e2e_mol.json`.
-
 ---
 
 ## Running things
+
+The post-training task trees need their fixtures fetched before their verifier images can
+build — 850 MB of pinned checkpoints that do not belong in git:
+
+```bash
+python spike/posttrain/assemble_tasks.py      # anchors, private rows, base + sibling models
+python common/sync.py --check                 # shared grader modules have not drifted
+```
+
+Then:
 
 ```bash
 # oracle trial through Harbor on Modal (local Docker on macOS silently
 # ignores network_mode = "no-network", so the verifier would not be isolated)
 harbor run -c tasks/mol-property-adapt/configs/job-modal.json --agent oracle
-harbor run -c sciml-protein-regression/configs/job-modal-oracle.json --agent oracle
+harbor run -c tasks/qa-sft-adapt/configs/job-modal.json --agent oracle
+harbor run -c tasks/pref-reward-model/configs/job-modal.json --agent oracle
 
 # re-score a finished trial without re-running the agent
-./tasks/mol-property-adapt/scripts/regrade.sh --all
-./sciml-protein-regression/scripts/regrade.sh --all
+./tasks/<task>/scripts/regrade.sh --all
 
-# rebuild the task tree from the spike artifacts
-python spike/assemble_task.py
-```
-
-Verifier integrity checks are regression-tested against the real image:
-
-```bash
+# verifier regression suites, against the real images
+python spike/posttrain/verify_graders.py                               # post-training tasks
 modal run sciml-protein-regression/scripts/modal_verify_hardening.py   # 16 assertions
 ```
 
-It asserts the *accept* path first — a grader that rejects honest submissions is worse
-than the loopholes it closes.
+Both suites assert the *accept* path first — a grader that rejects honest submissions is
+worse than the loopholes it closes, because a false reject is indistinguishable in the
+reward from an agent that did nothing.
+
+Re-deriving the post-training anchors from scratch is documented in
+[`spike/posttrain/RESULTS.md`](spike/posttrain/RESULTS.md).
 
 ---
 
@@ -320,23 +397,37 @@ than the loopholes it closes.
    `train_reference.py` and the anchor arm are the same recipe in two implementations.
    Either re-measure the anchor from the shipped script, or drop the claim in its
    docstring — the repo currently asserts both.
-2. **`MIN_ENCODER_TENSORS = 50` is hardcoded to this checkpoint.** A ratio against the
-   base's own tensor count would survive a model swap.
-3. **bbbp's contamination tripwire is thin.** Legitimate scores on that split run
+2. **`pref-reward-model` ships on one eval set at 3.10σ, chosen as the best of four.**
+   3.10 against a 3.0 bar is a hair, so a third of that reward band is seed noise; and
+   taking the maximum of four marginal measurements inflates the figure, so the honest
+   reading is "around 3σ". It clears the bar this repo states and it is the weakest thing
+   here. The obstacle is real rather than fixable by tuning: a trained head on frozen
+   embeddings reaches 0.6082 where a full fine-tune reaches 0.6315.
+3. **`base` is a max over noisy means, which biases it upward.** On `arc_easy` the two
+   no-adaptation arms are 0.0013 apart with a σ of 0.0154, so which one "wins" is close to
+   a coin flip. The bias is in the safe direction — it under-pays rather than pays for
+   free — but a proper treatment would take an upper confidence bound.
+4. **bbbp's contamination tripwire is thin.** Legitimate scores on that split run
    0.89–0.92, leaving ~0.02 below a fully test-trained model. The InChIKey overlap check
    carries most of that load.
-4. **The agent gets one shot at a final artifact.** RE-Bench scores the best entry in an
+5. **The agent gets one shot at a final artifact.** RE-Bench scores the best entry in an
    intermediate score log; that is not portable here, since it would require exposing the
-   held-out set. So this task partly measures "did you select on validation" alongside
-   "can you adapt an encoder."
+   held-out set. So these tasks partly measure "did you select on validation" alongside
+   "can you post-train a model."
+6. **The shingle fingerprint is subsampled 1-in-4** to keep it under 4 MB inside the
+   verifier image. A 30-token leak is still caught with probability 99.6%; a
+   one-sentence leak is not certain to be.
+7. **`MIN_ENCODER_TENSORS = 50` is still hardcoded in the mol grader.** The two new tasks
+   take 90% of the base's own body-tensor count instead, which survives a model swap; the
+   mol task was left alone so its recorded reward stays reproducible.
 
 ---
 
 ## Note on private holdout
 
-This public repo includes `spike/PRIVATE_SEED` and `spike/split/private/` by request.
-That publishes the graded holdout; **do not treat the reward as un-gameable if agents can
-read this repository.** The in-container defences — no verifier network, InChIKey overlap
+This public repo includes the private seeds and the held-out rows by request. That
+publishes the graded holdout; **do not treat the reward as un-gameable if agents can read
+this repository.** The in-container defences — no verifier network, contamination
 detection, and the implausible-score tripwire — assume the agent cannot see this repo.
 
 ---
@@ -347,10 +438,11 @@ detection, and the implausible-score tripwire — assume the agent cannot see th
 cd spike
 uv venv --python 3.12 .venv
 uv pip install --python .venv/bin/python pandas scipy numpy scikit-learn torch \
-    transformers safetensors huggingface_hub rdkit
-.venv/bin/python fetch_flip2.py          # FLIP2 pins
-.venv/bin/python moleculenet.py --help   # MoleculeNet downloads
+    transformers safetensors huggingface_hub rdkit datasets
+.venv/bin/python fetch_flip2.py            # FLIP2 pins
+.venv/bin/python moleculenet.py --help     # MoleculeNet downloads
+.venv/bin/python posttrain/fetch_data.py   # hh-rlhf + multiple-choice QA, with sha256 pins
 ```
 
-Third-party clones (`.research/`, `_research/`), the spike venv, embedding caches and
-large fixture checkpoints are gitignored.
+Third-party clones (`.research/`, `_research/`), the spike venv, embedding caches, large
+fixture checkpoints and the regenerable post-training corpora are gitignored.
