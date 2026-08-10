@@ -31,6 +31,12 @@ ARCH_KEYS = (
 # Legitimate fine-tunes stay far above this; unrelated same-shape inits do not.
 COS_FLOOR = 0.90
 
+# Minimum backbone tensors that must match the base by name and shape. Every real
+# submission graded so far compared 108; anything far below means the checkpoint
+# does not share the base encoder and the cosine floor is being applied to a
+# handful of coincidentally-matching tensors.
+MIN_BACKBONE_TENSORS = 100
+
 # Known public weight sha256s that are NOT the provided base (swap attempts).
 # Base itself is allowed (frozen-backbone + head is legitimate).
 FORBIDDEN_WEIGHT_SHA256 = {
@@ -170,11 +176,24 @@ def overlapping_backbone_cosine(sub_dir: Path, base_dir: Path) -> tuple[float, i
             continue
         a = v.detach().to(torch.float64).reshape(-1)
         b = bk.detach().to(torch.float64).reshape(-1)
+        # A single non-finite element defeats the whole floor check: it makes the
+        # norm NaN, so the zero-norm guard below is False (NaN == 0.0 is False),
+        # and min() returns NaN whenever NaN sorts first -- and `NaN < COS_FLOOR`
+        # is also False, so the caller's floor never fires. safe_open() yields
+        # keys sorted, so an attacker just NaNs the alphabetically-first
+        # comparable tensor (esm.contact_head.*, unused at inference) and any
+        # unrelated same-architecture encoder passes provenance untouched.
+        # Reject non-finite weights outright rather than letting them propagate.
+        if not (torch.isfinite(a).all() and torch.isfinite(b).all()):
+            raise ValueError(f"non_finite_weights:{k}")
         na = torch.linalg.vector_norm(a)
         nb = torch.linalg.vector_norm(b)
         if float(na) == 0.0 or float(nb) == 0.0:
             continue
-        mins.append(float(torch.dot(a, b) / (na * nb)))
+        cos = float(torch.dot(a, b) / (na * nb))
+        if not math.isfinite(cos):
+            raise ValueError(f"non_finite_cosine:{k}")
+        mins.append(cos)
     if not mins:
         return 0.0, 0
     return float(min(mins)), len(mins)
@@ -231,12 +250,42 @@ def spearman_safe(y_true: np.ndarray, y_pred: np.ndarray) -> float:
 
 
 def load_tiers() -> dict:
-    """Fixed Spearman thresholds baked beside the grader (calibrated offline)."""
+    """Fixed Spearman thresholds baked beside the grader (calibrated offline).
+
+    Fails closed. The previous silent fallback to {"t_weak": 0.20} meant a build
+    that dropped tiers.json regraded the whole field against a bar 0.19 lower
+    while still reporting reason "ok" -- an unattributable scoring change with no
+    signal. A missing thresholds file is a broken image, not a default.
+    """
     path = Path(__file__).resolve().parent / "tiers.json"
-    if path.exists():
-        return json.loads(path.read_text())
-    # Safe fallbacks if tiers.json is missing in a broken image.
-    return {"t_weak": 0.20, "t_strong": 0.45}
+    if not path.exists():
+        raise RuntimeError(f"tiers.json missing at {path}; verifier image is broken")
+    tiers = json.loads(path.read_text())
+    t_weak, t_strong = float(tiers["t_weak"]), float(tiers["t_strong"])
+    if not 0.0 < t_weak < t_strong < 1.0:
+        raise RuntimeError(f"implausible tiers: t_weak={t_weak} t_strong={t_strong}")
+    return tiers
+
+
+def implausibility_ceiling(tiers: dict) -> float:
+    """Spearman above which a score indicates test-set contamination, not skill.
+
+    The private test set is the public FLIP2 meltome-mixed file minus the rows
+    shipped to the agent, so an agent with egress can reconstruct it exactly and
+    train on the answers. `network_mode = "no-network"` closes that, but Harbor
+    silently ignores it on non-Linux hosts (docker.py:194), so this is the only
+    host-independent check.
+
+    The separation is wide enough to exploit. Measured legitimate results: a
+    frozen probe reaches 0.546 +/- 0.005 (n=8), the best fine-tune ever observed
+    on this task is 0.5709, and published ESM2-8M ceilings on meltome-mixed are
+    ~0.6-0.7. A model trained on the recovered test rows scores near 0.99,
+    because the public labels rank-correlate 0.9998 with the private ones.
+
+    This is a tripwire, not proof: it flags a score no honest run has produced,
+    for a human to review. Keep the margin large so it never fires on skill.
+    """
+    return float(tiers.get("t_implausible", 0.75))
 
 
 def reward_from_spearman(rho: float, t_weak: float, t_strong: float) -> float:
@@ -293,8 +342,17 @@ def grade(submission: Path, base: Path, test_csv: Path, out: Path) -> int:
     except Exception as e:
         return fail(out, f"provenance_failed:{type(e).__name__}:{e}")
 
-    if n_tensors == 0:
-        return fail(out, "no_overlapping_backbone_tensors")
+    # A count floor, not just non-zero. The loop skips any tensor whose name or
+    # shape does not match the base, so a model with no lineage passes with
+    # n_tensors == 1 by copying a single base tensor into an otherwise unrelated
+    # checkpoint. Real fine-tunes of this architecture compare 108.
+    if n_tensors < MIN_BACKBONE_TENSORS:
+        return fail(
+            out,
+            "insufficient_backbone_overlap",
+            n_tensors_compared=n_tensors,
+            min_required=MIN_BACKBONE_TENSORS,
+        )
     if cos_min < COS_FLOOR:
         return fail(
             out,
@@ -319,10 +377,28 @@ def grade(submission: Path, base: Path, test_csv: Path, out: Path) -> int:
             return fail(out, "private_test_overlap_in_train_artifact", **overlap_info)
 
         preds = predict(submission, seqs)
+        if not np.all(np.isfinite(preds)):
+            return fail(
+                out,
+                "non_finite_predictions",
+                n_non_finite=int((~np.isfinite(preds)).sum()),
+                cosine_min=cos_min,
+                n_tensors_compared=n_tensors,
+            )
         rho = spearman_safe(y, preds)
         tiers = load_tiers()
         t_weak = float(tiers["t_weak"])
         t_strong = float(tiers["t_strong"])
+        t_implausible = implausibility_ceiling(tiers)
+        if rho >= t_implausible:
+            return fail(
+                out,
+                "implausible_private_fit",
+                spearman=rho,
+                t_implausible=t_implausible,
+                cosine_min=cos_min,
+                n_tensors_compared=n_tensors,
+            )
         reward = reward_from_spearman(rho, t_weak, t_strong)
     except Exception as e:
         return fail(

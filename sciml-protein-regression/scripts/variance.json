@@ -1,0 +1,113 @@
+{
+  "frozen": {
+    "n": 8,
+    "mean": 0.546,
+    "std": 0.0054,
+    "min": 0.5375,
+    "max": 0.5521
+  },
+  "finetune": {
+    "n": 4,
+    "mean": 0.5169,
+    "std": 0.0053,
+    "min": 0.5117,
+    "max": 0.522
+  },
+  "headroom_mean_gap": -0.0291,
+  "pooled_std": 0.0075,
+  "gap_in_pooled_sigma": -3.86,
+  "graded_reference_frozen": 0.5358,
+  "graded_reference_finetune_02_00": 0.5709,
+  "t_weak": 0.3887,
+  "t_strong": 0.45,
+  "raw": [
+    {
+      "seed": 0,
+      "arm": "frozen",
+      "private": 0.5451128125065877,
+      "val": 0.5648121618440015,
+      "pooling": "mean",
+      "epochs": 118
+    },
+    {
+      "seed": 1,
+      "arm": "frozen",
+      "private": 0.5521048171347214,
+      "val": 0.5702866076532075,
+      "pooling": "mean",
+      "epochs": 146
+    },
+    {
+      "seed": 2,
+      "arm": "frozen",
+      "private": 0.5448610898044456,
+      "val": 0.5643752484063704,
+      "pooling": "mean",
+      "epochs": 116
+    },
+    {
+      "seed": 3,
+      "arm": "frozen",
+      "private": 0.5519202509775823,
+      "val": 0.5693641780405756,
+      "pooling": "mean",
+      "epochs": 127
+    },
+    {
+      "seed": 4,
+      "arm": "frozen",
+      "private": 0.5443560826755155,
+      "val": 0.5645690718135684,
+      "pooling": "mean",
+      "epochs": 129
+    },
+    {
+      "seed": 5,
+      "arm": "frozen",
+      "private": 0.5511917937889858,
+      "val": 0.5656073853217998,
+      "pooling": "mean",
+      "epochs": 114
+    },
+    {
+      "seed": 6,
+      "arm": "frozen",
+      "private": 0.537518975312233,
+      "val": 0.5479430133989247,
+      "pooling": "mean",
+      "epochs": 68
+    },
+    {
+      "seed": 7,
+      "arm": "frozen",
+      "private": 0.5408907227228028,
+      "val": 0.5556716789987315,
+      "pooling": "mean",
+      "epochs": 83
+    },
+    {
+      "seed": 0,
+      "arm": "finetune",
+      "private": 0.5130959596407608,
+      "val": 0.5350830198534484
+    },
+    {
+      "seed": 1,
+      "arm": "finetune",
+      "private": 0.5208951731669625,
+      "val": 0.5384358946168472
+    },
+    {
+      "seed": 2,
+      "arm": "finetune",
+      "private": 0.5117261082819797,
+      "val": 0.5374777454358911
+    },
+    {
+      "seed": 3,
+      "arm": "finetune",
+      "private": 0.5220314652954301,
+      "val": 0.5386231634330266
+    }
+  ]
+}

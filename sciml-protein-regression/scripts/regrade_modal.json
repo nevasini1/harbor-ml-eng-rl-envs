@@ -1,0 +1,44 @@
+[
+  {
+    "trial": "jobs/2026-08-09__14-08-50/sciml-protein-regression__ZnpRu34",
+    "exit_code": 0,
+    "reward.json": {
+      "reward": 0.5
+    },
+    "metrics.json": {
+      "spearman": 0.43121436319307954,
+      "t_weak": 0.3887,
+      "t_strong": 0.45,
+      "n_test": 3427,
+      "cosine_min": 0.9997906237378942,
+      "n_tensors_compared": 108
+    },
+    "reward_meta.json": {
+      "reason": "ok"
+    },
+    "reward_txt": "0.5",
+    "stdout_tail": "{\"reward\": 0.5, \"spearman\": 0.43121436319307954, \"t_weak\": 0.3887, \"t_strong\": 0.45, \"n_test\": 3427, \"cosine_min\": 0.9997906237378942, \"n_tensors_compared\": 108, \"reason\": \"ok\"}\n",
+    "stderr_tail": ""
+  },
+  {
+    "trial": "jobs/frozen-probe-check/frozen_head_only",
+    "exit_code": 0,
+    "reward.json": {
+      "reward": 1.0
+    },
+    "metrics.json": {
+      "spearman": 0.5357784593225198,
+      "t_weak": 0.3887,
+      "t_strong": 0.45,
+      "n_test": 3427,
+      "cosine_min": 0.999999999999963,
+      "n_tensors_compared": 108
+    },
+    "reward_meta.json": {
+      "reason": "ok"
+    },
+    "reward_txt": "1.0",
+    "stdout_tail": "{\"reward\": 1.0, \"spearman\": 0.5357784593225198, \"t_weak\": 0.3887, \"t_strong\": 0.45, \"n_test\": 3427, \"cosine_min\": 0.999999999999963, \"n_tensors_compared\": 108, \"reason\": \"ok\"}\n",
+    "stderr_tail": ""
+  }
+]

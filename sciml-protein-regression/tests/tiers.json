@@ -6,9 +6,11 @@
   "definition": {
     "0.0": "integrity fail OR spearman < t_weak",
     "0.5": "t_weak <= spearman < t_strong  (meets or beats frozen probe)",
-    "1.0": "spearman >= t_strong  (meets or beats strong-oracle bar)"
+    "1.0": "spearman >= t_strong  (meets or beats strong-oracle bar)",
+    "0.0 (contamination)": "spearman >= t_implausible -> flagged, not scored"
   },
   "n_train_probe": 1500,
   "n_test": 3427,
-  "notes": "T_weak equals the calibrated frozen mean-pool Ridge Spearman on the private test set. T_strong is a fixed strong-oracle bar below the successful Codex run (~0.57)."
+  "notes": "T_weak equals the calibrated frozen mean-pool Ridge Spearman on the private test set. T_strong is a fixed strong-oracle bar below the successful Codex run (~0.57). T_implausible is a contamination tripwire: measured frozen probe is 0.546+/-0.005 (n=8) and the best fine-tune ever observed is 0.5709, so no honest run approaches 0.75, while a model trained on the reconstructed test set scores ~0.99.",
+  "t_implausible": 0.75
 }

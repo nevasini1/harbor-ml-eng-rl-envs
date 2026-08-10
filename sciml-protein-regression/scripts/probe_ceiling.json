@@ -1,0 +1,55 @@
+{
+  "n_fit": 17922,
+  "n_select": 1991,
+  "n_private_test": 3427,
+  "per_layer_linear": [
+    {
+      "layer": 0,
+      "meanpool_ridge": 0.2554,
+      "cls_ridge": NaN
+    },
+    {
+      "layer": 1,
+      "meanpool_ridge": 0.4333,
+      "cls_ridge": 0.3815
+    },
+    {
+      "layer": 2,
+      "meanpool_ridge": 0.4251,
+      "cls_ridge": 0.3803
+    },
+    {
+      "layer": 3,
+      "meanpool_ridge": 0.4134,
+      "cls_ridge": 0.3856
+    },
+    {
+      "layer": 4,
+      "meanpool_ridge": 0.4029,
+      "cls_ridge": 0.3769
+    },
+    {
+      "layer": 5,
+      "meanpool_ridge": 0.3972,
+      "cls_ridge": 0.3698
+    },
+    {
+      "layer": 6,
+      "meanpool_ridge": 0.4586,
+      "cls_ridge": 0.4217
+    }
+  ],
+  "nonlinear_heads": {
+    "cls_nonlinear_final": {
+      "private_spearman": 0.4316,
+      "selected_epoch": 300
+    },
+    "meanpool_nonlinear_final": {
+      "private_spearman": 0.4973,
+      "selected_epoch": 300
+    }
+  },
+  "control_meanpool_ridge_final_layer": 0.4586,
+  "tiers_json_claims_frozen_probe": 0.3887,
+  "t_strong_in_tiers_json": 0.45
+}
