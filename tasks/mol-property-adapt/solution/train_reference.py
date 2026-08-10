@@ -5,14 +5,32 @@ pretrained encoder), one-cycle warmup and linear decay, masked BCE so missing
 labels are excluded from the loss rather than treated as negatives, and epoch
 selection on a validation slice held out of the agent's own training data.
 
-The hyperparameters here must stay identical to the `legal_finetune` arm of
-scripts/modal_legal_anchors.py, because reference_auc is *defined* as what this
-script produces (0.7019, 5-seed mean, std 0.0055). If the two drift apart the
-anchor stops being reproducible from its own definition.
+The hyperparameters here match the `legal_finetune` arm of
+scripts/modal_legal_anchors.py, which measured reference_auc: body LR 3e-5 rather
+than 5e-5 and a 20% validation slice rather than 10%. reference_ablation.json puts
+3e-5 at 0.7019 against 5e-5 at 0.7006 -- inside noise, so that was an alignment
+change, not a tuning claim.
 
-Body LR is 3e-5 rather than 5e-5 and the validation slice is 20% rather than 10%,
-matching that arm. reference_ablation.json measured 3e-5 at 0.7019 against 5e-5 at
-0.7006 -- inside noise, so this is an alignment change, not a tuning claim.
+UNRESOLVED: this script does not currently reproduce the anchor it is supposed to
+define. Run end to end on CPU it scored tox21 0.6897 (scripts/e2e_mol.json),
+below the *minimum* of the five seeds that set reference_auc = 0.7019
+(range 0.6967-0.7111). Same recipe, two implementations: this one shuffles
+batches with torch.randperm and the anchor arm with rng.permutation, on different
+hardware. bbbp landed on the other side, beating its own anchor at 0.9158 vs
+0.9121, which is the tell -- the anchors track a GPU sibling of this script
+rather than this script.
+
+Two coherent resolutions, and the repo currently implies both:
+
+  * treat reference_auc as "what this script produces" and re-measure it by
+    running this file on CPU across ~5 seeds, so the oracle scores ~1.0 by
+    construction; or
+  * treat the reference as an independent tuned bar, in which case solve.sh is
+    right that the oracle is "deliberately competent-but-ordinary ... so that a
+    strong agent can exceed it", an oracle at 0.82 is working as intended, and
+    this docstring should stop implying otherwise.
+
+Until that is decided, do not assume editing this file moves the anchor.
 """
 
 import os
