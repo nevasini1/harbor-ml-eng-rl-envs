@@ -35,6 +35,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import traceback
 from pathlib import Path
 
@@ -49,6 +50,20 @@ MAX_SUBMISSION_BYTES = 1 << 30  # base encoder is ~14 MB; 1 GB is already absurd
 MAX_SMILES_CHARS = 1024
 COS_FLOOR = 0.90
 BATCH_SIZE = 64
+
+# The base MLM exposes 53 encoder tensors once heads are excluded, so a genuine
+# derivative compares 53. The old floor of 10 was far too loose: the comparison
+# loop skips every tensor that does not match the base by name and shape, so an
+# unrelated checkpoint carrying a handful of copied embedding tensors cleared it.
+MIN_ENCODER_TENSORS = 50
+
+# AUC above which a score indicates test-set contamination rather than skill.
+# Anchors here are base 0.6341 / reference 0.7019 and the best fine-tune observed
+# across 25 seeded runs is 0.7111, while published ChemBERTa numbers on tox21 sit
+# near 0.74-0.78 on easier splits. A model trained on the recovered test rows
+# scores ~0.99. 0.85 therefore sits far above anything an honest run has produced
+# and far below contamination. It is a tripwire for a human to review, not proof.
+DEFAULT_T_IMPLAUSIBLE = 0.85
 
 ARCH_FIELDS = [
     "model_type",
@@ -189,22 +204,149 @@ def check_lineage(sub: Path, base: Path) -> dict:
             raise Reject(f"tensor shape mismatch on {key}: {a.shape} vs {b.shape}")
         a = a.astype(np.float64).ravel()
         b = b.astype(np.float64).ravel()
+        # A single non-finite element makes the norm NaN, and `NaN == 0` is False,
+        # so the zero-norm guard below does not skip it. The cosine is then NaN,
+        # and `NaN < worst` is also False -- so the tensor never becomes the
+        # minimum and simply drops out of the floor check while still counting
+        # toward `compared`. An attacker NaNs precisely the tensors that would
+        # score badly and the remaining ones carry the check. Reject outright.
+        if not (np.all(np.isfinite(a)) and np.all(np.isfinite(b))):
+            raise Reject(f"non-finite weights in {key}")
         na, nb = np.linalg.norm(a), np.linalg.norm(b)
         if na == 0 or nb == 0:
             continue
         cos = float(a @ b / (na * nb))
+        if not np.isfinite(cos):
+            raise Reject(f"non-finite cosine on {key}")
         compared += 1
         if cos < worst:
             worst, worst_key = cos, key
 
-    if compared < 10:
-        raise Reject(f"only {compared} encoder tensors comparable against the base; "
-                     "submission does not appear to be derived from it")
+    if compared < MIN_ENCODER_TENSORS:
+        raise Reject(f"only {compared} encoder tensors comparable against the base "
+                     f"(need {MIN_ENCODER_TENSORS}); submission does not appear to "
+                     "be derived from it")
     if worst < COS_FLOOR:
         raise Reject(f"encoder lineage check failed: min per-tensor cosine "
                      f"{worst:.4f} < {COS_FLOOR} on {worst_key}")
     return {"min_tensor_cosine": round(worst, 6), "min_tensor_name": worst_key,
             "tensors_compared": compared}
+
+
+# ------------------------------------------------- test-set contamination
+
+# Artifacts the agent ships that could carry molecules. task.toml copies exactly
+# these two paths across, so this is the whole reachable surface.
+ARTIFACT_ROOTS = ("/app/final_model", "/logs/agent")
+SCANNABLE_SUFFIXES = {".csv", ".tsv", ".txt", ".json", ".jsonl", ".smi", ".md"}
+MAX_SCAN_BYTES = 64 << 20
+MAX_TOKENS_SCANNED = 500_000
+
+_ARTIFACT_KEYS: set[str] | None = None
+
+
+def artifact_inchikeys() -> set[str]:
+    """InChIKeys of every molecule parseable out of the agent's artifacts.
+
+    Matching on InChIKey rather than the SMILES string is the point: the same
+    molecule has many valid SMILES spellings, so a string comparison would miss
+    anything rewritten, canonicalised by a different toolkit, or round-tripped
+    through another format. The InChIKey is invariant to all of that.
+
+    Only text-shaped files are read; weights are skipped. Computed once per run
+    because the artifacts are shared across eval sets.
+    """
+    global _ARTIFACT_KEYS
+    if _ARTIFACT_KEYS is not None:
+        return _ARTIFACT_KEYS
+
+    from rdkit import Chem, RDLogger
+
+    RDLogger.DisableLog("rdApp.*")
+    seen: set[str] = set()
+    budget = MAX_TOKENS_SCANNED
+    for root in ARTIFACT_ROOTS:
+        base = Path(root)
+        if not base.exists():
+            continue
+        for p in sorted(base.rglob("*")):
+            if budget <= 0:
+                break
+            if p.is_symlink() or not p.is_file():
+                continue
+            if "".join(p.suffixes[-2:]) not in SCANNABLE_SUFFIXES and \
+               p.suffix not in SCANNABLE_SUFFIXES:
+                continue
+            try:
+                if p.stat().st_size > MAX_SCAN_BYTES:
+                    continue
+                text = p.read_text(errors="ignore")
+            except Exception:
+                continue
+            for tok in re.split(r"[\s,;\"'\[\]{}]+", text):
+                if budget <= 0:
+                    break
+                if not 4 <= len(tok) <= MAX_SMILES_CHARS:
+                    continue
+                # Cheap pre-filter: real SMILES carry ring digits, branches,
+                # bonds or brackets, or are short all-alpha formulas.
+                if not (any(c in tok for c in "()=#@+-\\/") or
+                        any(c.isdigit() for c in tok)):
+                    if not tok.isalpha():
+                        continue
+                budget -= 1
+                try:
+                    m = Chem.MolFromSmiles(tok)
+                except Exception:
+                    continue
+                if m is not None and m.GetNumAtoms() > 0:
+                    try:
+                        seen.add(Chem.MolToInchiKey(m))
+                    except Exception:
+                        continue
+    _ARTIFACT_KEYS = seen
+    return seen
+
+
+def load_private_keys(path: Path) -> dict:
+    """Held-out InChIKeys per eval set. Fails closed, like the anchors.
+
+    instruction.md rule 1 promises the agent that "the verifier checks for
+    train/test contamination". If this file is missing the check silently does
+    not run while the promise still stands, which is precisely the failure mode
+    the anchors loader was hardened against.
+    """
+    if not path.exists():
+        raise RuntimeError(
+            f"test_inchikeys.json missing at {path}; the contamination check "
+            "instruction.md promises cannot run and the verifier image is broken")
+    keys = json.loads(path.read_text())
+    if not keys:
+        raise RuntimeError(f"test_inchikeys.json at {path} is empty")
+    return {k: set(v) for k, v in keys.items()}
+
+
+def check_contamination(name: str, private_keys: set[str]) -> dict:
+    """Reject if the held-out molecules turn up in what the agent shipped.
+
+    Direct evidence, unlike the t_implausible tripwire, which only infers
+    contamination from an improbable score and so cannot see partial leakage.
+    Neither is sufficient alone: this one sees nothing if the agent leaves no
+    data behind, and the tripwire sees nothing below its threshold.
+
+    Any overlap is a violation. The private test molecules are absent from the
+    agent's training file by construction (train_test_inchikey_overlap is 0 in
+    the manifest), so their presence means they came from outside the container.
+    """
+    found = artifact_inchikeys()
+    overlap = private_keys & found
+    info = {"artifact_molecules_seen": len(found),
+            "private_test_overlap": len(overlap)}
+    if overlap:
+        raise Reject(
+            f"{len(overlap)} held-out {name} molecules found in the submitted "
+            f"artifacts; the private split is not derivable from the agent's data")
+    return info
 
 
 # ------------------------------------------------------------------ scoring
@@ -272,12 +414,47 @@ def score_eval_set(sub: Path, base: Path, test_csv: Path, public: dict,
 
 # --------------------------------------------------------------------- main
 
+def load_anchors(path: Path) -> dict:
+    """Read the anchors, failing closed.
+
+    There is deliberately no fallback. A silent default would regrade the whole
+    field against a bar nobody chose while still reporting status "ok" -- an
+    unattributable scoring change with no signal. A missing or malformed anchors
+    file is a broken verifier image, not a default.
+
+    The ordering check matters as much as the presence check: reward divides by
+    (reference - base), so a reversed or equal pair would send every submission
+    to 0 or 1 with no error raised anywhere.
+    """
+    if not path.exists():
+        raise RuntimeError(f"anchors.json missing at {path}; verifier image is broken")
+    anchors = json.loads(path.read_text())
+    if not anchors:
+        raise RuntimeError(f"anchors.json at {path} defines no eval sets")
+    for name, anc in anchors.items():
+        for field in ("base_auc", "reference_auc", "n_tasks"):
+            if field not in anc:
+                raise RuntimeError(f"anchors.json[{name}] is missing {field}")
+        base, ref = float(anc["base_auc"]), float(anc["reference_auc"])
+        if not 0.0 < base < ref < 1.0:
+            raise RuntimeError(
+                f"implausible anchors for {name}: base={base} reference={ref}; "
+                "expected 0 < base < reference < 1")
+        t_imp = float(anc.get("t_implausible", DEFAULT_T_IMPLAUSIBLE))
+        if t_imp <= ref:
+            raise RuntimeError(
+                f"t_implausible={t_imp} for {name} is not above reference={ref}; "
+                "the tripwire would fire on legitimate work")
+    return anchors
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--submission", default="/app/final_model")
     ap.add_argument("--base", default="/grader/base_model")
     ap.add_argument("--private", default="/grader/private")
     ap.add_argument("--anchors", default="/grader/private/anchors.json")
+    ap.add_argument("--test-keys", default="/grader/private/test_inchikeys.json")
     ap.add_argument("--public-hashes", default="/grader/public_hashes.json")
     ap.add_argument("--base-repo", default="DeepChem/ChemBERTa-77M-MLM")
     ap.add_argument("--out", default="/logs/verifier/reward.json")
@@ -290,7 +467,13 @@ def main() -> int:
     reward = 0.0
 
     try:
-        anchors = json.loads(Path(args.anchors).read_text())
+        anchors = load_anchors(Path(args.anchors))
+        private_keys = load_private_keys(Path(args.test_keys))
+        missing = set(anchors) - set(private_keys)
+        if missing:
+            raise RuntimeError(
+                f"no held-out InChIKeys for {sorted(missing)}; the contamination "
+                "check would silently skip those eval sets")
         public_raw = json.loads(Path(args.public_hashes).read_text())
         public = {
             f"{repo}/{fname}": meta["sha256"]
@@ -312,9 +495,22 @@ def main() -> int:
                     anc["n_tasks"],
                 )
                 entry |= res
+                entry |= check_contamination(name, private_keys[name])
+                t_imp = float(anc.get("t_implausible", DEFAULT_T_IMPLAUSIBLE))
+                if res["auc"] >= t_imp:
+                    raise Reject(
+                        f"implausible AUC {res['auc']:.4f} >= {t_imp}: no honest run "
+                        "has scored here; flagged for review, not scored")
                 denom = anc["reference_auc"] - anc["base_auc"]
                 rec = 0.0 if denom <= 0 else (res["auc"] - anc["base_auc"]) / denom
-                entry |= {"recovery": round(min(max(rec, 0.0), 1.0), 6), "status": "ok"}
+                # `recovery_raw` is recorded uncapped on purpose. Clipping is what
+                # hid a miscalibrated reference for as long as it did: every
+                # fine-tune was landing at recovery 1.47 and the clip flattened
+                # them all to 1.0, so the anchor being 0.04 too low was invisible
+                # in the reward. The capped value is what scores; the raw value is
+                # what tells you the anchors have drifted.
+                entry |= {"recovery": round(min(max(rec, 0.0), 1.0), 6),
+                          "recovery_raw": round(rec, 6), "status": "ok"}
             except Reject as exc:
                 entry |= {"recovery": 0.0, "status": "rejected", "reason": str(exc)}
             except BaseException as exc:  # noqa: BLE001

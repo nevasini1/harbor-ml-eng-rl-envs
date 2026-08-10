@@ -27,7 +27,8 @@ RUN uv pip install --system --index-strategy unsafe-best-match \
         safetensors==0.4.5 \
         scikit-learn==1.5.2 \
         pandas==2.2.3 \
-        numpy==1.26.4
+        numpy==1.26.4 \
+        rdkit==2024.3.5
 
 # Grader sources.
 COPY grade.py test.sh /tests/
