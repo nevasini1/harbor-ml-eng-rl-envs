@@ -1,8 +1,13 @@
 #!/bin/bash
-# Strong oracle (CPU / memory-safe):
-# 1) stream frozen CLS features (small batches)
-# 2) fit a small head
-# 3) full-model fine-tune with short effective batches
+# Strong oracle:
+# 1) stream frozen CLS features
+# 2) fit a small head on them
+# 3) full-model fine-tune, warm-started from that head
+#
+# Runs on GPU when one is present and falls back to CPU otherwise. The fallback
+# is not practical -- a single forward pass over the corpus is ~85 min at 512
+# tokens and this does four fine-tune epochs -- but it keeps the script runnable
+# for debugging without a GPU.
 set -euo pipefail
 
 python -u - <<'PY'
@@ -30,6 +35,15 @@ BATCH = 2
 ACCUM = 4
 LR = 7e-5
 THREADS = 4
+
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+if DEVICE == "cuda":
+    # Keep the optimization identical to the CPU path: BATCH*ACCUM stays 8, and
+    # the number of optimizer updates per epoch is unchanged, so LR and the
+    # warmup/cosine schedule carry over. Only the micro-batch grows, because
+    # gradient accumulation existed solely to fit CPU memory.
+    BATCH, ACCUM = 8, 1
+print(f"device={DEVICE} batch={BATCH} accum={ACCUM}", flush=True)
 
 torch.set_num_threads(THREADS)
 torch.set_num_interop_threads(1)
@@ -116,7 +130,8 @@ def extract_cls(model, loader, n):
     for step, batch in enumerate(loader, 1):
         idx = batch.pop("indices").numpy()
         labels = batch.pop("labels")
-        h = model(**batch).last_hidden_state[:, 0].cpu().numpy()
+        batch = {k: v.to(DEVICE) for k, v in batch.items()}
+        h = model(**batch).last_hidden_state[:, 0].float().cpu().numpy()
         xs[idx] = h
         ys[idx] = labels.numpy()
         if step % 200 == 0:
@@ -174,7 +189,8 @@ def eval_rho(model, loader, y_raw):
     for batch in loader:
         idx = batch.pop("indices").numpy()
         batch.pop("labels")
-        preds[idx] = model(**batch).logits.squeeze(-1).cpu().numpy()
+        batch = {k: v.to(DEVICE) for k, v in batch.items()}
+        preds[idx] = model(**batch).logits.squeeze(-1).float().cpu().numpy()
     pred = preds * std + mean
     return float(spearmanr(y_raw, pred).statistic)
 
@@ -190,7 +206,7 @@ if FEAT.exists():
     print(f"loaded features {FEAT} tr={xtr.shape}", flush=True)
 else:
     print("extracting frozen CLS features...", flush=True)
-    backbone = AutoModel.from_pretrained(BASE)
+    backbone = AutoModel.from_pretrained(BASE).to(DEVICE)
     xtr, ytr = extract_cls(backbone, tr_loader_ext, len(tr_ds))
     xva, yva = extract_cls(backbone, va_loader_ext, len(va_ds))
     del backbone
@@ -202,7 +218,7 @@ head = fit_head(xtr, ytr, xva, yva)
 del xtr, ytr, xva, yva
 gc.collect()
 
-model = AutoModelForSequenceClassification.from_pretrained(BASE, num_labels=1)
+model = AutoModelForSequenceClassification.from_pretrained(BASE, num_labels=1).to(DEVICE)
 model.classifier.load_state_dict(head.state_dict())
 del head
 gc.collect()
@@ -247,7 +263,8 @@ for epoch in range(1, EPOCHS + 1):
     n = 0
     for step, batch in enumerate(tr_loader, 1):
         batch.pop("indices")
-        labels = batch.pop("labels")
+        labels = batch.pop("labels").to(DEVICE)
+        batch = {k: v.to(DEVICE) for k, v in batch.items()}
         pred = model(**batch).logits.squeeze(-1)
         loss = nn.functional.smooth_l1_loss(pred, labels, beta=0.5) / ACCUM
         loss.backward()
@@ -272,6 +289,7 @@ for epoch in range(1, EPOCHS + 1):
 
 if best_state is not None:
     model.load_state_dict(best_state)
+model = model.cpu()
 model.config.label_mean = mean
 model.config.label_std = std
 model.config.validation_spearman = best_rho

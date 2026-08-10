@@ -1,6 +1,6 @@
 # mleval/sciml-protein-regression
 
-CPU-only Harbor task: fine-tune `facebook/esm2_t6_8M_UR50D` on a Meltome thermostability split; score Spearman on a private held-out set.
+Harbor task (1 GPU, 4h): fine-tune `facebook/esm2_t6_8M_UR50D` on a Meltome thermostability split; score Spearman on a private held-out set.
 
 ## Layout
 

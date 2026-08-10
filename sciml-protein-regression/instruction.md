@@ -4,7 +4,7 @@ You are given a pretrained protein language model and a training/validation tabl
 
 ## Budget
 
-- **CPU only** (no GPU)
+- **1 GPU**, 4 CPUs, 24 GB RAM
 - **4 hours** wall-clock, all-inclusive (setup, data work, training, packaging)
 - **No network access.** Everything needed is already in the image: the base model
   under `/models/esm2_t6_8M_UR50D` and the labeled data under `/data`.

@@ -6,13 +6,13 @@ artifacts = ["/app/final_model"]
 [task]
 name = "mleval/sciml-protein-regression"
 version = "1.0.0"
-description = "Fine-tune ESM-2-8M on Meltome protein thermostability; maximize Spearman on a private held-out split (CPU-only, 4h)."
+description = "Fine-tune ESM-2-8M on Meltome protein thermostability; maximize Spearman on a private held-out split (1 GPU, 4h)."
 authors = [{ name = "mleval", email = "mleval@example.com" }]
 
 [metadata]
 category = "scientific-ml"
 subcategory = "protein-property-regression"
-tags = ["protein", "esm2", "cpu", "fine-tuning", "flip2", "meltome"]
+tags = ["protein", "esm2", "gpu", "fine-tuning", "flip2", "meltome"]
 
 [agent]
 timeout_sec = 14400
@@ -40,7 +40,19 @@ build_timeout_sec = 1800.0
 cpus = 4
 memory_mb = 24576
 storage_mb = 40960
-gpus = 0
+# One GPU. This task was specified CPU-only, and that is what made it
+# unrunnable: meltome-mixed has a median sequence length of 413 aa (p95 1,377),
+# so at 512 tokens embedding throughput falls to ~6 seq/s and a single forward
+# pass over the corpus takes ~85 minutes -- about 35% of a 4-hour budget for one
+# featurization with no training. solution/solve.sh is a 4-epoch full fine-tune
+# over ~20k sequences, which on CPU is on the order of ten hours; the oracle
+# could never finish inside its own budget.
+#
+# This fixes feasibility only. It does NOT fix the task. The inversion was
+# measured on GPU: across two splits, 13 frozen seeds and 7 fine-tune seeds at
+# std ~0.003, a frozen probe scores 0.55-0.58 while a fine-tune scores 0.52-0.53
+# (-7.5 and -12.2 sigma). Compute was never the reason fine-tuning loses here.
+gpus = 1
 # The private test set is the public FLIP2 meltome-mixed file minus the rows
 # shipped as /data/train.csv.gz. With egress, an agent recovers it exactly by set
 # difference -- verified at 100% recall and precision, with public labels
