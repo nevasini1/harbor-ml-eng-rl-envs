@@ -18,8 +18,8 @@ row. Most of this repo is the evidence for two anchors per eval set.
 | base model | ChemBERTa-77M-MLM (3.4M params) | ESM-2-8M |
 | data | Tox21 + BBBP, chemical-region holdouts | FLIP2 meltome-mixed |
 | metric | mean ROC-AUC | Spearman |
-| compute | CPU-only, 4 h | 1 GPU, 4 h |
-| reward | continuous recovery between two anchors | 3 tiers (0 / 0.5 / 1) |
+| compute | **no GPU** — 8 CPUs, 16 GB, 4 h | **1 GPU** + 4 CPUs, 24 GB, 4 h |
+| reward | continuous recovery between two *measured* anchors | 3 discrete tiers on *fixed* thresholds |
 | why | ordered ladder, 6.5σ and 4.1σ separation | **inverted**: a frozen probe beats a fine-tune |
 
 The protein task is kept because its verifier is the better-hardened of the two and
@@ -28,7 +28,66 @@ because the negative result is worth reading. Its reward is not usable — see
 
 ---
 
-## How the reward works
+## Two reward schemes
+
+The two tasks score in genuinely different ways. They were designed independently, and
+comparing them is most of what this repo learned.
+
+### `mol-property-adapt` — continuous, between measured anchors
+
+```
+recovery = clip((auc − base) / (reference − base), 0, 1)
+reward   = integrity_gate × mean(recovery over eval sets)
+```
+
+Both anchors are **measurements**, taken over 5 seeds on the private split, each
+re-derivable from a committed script. Integrity is a separate multiplicative gate, so a
+0 always carries an attributable reason instead of being indistinguishable from a weak
+model. The uncapped `recovery_raw` is recorded alongside the capped value.
+
+### `sciml-protein-regression` — three tiers, on fixed thresholds
+
+```
+reward = 0.0   if integrity fails, or spearman < t_weak          (0.3887)
+       = 0.5   if t_weak ≤ spearman < t_strong                   (0.45)
+       = 1.0   if spearman ≥ t_strong
+       = 0.0   if spearman ≥ t_implausible (0.75) — flagged, not scored
+```
+
+No `base`/`reference` pair, no recovery, no reference-training script. `t_weak` was
+calibrated (a frozen mean-pool Ridge probe); `t_strong` was **chosen** — its own note
+says "a fixed strong-oracle bar below the successful Codex run (~0.57)". Nothing
+produces it.
+
+### Why the tiered scheme lost
+
+Not taste — four concrete failures, all visible in this repo:
+
+1. **Quantization makes every calibration error maximal.** A submission 0.001 past
+   `t_strong` scores identically to one 0.1 past. With three levels, a mis-set threshold
+   costs the *entire* distinction rather than a proportional slice. Continuous recovery
+   degrades gracefully; tiers do not degrade at all.
+2. **Both thresholds are mis-set, and the file proves it.**
+   `scripts/probe_ceiling.json` records `tiers_json_claims_frozen_probe: 0.3887` beside a
+   mean-pool Ridge at **0.4586**, a nonlinear head at **0.4973**, and a trained head at
+   **0.546** — three frozen methods, none of which adapts the encoder, and two of which
+   clear `t_strong = 0.45` outright.
+3. **The upper anchor is unreproducible by construction.** `t_strong` is a round number
+   under an observed result; no script emits it. The mol task's `reference_auc` is
+   defined by a shipped solution — imperfectly, see Open questions, but the invariant at
+   least *exists* and can be checked.
+4. **Thresholds amplify noise instead of absorbing it.** A submission near a boundary
+   flips tiers between reruns, changing the reward by 0.5. Under recovery the same
+   wobble moves the score proportionally, and `band_sigma` makes the noise-to-signal
+   ratio an explicit, reportable number.
+
+The lesson generalises past this repo: **tiers look robust because they hide small
+errors, and are fragile for exactly that reason.** A continuous reward with recorded
+anchors tells you when it is wrong.
+
+---
+
+## How the mol reward works in detail
 
 Per eval set, the raw metric is normalized onto [0,1] between two measured anchors:
 
