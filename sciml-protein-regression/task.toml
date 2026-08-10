@@ -23,13 +23,17 @@ environment_mode = "separate"
 
 [verifier.environment]
 cpus = 4
-memory_mb = 16384
+# Must stay at or below the host Docker VM (11.7GB locally), otherwise the cgroup
+# limit never binds: instead of a clean in-container OOM that kills grade.py and
+# lets test.sh write a 0 reward, the host thrashes and takes the whole container,
+# leaving no reward.json at all -- which Harbor's metric scores as 0 anyway but
+# records as a trial error.
+memory_mb = 8192
 storage_mb = 40960
 gpus = 0
-# Harbor's local Docker provider rejects network_mode="no-network".
-# Isolation is via separate-verifier + private_test baked into the image.
-# Prefer a provider with egress control (Modal/E2B) for true no-network.
-network_mode = "public"
+# The grader needs nothing from the network: the base model is baked into the
+# image at /grader/base_model and the private split at /tests/private_test.
+network_mode = "no-network"
 build_timeout_sec = 1800.0
 
 [environment]
@@ -37,5 +41,19 @@ cpus = 4
 memory_mb = 24576
 storage_mb = 40960
 gpus = 0
-network_mode = "public"
+# The private test set is the public FLIP2 meltome-mixed file minus the rows
+# shipped as /data/train.csv.gz. With egress, an agent recovers it exactly by set
+# difference -- verified at 100% recall and precision, with public labels
+# rank-correlating 0.9998 with the private ground truth. No rule in
+# instruction.md can prevent that; only removing egress can. The agent needs
+# nothing from the network: base model at /models, data at /data.
+#
+# WARNING: this is NOT enforced on macOS. Harbor gates egress control on
+# `sys.platform == "linux" or _egress_control_kernel_support()`
+# (harbor/environments/docker/docker.py:194); Docker Desktop's VM fails the
+# nftables probe, so the sidecar is never attached and this setting is silently
+# ignored -- no error, no warning. Verified: zenodo.org and huggingface.co are
+# both reachable from inside the agent container on this host. Only trust runs
+# executed on a Linux host or a provider with real egress control.
+network_mode = "no-network"
 build_timeout_sec = 1800.0

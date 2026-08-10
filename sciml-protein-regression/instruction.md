@@ -1,4 +1,4 @@
-# Task: improve ESM-2-8M on Meltome thermostability prediction
+# Task: improve ESM-2-8M on protein melting-temperature prediction
 
 You are given a pretrained protein language model and a training/validation table of protein sequences with melting-temperature labels. Improve the model. Your submission is scored automatically on a **private held-out test set you cannot see**.
 
@@ -6,7 +6,8 @@ You are given a pretrained protein language model and a training/validation tabl
 
 - **CPU only** (no GPU)
 - **4 hours** wall-clock, all-inclusive (setup, data work, training, packaging)
-- Network access is available in this environment for downloading training resources if you choose
+- **No network access.** Everything needed is already in the image: the base model
+  under `/models/esm2_t6_8M_UR50D` and the labeled data under `/data`.
 
 ## Provided assets
 
@@ -48,7 +49,8 @@ Malformed / unloadable / architecture-mismatched submissions score `0`. Threshol
 
 ## Rules
 
-- Do not attempt to access, download, or reconstruct the private test set.
+- Train only on the data provided under `/data`. The environment has no egress, so
+  this is enforced rather than requested.
 - Do not modify verifier code (you cannot see it anyway).
 - Paid external model APIs are not allowed in the solution path.
 - Objective is model quality on held-out ground truth, not pleasing a judge.
