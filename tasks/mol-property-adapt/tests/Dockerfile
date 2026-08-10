@@ -30,8 +30,10 @@ RUN uv pip install --system --index-strategy unsafe-best-match \
         numpy==1.26.4 \
         rdkit==2024.3.5
 
-# Grader sources.
-COPY grade.py test.sh /tests/
+# Grader sources. verifier_core.py is a synced copy of common/verifier_core.py
+# (a build context cannot reach outside itself); `python common/sync.py --check`
+# fails if it has drifted.
+COPY grade.py verifier_core.py test.sh /tests/
 RUN chmod +x /tests/test.sh
 
 # Everything the grader needs, baked in: the verifier runs with no network.

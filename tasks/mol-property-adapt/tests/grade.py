@@ -6,7 +6,13 @@ is imported or executed here.
 
 reward = mean over eval sets of clip((auc - base) / (reference - base), 0, 1)
 
-Design constraints this file is written against:
+The integrity layers, the fail-closed anchor loader and the always-write driver
+now live in `verifier_core.py`, shared with the other tasks in this repo; this
+file is what is specific to molecules. The extraction is behaviour-preserving:
+regrading `jobs/mol-oracle-modal` still returns 0.909661.
+
+Design constraints the shared core is written against (restated because they are
+what makes this grader trustworthy):
 
   * Never crash into ambiguity. Any agent output - missing, malformed, hostile,
     wrong shape, non-finite, or a model that raises at inference - must still
@@ -14,30 +20,26 @@ Design constraints this file is written against:
     continues; the process always writes reward.json.
 
   * Three anti-substitution layers, because they fail on disjoint inputs:
-      1. architecture-config hash vs the provided base
-      2. sha256 vs known public checkpoints (rejects any other public model)
-      3. per-tensor float64 cosine vs the base encoder
-    Layer 3 deliberately ALLOWS an unmodified encoder: freezing the backbone and
-    training only a head is a legitimate strategy, so "weights must have moved" is
-    not a valid requirement.
+    architecture-config hash, sha256 vs known public checkpoints, and per-tensor
+    float64 cosine vs the base encoder. The third deliberately ALLOWS an
+    unmodified encoder: freezing the backbone and training only a head is a
+    legitimate strategy, so "weights must have moved" is not a valid requirement.
 
-  * float64 for cosine. float32 accumulation over a large embedding matrix can
-    return values above 1. Per-tensor minimum, not a global cosine, because a
-    single global figure stays high even for shuffled weights.
-
-  * reward.json carries exactly one key. Harbor's default dataset metric raises on
-    a multi-key reward dict, so per-eval-set detail goes to metrics.json instead.
+  * reward.json carries exactly one key. Harbor's default dataset metric raises
+    on a multi-key reward dict, so per-eval-set detail goes to metrics.json.
 """
 
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
 import re
-import traceback
 from pathlib import Path
+
+from verifier_core import (Reject, check_architecture, check_lineage,
+                           check_not_other_public, grade_eval_sets, load_anchors,
+                           load_public_hashes, scan_dir)
 
 os.environ.setdefault("OMP_NUM_THREADS", "1")
 os.environ.setdefault("MKL_NUM_THREADS", "1")
@@ -45,10 +47,7 @@ os.environ.setdefault("PYTHONHASHSEED", "0")
 os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 os.environ.setdefault("HF_HUB_OFFLINE", "1")
 
-MAX_CONFIG_BYTES = 1 << 20
-MAX_SUBMISSION_BYTES = 1 << 30  # base encoder is ~14 MB; 1 GB is already absurd
 MAX_SMILES_CHARS = 1024
-COS_FLOOR = 0.90
 BATCH_SIZE = 64
 
 # The base MLM exposes 53 encoder tensors once heads are excluded, so a genuine
@@ -64,173 +63,6 @@ MIN_ENCODER_TENSORS = 50
 # scores ~0.99. 0.85 therefore sits far above anything an honest run has produced
 # and far below contamination. It is a tripwire for a human to review, not proof.
 DEFAULT_T_IMPLAUSIBLE = 0.85
-
-ARCH_FIELDS = [
-    "model_type",
-    "hidden_size",
-    "num_hidden_layers",
-    "num_attention_heads",
-    "intermediate_size",
-    "vocab_size",
-    "max_position_embeddings",
-    "type_vocab_size",
-]
-
-
-class Reject(Exception):
-    """Submission is unusable or fails integrity; this eval set floors to 0."""
-
-
-# --------------------------------------------------------------- safe reading
-
-def scan_dir(path: Path) -> int:
-    if not path.is_dir():
-        raise Reject("submission path is not a directory")
-    total = 0
-    for p in path.rglob("*"):
-        if p.is_symlink():
-            raise Reject(f"symlink in submission: {p.name}")
-        if p.is_file():
-            total += p.stat().st_size
-            if total > MAX_SUBMISSION_BYTES:
-                raise Reject("submission exceeds size cap")
-    return total
-
-
-def read_config(path: Path) -> dict:
-    cfg = path / "config.json"
-    if not cfg.is_file():
-        raise Reject("missing config.json")
-    if cfg.stat().st_size > MAX_CONFIG_BYTES:
-        raise Reject("config.json implausibly large")
-    try:
-        return json.loads(cfg.read_text())
-    except (json.JSONDecodeError, UnicodeDecodeError, RecursionError, ValueError) as exc:
-        raise Reject(f"unparseable config.json: {type(exc).__name__}")
-
-
-def sha256_file(path: Path) -> str:
-    h = hashlib.sha256()
-    with path.open("rb") as fh:
-        for chunk in iter(lambda: fh.read(1 << 20), b""):
-            h.update(chunk)
-    return h.hexdigest()
-
-
-# ------------------------------------------------------------------- layers
-
-def check_architecture(sub: Path, base: Path) -> dict:
-    s, b = read_config(sub), read_config(base)
-    sig = lambda c: hashlib.sha256(  # noqa: E731
-        json.dumps({k: c.get(k) for k in ARCH_FIELDS}, sort_keys=True).encode()
-    ).hexdigest()
-    if sig(s) != sig(b):
-        diff = {k: (b.get(k), s.get(k)) for k in ARCH_FIELDS if b.get(k) != s.get(k)}
-        raise Reject(f"architecture differs from base: {diff}")
-    return {"arch_sha256": sig(s)}
-
-
-def check_not_other_public(sub: Path, public: dict, base_repo: str) -> dict:
-    hits = []
-    for f in sorted(sub.glob("*.safetensors")) + sorted(sub.glob("*.bin")):
-        d = sha256_file(f)
-        for ref, ref_digest in public.items():
-            if d == ref_digest and not ref.startswith(base_repo):
-                hits.append({"file": f.name, "matches": ref})
-    if hits:
-        raise Reject(f"weights are bit-identical to another public checkpoint: {hits}")
-    return {"public_checkpoint_matches": 0}
-
-
-def load_tensors(path: Path) -> dict:
-    """Weights as numpy arrays, from safetensors or a .bin.
-
-    The provided base ships pytorch_model.bin while `save_pretrained` emits
-    safetensors, so both sides must handle either format. `.bin` is read with
-    weights_only=True: it is a pickle, and the submission side is untrusted.
-    """
-    import numpy as np
-
-    st = path / "model.safetensors"
-    if st.is_file():
-        from safetensors import safe_open
-
-        out = {}
-        with safe_open(str(st), framework="np") as f:
-            for k in f.keys():
-                out[k] = f.get_tensor(k)
-        return out
-
-    bin_path = path / "pytorch_model.bin"
-    if bin_path.is_file():
-        import torch
-
-        try:
-            raw = torch.load(str(bin_path), map_location="cpu", weights_only=True)
-        except Exception as exc:
-            raise Reject(f"unreadable pytorch_model.bin: {type(exc).__name__}")
-        return {k: v.detach().numpy() for k, v in raw.items()
-                if hasattr(v, "detach") and v.dtype.is_floating_point}
-
-    raise Reject("no model.safetensors or pytorch_model.bin in submission")
-
-
-def normalize_key(k: str) -> str:
-    """Strip the task-model prefix so encoder tensors line up across checkpoints.
-
-    The base is an MLM (`roberta.*`) and the submission a sequence classifier
-    (`roberta.*` too, but `lm_head.*` vs `classifier.*` differ). Comparing on the
-    shared encoder body is the point; heads legitimately have no counterpart.
-    """
-    for prefix in ("roberta.", "bert.", "esm.", "model."):
-        if k.startswith(prefix):
-            return k[len(prefix):]
-    return k
-
-
-def check_lineage(sub: Path, base: Path) -> dict:
-    import numpy as np
-
-    sub_t = {normalize_key(k): v for k, v in load_tensors(sub).items()}
-    base_t = {normalize_key(k): v for k, v in load_tensors(base).items()}
-
-    worst, worst_key, compared = 1.0, None, 0
-    for key, b in base_t.items():
-        # Encoder tensors only; a fresh task head has nothing to compare against.
-        if key not in sub_t or key.startswith(("lm_head", "classifier")):
-            continue
-        a = sub_t[key]
-        if a.shape != b.shape:
-            raise Reject(f"tensor shape mismatch on {key}: {a.shape} vs {b.shape}")
-        a = a.astype(np.float64).ravel()
-        b = b.astype(np.float64).ravel()
-        # A single non-finite element makes the norm NaN, and `NaN == 0` is False,
-        # so the zero-norm guard below does not skip it. The cosine is then NaN,
-        # and `NaN < worst` is also False -- so the tensor never becomes the
-        # minimum and simply drops out of the floor check while still counting
-        # toward `compared`. An attacker NaNs precisely the tensors that would
-        # score badly and the remaining ones carry the check. Reject outright.
-        if not (np.all(np.isfinite(a)) and np.all(np.isfinite(b))):
-            raise Reject(f"non-finite weights in {key}")
-        na, nb = np.linalg.norm(a), np.linalg.norm(b)
-        if na == 0 or nb == 0:
-            continue
-        cos = float(a @ b / (na * nb))
-        if not np.isfinite(cos):
-            raise Reject(f"non-finite cosine on {key}")
-        compared += 1
-        if cos < worst:
-            worst, worst_key = cos, key
-
-    if compared < MIN_ENCODER_TENSORS:
-        raise Reject(f"only {compared} encoder tensors comparable against the base "
-                     f"(need {MIN_ENCODER_TENSORS}); submission does not appear to "
-                     "be derived from it")
-    if worst < COS_FLOOR:
-        raise Reject(f"encoder lineage check failed: min per-tensor cosine "
-                     f"{worst:.4f} < {COS_FLOOR} on {worst_key}")
-    return {"min_tensor_cosine": round(worst, 6), "min_tensor_name": worst_key,
-            "tensors_compared": compared}
 
 
 # ------------------------------------------------- test-set contamination
@@ -379,7 +211,7 @@ def score_eval_set(sub: Path, base: Path, test_csv: Path, public: dict,
     info = {"submission_bytes": scan_dir(sub)}
     info |= check_architecture(sub, base)
     info |= check_not_other_public(sub, public, base_repo)
-    info |= check_lineage(sub, base)
+    info |= check_lineage(sub, base, MIN_ENCODER_TENSORS)
 
     df = pd.read_csv(test_csv)
     labels = [c for c in df.columns if c != "smiles"]
@@ -414,40 +246,6 @@ def score_eval_set(sub: Path, base: Path, test_csv: Path, public: dict,
 
 # --------------------------------------------------------------------- main
 
-def load_anchors(path: Path) -> dict:
-    """Read the anchors, failing closed.
-
-    There is deliberately no fallback. A silent default would regrade the whole
-    field against a bar nobody chose while still reporting status "ok" -- an
-    unattributable scoring change with no signal. A missing or malformed anchors
-    file is a broken verifier image, not a default.
-
-    The ordering check matters as much as the presence check: reward divides by
-    (reference - base), so a reversed or equal pair would send every submission
-    to 0 or 1 with no error raised anywhere.
-    """
-    if not path.exists():
-        raise RuntimeError(f"anchors.json missing at {path}; verifier image is broken")
-    anchors = json.loads(path.read_text())
-    if not anchors:
-        raise RuntimeError(f"anchors.json at {path} defines no eval sets")
-    for name, anc in anchors.items():
-        for field in ("base_auc", "reference_auc", "n_tasks"):
-            if field not in anc:
-                raise RuntimeError(f"anchors.json[{name}] is missing {field}")
-        base, ref = float(anc["base_auc"]), float(anc["reference_auc"])
-        if not 0.0 < base < ref < 1.0:
-            raise RuntimeError(
-                f"implausible anchors for {name}: base={base} reference={ref}; "
-                "expected 0 < base < reference < 1")
-        t_imp = float(anc.get("t_implausible", DEFAULT_T_IMPLAUSIBLE))
-        if t_imp <= ref:
-            raise RuntimeError(
-                f"t_implausible={t_imp} for {name} is not above reference={ref}; "
-                "the tripwire would fire on legitimate work")
-    return anchors
-
-
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--submission", default="/app/final_model")
@@ -461,78 +259,45 @@ def main() -> int:
     ap.add_argument("--metrics-out", default="/logs/verifier/metrics.json")
     args = ap.parse_args()
 
-    out = Path(args.out)
+    out, metrics_out = Path(args.out), Path(args.metrics_out)
     out.parent.mkdir(parents=True, exist_ok=True)
-    metrics = {"eval_sets": {}, "status": "ok"}
-    reward = 0.0
-
     try:
-        anchors = load_anchors(Path(args.anchors))
+        anchors = load_anchors(Path(args.anchors), "auc", ("n_tasks",),
+                               DEFAULT_T_IMPLAUSIBLE)
         private_keys = load_private_keys(Path(args.test_keys))
         missing = set(anchors) - set(private_keys)
         if missing:
             raise RuntimeError(
                 f"no held-out InChIKeys for {sorted(missing)}; the contamination "
                 "check would silently skip those eval sets")
-        public_raw = json.loads(Path(args.public_hashes).read_text())
-        public = {
-            f"{repo}/{fname}": meta["sha256"]
-            for repo, entry in public_raw.items()
-            for fname, meta in entry.get("files", {}).items()
-            if meta.get("sha256")
-        }
-
-        recoveries = []
-        for name, anc in anchors.items():
-            entry: dict = {"base_auc": anc["base_auc"], "reference_auc": anc["reference_auc"]}
-            try:
-                res = score_eval_set(
-                    Path(args.submission) / name,
-                    Path(args.base),
-                    Path(args.private) / f"{name}_test.csv",
-                    public,
-                    args.base_repo,
-                    anc["n_tasks"],
-                )
-                entry |= res
-                entry |= check_contamination(name, private_keys[name])
-                t_imp = float(anc.get("t_implausible", DEFAULT_T_IMPLAUSIBLE))
-                if res["auc"] >= t_imp:
-                    raise Reject(
-                        f"implausible AUC {res['auc']:.4f} >= {t_imp}: no honest run "
-                        "has scored here; flagged for review, not scored")
-                denom = anc["reference_auc"] - anc["base_auc"]
-                rec = 0.0 if denom <= 0 else (res["auc"] - anc["base_auc"]) / denom
-                # `recovery_raw` is recorded uncapped on purpose. Clipping is what
-                # hid a miscalibrated reference for as long as it did: every
-                # fine-tune was landing at recovery 1.47 and the clip flattened
-                # them all to 1.0, so the anchor being 0.04 too low was invisible
-                # in the reward. The capped value is what scores; the raw value is
-                # what tells you the anchors have drifted.
-                entry |= {"recovery": round(min(max(rec, 0.0), 1.0), 6),
-                          "recovery_raw": round(rec, 6), "status": "ok"}
-            except Reject as exc:
-                entry |= {"recovery": 0.0, "status": "rejected", "reason": str(exc)}
-            except BaseException as exc:  # noqa: BLE001
-                entry |= {"recovery": 0.0, "status": "error",
-                          "reason": f"{type(exc).__name__}: {exc}",
-                          "traceback": traceback.format_exc()[-1500:]}
-            metrics["eval_sets"][name] = entry
-            recoveries.append(entry["recovery"])
-
-        reward = sum(recoveries) / len(recoveries) if recoveries else 0.0
+        public = load_public_hashes(Path(args.public_hashes))
     except BaseException as exc:  # noqa: BLE001
-        metrics |= {"status": "grader_error",
-                    "reason": f"{type(exc).__name__}: {exc}",
-                    "traceback": traceback.format_exc()[-1500:]}
-        reward = 0.0
+        # Config failures are not the agent's doing, so they are reported as a
+        # grader error rather than as a rejected submission - but they still
+        # write a reward, because a missing reward.json is a trial error.
+        import traceback
 
-    metrics["reward"] = round(reward, 6)
-    # Exactly one key: Harbor's default dataset metric rejects multi-key rewards.
-    out.write_text(json.dumps({"reward": round(reward, 6)}))
-    Path(args.metrics_out).parent.mkdir(parents=True, exist_ok=True)
-    Path(args.metrics_out).write_text(json.dumps(metrics, indent=2))
-    print(json.dumps(metrics, indent=2))
+        out.write_text(json.dumps({"reward": 0.0}))
+        metrics_out.parent.mkdir(parents=True, exist_ok=True)
+        metrics_out.write_text(json.dumps(
+            {"eval_sets": {}, "status": "grader_error", "reward": 0.0,
+             "reason": f"{type(exc).__name__}: {exc}",
+             "traceback": traceback.format_exc()[-1500:]}, indent=2))
+        print(f"grader_error: {type(exc).__name__}: {exc}")
+        return 0
+
+    grade_eval_sets(
+        anchors,
+        lambda name, anc: score_eval_set(
+            Path(args.submission) / name, Path(args.base),
+            Path(args.private) / f"{name}_test.csv", public, args.base_repo,
+            anc["n_tasks"]),
+        metric="auc",
+        out=out,
+        metrics_out=metrics_out,
+        default_t_implausible=DEFAULT_T_IMPLAUSIBLE,
+        postcheck=lambda name, anc, res: check_contamination(name, private_keys[name]),
+    )
     return 0
 
 
