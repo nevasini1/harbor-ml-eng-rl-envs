@@ -14,17 +14,18 @@ row. Most of this repo is the evidence for two anchors per eval set.
 
 | | [`tasks/mol-property-adapt`](tasks/mol-property-adapt/) | [`sciml-protein-regression`](sciml-protein-regression/) |
 |---|---|---|
-| **status** | **active — ships** | **shelved — measures nothing** |
+| **status** | **active — ships** | **repairable** (was shelved; see below) |
 | base model | ChemBERTa-77M-MLM (3.4M params) | ESM-2-8M |
 | data | Tox21 + BBBP, chemical-region holdouts | FLIP2 meltome-mixed |
 | metric | mean ROC-AUC | Spearman |
 | compute | **no GPU** — 8 CPUs, 16 GB, 4 h | **1 GPU** + 4 CPUs, 24 GB, 4 h |
 | reward | continuous recovery between two *measured* anchors | 3 discrete tiers on *fixed* thresholds |
-| why | ordered ladder, 6.5σ and 4.1σ separation | **inverted**: a frozen probe beats a fine-tune |
+| why | ordered ladder, 6.5σ and 4.1σ separation | ordered under LP-FT at 3.9σ; **inverted under a naive fine-tune** |
 
-The protein task is kept because its verifier is the better-hardened of the two and
-because the negative result is worth reading. Its reward is not usable — see
-[Why the protein task is shelved](#why-the-protein-task-is-shelved).
+The protein task's *reward* is still not usable — its three tiers are mis-set and a
+frozen probe scores 1.0. But the task itself now looks repairable, and the reason it
+was written off is instructive. See
+[The protein task was written off twice over](#the-protein-task-was-written-off-twice-over).
 
 ---
 
@@ -162,33 +163,83 @@ Both known artifacts, re-scored through the hardened grader on Linux
 Both reproduce their recorded values to the 7th decimal. The second row is the problem,
 not a pass: a submission that never touches the encoder takes the maximum reward.
 
-An oracle agent run on GPU is in flight; results will be added here.
+### `sciml-protein-regression` — oracle, GPU, Modal backend
+
+`jobs/protein-oracle-gpu/`, 1 trial, 0 errors.
+
+| Spearman | reward | cosine_min | tensors | t_weak | t_strong |
+|---|---|---|---|---|---|
+| 0.5733 | **1.0** | 0.9838 | 108 | 0.3887 | 0.45 |
+
+`cosine_min = 0.9838` confirms the encoder moved — a real fine-tune, not the frozen
+submission that also scores 1.0. And that is the point: the frozen probe scores 1.0 at
+ρ=0.5358 and this oracle scores 1.0 at ρ=0.5733. **A genuine 0.0375 difference is
+invisible**, because both clear `t_strong` and quantize into the same tier.
+
+Getting here required three changes, only two of which were obvious: `gpus = 1` in
+`task.toml`, device handling in `solve.sh`, and — the one that actually bit — swapping
+the agent image's **CPU-only torch wheel** for `cu124`. The first GPU attempt ran the
+whole fine-tune on CPU with an L40S at 0% utilisation, visible in the log as 8,961
+steps/epoch (batch 2) instead of 2,241 (batch 8).
 
 ---
 
-## Why the protein task is shelved
+## The protein task was written off twice over
 
-Not compute — **ordering**. Across two splits, 13 frozen seeds and 7 fine-tune seeds at
-std ~0.003:
+It was shelved as **inverted**: a frozen probe beats a fine-tune, so no threshold
+placement discriminates. Two measurements said so — `modal_variance.py` and
+`modal_cluster_split.py`, the latter at −7.5σ and −12.2σ across two splits.
 
-| split | frozen probe | fine-tune | gap |
-|---|---|---|---|
-| shipped | 0.5494 ± 0.0033 | 0.5214 ± 0.0017 | −0.028 (−7.5σ) |
-| MMseqs2 cluster, 30% id | 0.5784 ± 0.0029 | 0.5257 ± 0.0032 | −0.053 (−12.2σ) |
+Both were right about what they measured and wrong about what it meant.
 
-Fine-tuning reliably *loses*, so no threshold placement repairs it. Two independent
-confirmations: [Kumar et al. 2022](https://arxiv.org/abs/2202.10054) (fine-tuning
-distorts pretrained features under distribution shift) and
-[iScience 2025](https://pmc.ncbi.nlm.nih.gov/articles/PMC12481099/), which finds
-head-only *wins* on melting-point prediction specifically.
+### Error 1 — the comparison arm was a naive fine-tune
 
-The cluster-split row is the counter-intuitive one: MMseqs2 cut prefix leakage from 89
-sequences to 3 and the frozen probe got **better**. Assigning whole clusters to test
-groups related proteins with similar Tm together, which is easier to rank.
+Those arms unfreeze the **top two encoder layers** starting from a **randomly
+initialised head**. That is the exact configuration
+[Kumar et al. 2022](https://arxiv.org/abs/2202.10054) identify as pathological: early
+gradients are dominated by head error, so fine-tuning destroys good pretrained features
+before the head is any good. Their remedy is **LP-FT** — fit the head on frozen
+features first, then warm-start a full fine-tune from it.
+
+`solution/solve.sh` happens to do exactly that, and nobody had compared against it.
+
+### Error 2 — the frozen baseline was off-contract
+
+`variance.json`'s frozen arm used `pooling: mean`. But `EsmClassificationHead.forward`
+is `x = features[:, 0, :]` — the CLS token. **Mean-pooling is not expressible in a legal
+submission**, so 0.546 was a ceiling drawn over methods no agent could submit. Exactly
+the bug that made the mol anchors unreachable, in the other task.
+
+The legal CLS frozen head is **0.5332**, and that cross-checks: the real graded frozen
+artifact scored **0.5358**, inside the CLS arm's measured range of 0.5294–0.5406. The
+mean-pooled 0.546 sits outside it.
+
+### Re-measured, both arms, same seeds, same protocol
+
+[`scripts/lpft.json`](sciml-protein-regression/scripts/lpft.json):
+
+| arm | Spearman | n |
+|---|---|---|
+| frozen head, CLS — **base** | 0.5332 ± 0.0044 | 5 |
+| **LP-FT** — reference | **0.5627 ± 0.0061** | 5 |
+| | **band +0.0295, 3.92σ** | |
+| *naive top-2-layer fine-tune* | *0.5169 ± 0.0053* | *4* |
+
+**The task is not inverted. The naive recipe is.** At 3.92σ the band is comparable to
+bbbp's 4.09σ, which ships.
+
+What still needs doing before it could: replace the three tiers with continuous
+recovery, set `base = 0.5332` and `reference = 0.5627`, and add a `train_reference.py`
+so the upper anchor is reproducible from a shipped script rather than chosen. The
+current `t_weak = 0.3887` and `t_strong = 0.45` both sit *below* the frozen ceiling,
+which is why a frozen probe scores 1.0.
+
+### The finding that survives regardless
+
+MMseqs2 clustering at 30% identity cut prefix leakage from 89 sequences to 3 — and the
+frozen probe got **better**, 0.5494 → 0.5784. Assigning whole clusters to test groups
+related proteins with similar Tm together, which is *easier* to rank.
 **Removing near-duplicates and making a split harder are not the same thing.**
-
-The task now has a GPU, which makes it *runnable* — its oracle previously could not
-finish inside its own 4-hour budget. That fixes feasibility, not validity.
 
 ---
 

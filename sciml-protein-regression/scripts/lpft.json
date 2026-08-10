@@ -1,0 +1,110 @@
+{
+  "question": "is the inversion a property of the task, or only of the naive recipe?",
+  "frozen": {
+    "n": 5,
+    "mean": 0.5332,
+    "std": 0.0044,
+    "min": 0.5294,
+    "max": 0.5406
+  },
+  "lpft": {
+    "n": 5,
+    "mean": 0.5627,
+    "std": 0.0061,
+    "min": 0.5563,
+    "max": 0.5726
+  },
+  "band": 0.0295,
+  "band_sigma": 3.92,
+  "noise_as_pct_of_band": {
+    "frozen": 14.9,
+    "lpft": 20.7
+  },
+  "for_contrast": {
+    "naive_finetune_top2_layers": {
+      "mean": 0.5169,
+      "std": 0.0053,
+      "n": 4,
+      "source": "modal_variance.py"
+    },
+    "frozen_head_prior": {
+      "mean": 0.546,
+      "std": 0.0054,
+      "n": 8,
+      "source": "modal_variance.py"
+    },
+    "gpu_oracle_single_run": 0.5733,
+    "graded_frozen_artifact": 0.5358,
+    "current_tiers": {
+      "t_weak": 0.3887,
+      "t_strong": 0.45
+    }
+  },
+  "raw": [
+    {
+      "arm": "frozen",
+      "seed": 0,
+      "private": 0.5294062242454074,
+      "val": 0.547707782700079
+    },
+    {
+      "arm": "frozen",
+      "seed": 1,
+      "private": 0.540614370507901,
+      "val": 0.5507237825031341
+    },
+    {
+      "arm": "frozen",
+      "seed": 2,
+      "private": 0.533279083417878,
+      "val": 0.5470392835956994
+    },
+    {
+      "arm": "frozen",
+      "seed": 3,
+      "private": 0.5303746160667817,
+      "val": 0.5451561264848112
+    },
+    {
+      "arm": "frozen",
+      "seed": 4,
+      "private": 0.5321499645489102,
+      "val": 0.5469019207452044
+    },
+    {
+      "arm": "lpft",
+      "seed": 0,
+      "private": 0.5625243031844619,
+      "val": 0.586124260216155,
+      "head_val": 0.547707782700079
+    },
+    {
+      "arm": "lpft",
+      "seed": 1,
+      "private": 0.5623315759874199,
+      "val": 0.5916885135010468,
+      "head_val": 0.5507221936495929
+    },
+    {
+      "arm": "lpft",
+      "seed": 2,
+      "private": 0.5726131630627866,
+      "val": 0.6032927881995942,
+      "head_val": 0.5470405602079863
+    },
+    {
+      "arm": "lpft",
+      "seed": 3,
+      "private": 0.5563433401017189,
+      "val": 0.5896225236650403,
+      "head_val": 0.5451561264848112
+    },
+    {
+      "arm": "lpft",
+      "seed": 4,
+      "private": 0.5596749332880605,
+      "val": 0.5843197163862677,
+      "head_val": 0.5469019207452044
+    }
+  ]
+}
