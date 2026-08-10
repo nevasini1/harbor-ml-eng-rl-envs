@@ -1,0 +1,11 @@
+{
+    "task": {
+        "path": "sciml-protein-regression"
+    },
+    "trial_name": "sciml-protein-regression__egAHWfg",
+    "trials_dir": "jobs/protein-oracle-gpu",
+    "environment": {
+        "type": "modal"
+    },
+    "job_id": "108884ac-ec99-448e-923f-87edadd99d04"
+}

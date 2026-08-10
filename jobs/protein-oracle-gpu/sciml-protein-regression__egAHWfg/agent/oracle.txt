@@ -1,0 +1,83 @@
+/usr/local/lib/python3.12/site-packages/transformers/utils/hub.py:106: FutureWarning: Using `TRANSFORMERS_CACHE` is deprecated and will be removed in v5 of Transformers. Use `HF_HOME` instead.
+  warnings.warn(
+device=cuda batch=8 accum=1
+oracle train=17922 val=1991 mean=51.302 std=10.786
+extracting frozen CLS features...
+Some weights of EsmModel were not initialized from the model checkpoint at /models/esm2_t6_8M_UR50D and are newly initialized: ['esm.pooler.dense.bias', 'esm.pooler.dense.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+extract step=200/2241
+extract step=400/2241
+extract step=600/2241
+extract step=800/2241
+extract step=1000/2241
+extract step=1200/2241
+extract step=1400/2241
+extract step=1600/2241
+extract step=1800/2241
+extract step=2000/2241
+extract step=2200/2241
+features ready tr=(17922, 320) va=(1991, 320)
+head epoch=0 rho=0.4045 best=0.4045
+head epoch=10 rho=0.4585 best=0.4613
+head epoch=20 rho=0.4982 best=0.4982
+head epoch=30 rho=0.5160 best=0.5160
+head epoch=40 rho=0.5216 best=0.5280
+head epoch=50 rho=0.5207 best=0.5300
+head epoch=60 rho=0.5354 best=0.5369
+head epoch=70 rho=0.5371 best=0.5395
+head epoch=80 rho=0.5237 best=0.5401
+head epoch=90 rho=0.5432 best=0.5432
+head best rho=0.5432 epoch=90
+Some weights of EsmForSequenceClassification were not initialized from the model checkpoint at /models/esm2_t6_8M_UR50D and are newly initialized: ['classifier.dense.bias', 'classifier.dense.weight', 'classifier.out_proj.bias', 'classifier.out_proj.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+trainable tensors=106
+initial val spearman=0.5432
+epoch 1 step 200/2241 loss=0.2642 elapsed=20s
+epoch 1 step 400/2241 loss=0.2868 elapsed=40s
+epoch 1 step 600/2241 loss=0.3094 elapsed=59s
+epoch 1 step 800/2241 loss=0.3173 elapsed=78s
+epoch 1 step 1000/2241 loss=0.3168 elapsed=97s
+epoch 1 step 1200/2241 loss=0.3174 elapsed=116s
+epoch 1 step 1400/2241 loss=0.3169 elapsed=136s
+epoch 1 step 1600/2241 loss=0.3158 elapsed=155s
+epoch 1 step 1800/2241 loss=0.3160 elapsed=174s
+epoch 1 step 2000/2241 loss=0.3149 elapsed=193s
+epoch 1 step 2200/2241 loss=0.3139 elapsed=210s
+epoch 1/4 val_spearman=0.5456 elapsed=225s
+epoch 2 step 200/2241 loss=0.2779 elapsed=244s
+epoch 2 step 400/2241 loss=0.2684 elapsed=262s
+epoch 2 step 600/2241 loss=0.2693 elapsed=281s
+epoch 2 step 800/2241 loss=0.2701 elapsed=300s
+epoch 2 step 1000/2241 loss=0.2683 elapsed=319s
+epoch 2 step 1200/2241 loss=0.2714 elapsed=339s
+epoch 2 step 1400/2241 loss=0.2721 elapsed=358s
+epoch 2 step 1600/2241 loss=0.2729 elapsed=377s
+epoch 2 step 1800/2241 loss=0.2725 elapsed=398s
+epoch 2 step 2000/2241 loss=0.2713 elapsed=417s
+epoch 2 step 2200/2241 loss=0.2708 elapsed=435s
+epoch 2/4 val_spearman=0.5668 elapsed=450s
+epoch 3 step 200/2241 loss=0.2153 elapsed=470s
+epoch 3 step 400/2241 loss=0.2186 elapsed=488s
+epoch 3 step 600/2241 loss=0.2184 elapsed=507s
+epoch 3 step 800/2241 loss=0.2149 elapsed=526s
+epoch 3 step 1000/2241 loss=0.2159 elapsed=545s
+epoch 3 step 1200/2241 loss=0.2125 elapsed=564s
+epoch 3 step 1400/2241 loss=0.2121 elapsed=583s
+epoch 3 step 1600/2241 loss=0.2135 elapsed=601s
+epoch 3 step 1800/2241 loss=0.2124 elapsed=621s
+epoch 3 step 2000/2241 loss=0.2098 elapsed=640s
+epoch 3 step 2200/2241 loss=0.2093 elapsed=659s
+epoch 3/4 val_spearman=0.5817 elapsed=673s
+epoch 4 step 200/2241 loss=0.1518 elapsed=693s
+epoch 4 step 400/2241 loss=0.1545 elapsed=711s
+epoch 4 step 600/2241 loss=0.1454 elapsed=732s
+epoch 4 step 800/2241 loss=0.1437 elapsed=751s
+epoch 4 step 1000/2241 loss=0.1446 elapsed=770s
+epoch 4 step 1200/2241 loss=0.1456 elapsed=789s
+epoch 4 step 1400/2241 loss=0.1447 elapsed=808s
+epoch 4 step 1600/2241 loss=0.1454 elapsed=826s
+epoch 4 step 1800/2241 loss=0.1461 elapsed=845s
+epoch 4 step 2000/2241 loss=0.1451 elapsed=864s
+epoch 4 step 2200/2241 loss=0.1447 elapsed=884s
+epoch 4/4 val_spearman=0.5731 elapsed=899s
+wrote /app/final_model best_val_spearman=0.5817

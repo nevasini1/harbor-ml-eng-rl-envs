@@ -1,0 +1,12 @@
+{
+    "job_name": "protein-oracle-gpu",
+    "n_concurrent_trials": 1,
+    "environment": {
+        "type": "modal"
+    },
+    "tasks": [
+        {
+            "path": "sciml-protein-regression"
+        }
+    ]
+}

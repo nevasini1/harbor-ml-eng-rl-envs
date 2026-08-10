@@ -14,8 +14,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       build-essential curl git ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
+# CUDA build, not the CPU wheel. task.toml requests gpus = 1 and Modal does attach
+# one (verified: an L40S on the trial container), but the CPU-only wheel has no
+# CUDA support compiled in, so torch.cuda.is_available() returns False regardless
+# of the hardware. The first GPU trial ran the whole fine-tune on CPU with the
+# GPU sitting at 0% utilisation and 5 MiB used -- visible in the agent log as
+# 8,961 steps/epoch, i.e. batch 2 over 17,922 sequences, which is solve.sh's CPU
+# branch. Allocating a GPU and writing device code is not enough; the wheel has
+# to be able to see it.
 RUN pip install --no-cache-dir \
-      torch==2.6.0 --index-url https://download.pytorch.org/whl/cpu \
+      torch==2.6.0 --index-url https://download.pytorch.org/whl/cu124 \
  && pip install --no-cache-dir \
       transformers==4.49.0 \
       safetensors==0.4.5 \

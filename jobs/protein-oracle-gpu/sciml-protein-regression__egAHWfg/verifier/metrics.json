@@ -1,0 +1,8 @@
+{
+  "spearman": 0.5733090601708762,
+  "t_weak": 0.3887,
+  "t_strong": 0.45,
+  "n_test": 3427,
+  "cosine_min": 0.9837810800040203,
+  "n_tensors_compared": 108
+}
