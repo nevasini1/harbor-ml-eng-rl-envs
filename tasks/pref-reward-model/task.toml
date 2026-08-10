@@ -8,10 +8,10 @@ artifacts = ["/app/final_model", "/logs/agent/train_log.txt"]
 name = "mleval/pref-reward-model"
 version = "1.0.0"
 description = """Post-train a small pretrained encoder (distilroberta-base, 82M) into a \
-reward model over human preference pairs, under a CPU-only 4-hour budget. Scored by \
+reward model over human preference pairs, under a 1-GPU 4-hour budget. Scored by \
 pairwise accuracy on private held-out prompts the agent never sees."""
 authors = []
-keywords = ["ml-engineering", "post-training", "rlhf", "reward-model", "cpu-only", "hh-rlhf"]
+keywords = ["ml-engineering", "post-training", "rlhf", "reward-model", "gpu", "hh-rlhf"]
 
 [metadata]
 category = "ML"

@@ -23,6 +23,16 @@ row. Most of this repo is the evidence behind the anchors that number is built f
 | reward | continuous recovery between two *measured* anchors | same | same | 3 discrete tiers on *fixed* thresholds |
 | eval sets | tox21, bbbp | arc_easy, sciq, openbookqa | helpful_rs | meltome-mixed |
 | separation | 6.5σ / 4.1σ | 6.0σ / 16.0σ / 5.6σ | 3.1σ — thin, see below | **inverted**: a frozen probe beats a fine-tune |
+| oracle through Harbor | 0.9097 | **1.0** | 0.5828 | 1.0 — but so does a frozen probe |
+
+All four tasks have now been run end to end through Harbor with their own shipped oracle —
+agent container, artifact hand-off, verifier, reward — and the numbers are in
+[What has actually been run](#what-has-actually-been-run). The rewards differ for reasons
+worth understanding rather than fixing: 1.0 on `qa-sft-adapt` means the oracle cleared its
+reference on every eval set; 0.58 on `pref-reward-model` means it landed 1.3σ under a
+reference that is a five-seed *mean*, which a single seed does about half the time; and
+1.0 on the protein task means nothing at all, because a submission that never touches the
+encoder scores 1.0 there too.
 
 The two post-training tasks are new and share the mol task's verifier machinery rather
 than reimplementing it — see [What is shared](#what-is-shared). The protein task is kept
@@ -214,6 +224,19 @@ Both known artifacts, re-scored through the hardened grader on Linux:
 
 Both reproduce their recorded values to the 7th decimal. The second row is the problem,
 not a pass: a submission that never touches the encoder takes the maximum reward.
+
+The oracle has since been run on GPU (`jobs/protein-oracle-gpu/`), which is what the task
+was given a GPU for — its 4-epoch fine-tune could not finish inside its own budget on CPU.
+It scored **Spearman 0.5733, reward 1.0**, at `cosine_min` 0.9838 over 108 tensors.
+
+That is the one number that cuts *against* the shelving argument below: 0.5733 for a
+fine-tune is above the 0.5358 the frozen-probe artifact scored on the same split. It does
+not overturn the verdict, and it should not be read as if it does — the inversion was
+measured over 13 frozen and 7 fine-tune seeds, and this is one seed of a different recipe.
+What it does mean is that the ordering deserves a multi-seed re-measurement on GPU before
+the task is written off for good. It also changes nothing about the *reward*, which is the
+actual reason the task is shelved: three fixed tiers, both thresholds mis-set, and a
+frozen probe still taking the top one.
 
 ### `qa-sft-adapt` — oracle through Harbor, Modal backend
 
@@ -460,10 +483,16 @@ Re-deriving the post-training anchors from scratch is documented in
    intermediate score log; that is not portable here, since it would require exposing the
    held-out set. So these tasks partly measure "did you select on validation" alongside
    "can you post-train a model."
-6. **The shingle fingerprint is subsampled 1-in-4** to keep it under 4 MB inside the
+6. **The protein task's GPU oracle beat its frozen probe** — Spearman 0.5733 against
+   0.5358 on the same split — which is the opposite of the multi-seed result the shelving
+   verdict rests on. One seed of one recipe is not enough to reopen it, but the ordering
+   should be re-measured multi-seed on GPU rather than left as a table from the era when
+   the oracle could not finish its own recipe. The reward shape is a separate and
+   unaffected reason to shelve it.
+7. **The shingle fingerprint is subsampled 1-in-4** to keep it under 4 MB inside the
    verifier image. A 30-token leak is still caught with probability 99.6%; a
    one-sentence leak is not certain to be.
-7. **`MIN_ENCODER_TENSORS = 50` is still hardcoded in the mol grader.** The two new tasks
+8. **`MIN_ENCODER_TENSORS = 50` is still hardcoded in the mol grader.** The two new tasks
    take 90% of the base's own body-tensor count instead, which survives a model swap; the
    mol task was left alone so its recorded reward stays reproducible.
 
