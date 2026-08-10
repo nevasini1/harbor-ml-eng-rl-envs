@@ -1,9 +1,9 @@
 """Oracle solution for mleval/qa-sft-adapt: the recipe that set `reference`.
 
-The same recipe as the `sft_full` arm of `spike/posttrain/sft_ladder.py`, run
+The same recipe as the `sft_full` arm of `research/posttrain/sft_ladder.py`, run
 against the training file the agent gets. Running it on the shipped data
 reproduces the `reference_acc` in tests/grader/private/anchors.json to within
-seed noise; `spike/posttrain/results/qa_anchors.json` records the seeds it was
+seed noise; `research/posttrain/results/qa_anchors.json` records the seeds it was
 measured over.
 
 Supervised fine-tuning, in its plainest form: render each item as

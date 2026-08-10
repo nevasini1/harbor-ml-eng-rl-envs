@@ -12,7 +12,7 @@ row. Most of this repo is the evidence behind the anchors that number is built f
 
 ## The four tasks
 
-| | [`mol-property-adapt`](tasks/mol-property-adapt/) | [`qa-sft-adapt`](tasks/qa-sft-adapt/) | [`pref-reward-model`](tasks/pref-reward-model/) | [`sciml-protein-regression`](sciml-protein-regression/) |
+| | [`mol-property-adapt`](tasks/mol-property-adapt/) | [`qa-sft-adapt`](tasks/qa-sft-adapt/) | [`pref-reward-model`](tasks/pref-reward-model/) | [`sciml-protein-regression`](tasks/sciml-protein-regression/) |
 |---|---|---|---|---|
 | **status** | **active** | **active** | **active** | **shelved** |
 | what it tests | encoder adaptation | supervised fine-tuning | reward modelling (RLHF stage 2) | encoder adaptation |
@@ -127,7 +127,7 @@ a 0.5822 probe), a logistic probe on bbbp (0.8978, beating a 0.8934 head). Takin
 on both would have set bbbp's base 0.0044 low and paid every head-only submission ~31% of
 the reward for free.
 
-![effort ladder](spike/results/anchor_ladder.png)
+![effort ladder](research/results/anchor_ladder.png)
 
 ### `qa-sft-adapt`
 
@@ -297,7 +297,7 @@ setting**, and the only thing that checks you changed all of it is an end-to-end
 
 ### The two post-training tasks — verifier regression suites
 
-Not Harbor runs: these are `spike/posttrain/verify_graders.py`, which builds each real
+Not Harbor runs: these are `research/posttrain/verify_graders.py`, which builds each real
 verifier image and runs it under `--network none` against fixtures it constructs. The
 accept path is asserted first.
 
@@ -406,16 +406,21 @@ failures rhyme.
 
 ## Layout
 
+```
+tasks/        the four Harbor tasks, one directory each   -> tasks/README.md
+common/       verifier core shared by all of them
+research/     how the splits were cut and the anchors measured
+jobs/         Harbor run outputs, kept as the record of what was actually run
+docs/         background reading
+```
+
 | Path | What |
 |---|---|
+| [`tasks/`](tasks/) | the four tasks, with an [index](tasks/README.md) and a README each |
 | [`common/`](common/) | verifier core, contamination matching, regrade driver, sync check |
-| [`tasks/mol-property-adapt/`](tasks/mol-property-adapt/) | molecular property adaptation |
-| [`tasks/qa-sft-adapt/`](tasks/qa-sft-adapt/) | supervised fine-tuning of a 135M causal LM |
-| [`tasks/pref-reward-model/`](tasks/pref-reward-model/) | reward modelling on human preferences |
-| [`sciml-protein-regression/`](sciml-protein-regression/) | shelved protein task; hardened verifier, measurement scripts |
-| [`spike/`](spike/) | mol/protein split construction and anchors, [`SPIKE_RESULTS.md`](spike/SPIKE_RESULTS.md) |
-| [`spike/posttrain/`](spike/posttrain/) | post-training corpora, splits, ladders, [`RESULTS.md`](spike/posttrain/RESULTS.md) |
-| [`jobs/`](jobs/) | Harbor run outputs |
+| [`research/`](research/) | mol/protein split construction and anchors, [`SPIKE_RESULTS.md`](research/SPIKE_RESULTS.md) |
+| [`research/posttrain/`](research/posttrain/) | post-training corpora, splits, ladders, [`RESULTS.md`](research/posttrain/RESULTS.md) |
+| [`jobs/`](jobs/) | Harbor run outputs. Paths inside these records point at the pre-reorganisation layout on purpose: they are evidence of runs that happened, not live configuration |
 
 A Harbor task is two containers. `environment/` becomes the agent's (data, base model,
 network); `tests/` becomes the verifier's (private split, anchors, grader, **no
@@ -429,7 +434,7 @@ The post-training task trees need their fixtures fetched before their verifier i
 build — 850 MB of pinned checkpoints that do not belong in git:
 
 ```bash
-python spike/posttrain/assemble_tasks.py      # anchors, private rows, base + sibling models
+python research/posttrain/assemble_tasks.py      # anchors, private rows, base + sibling models
 python common/sync.py --check                 # shared grader modules have not drifted
 ```
 
@@ -446,8 +451,8 @@ harbor run -c tasks/pref-reward-model/configs/job-modal.json --agent oracle
 ./tasks/<task>/scripts/regrade.sh --all
 
 # verifier regression suites, against the real images
-python spike/posttrain/verify_graders.py                               # post-training tasks
-modal run sciml-protein-regression/scripts/modal_verify_hardening.py   # 16 assertions
+python research/posttrain/verify_graders.py                               # post-training tasks
+modal run tasks/sciml-protein-regression/scripts/modal_verify_hardening.py   # 16 assertions
 ```
 
 Both suites assert the *accept* path first — a grader that rejects honest submissions is
@@ -455,7 +460,7 @@ worse than the loopholes it closes, because a false reject is indistinguishable 
 reward from an agent that did nothing.
 
 Re-deriving the post-training anchors from scratch is documented in
-[`spike/posttrain/RESULTS.md`](spike/posttrain/RESULTS.md).
+[`research/posttrain/RESULTS.md`](research/posttrain/RESULTS.md).
 
 ---
 

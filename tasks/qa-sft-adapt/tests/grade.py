@@ -71,7 +71,7 @@ _MODEL = None
 # ---------------------------------------------------------------- rendering
 
 def render_prompt(question: str) -> str:
-    """The one prompt format. Must match spike/posttrain/sft_ladder.py exactly."""
+    """The one prompt format. Must match research/posttrain/sft_ladder.py exactly."""
     return f"Question: {question.strip()}\nAnswer:"
 
 

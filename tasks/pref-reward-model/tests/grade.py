@@ -80,7 +80,7 @@ _MODEL = None
 
 
 def render(prompt: str, response: str) -> str:
-    """The one input format. Must match spike/posttrain/rm_ladder.py exactly."""
+    """The one input format. Must match research/posttrain/rm_ladder.py exactly."""
     return f"{prompt}\n\nAssistant: {response}"
 
 

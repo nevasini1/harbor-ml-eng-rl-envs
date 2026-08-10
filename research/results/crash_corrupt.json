@@ -1,0 +1,6 @@
+{
+  "reward": 0.0,
+  "status": "error",
+  "reason": "SafetensorError: Error while deserializing header: MetadataIncompleteBuffer",
+  "traceback": "Traceback (most recent call last):\n  File \"/Users/jalajupadhyay/Documents/final/research/grade.py\", line 278, in main\n    report = grade(args)\n             ^^^^^^^^^^^\n  File \"/Users/jalajupadhyay/Documents/final/research/grade.py\", line 245, in grade\n    report |= check_lineage(sub_dir, base_dir)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/jalajupadhyay/Documents/final/research/grade.py\", line 147, in check_lineage\n    with safe_open(str(sub_file), framework=\"np\") as sf, \\\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nsafetensors_rust.SafetensorError: Error while deserializing header: MetadataIncompleteBuffer\n"
+}

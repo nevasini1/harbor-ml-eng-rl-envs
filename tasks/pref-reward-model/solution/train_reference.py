@@ -1,7 +1,7 @@
 """Oracle solution for mleval/pref-reward-model: the recipe that set `reference`.
 
 This is the *same* recipe as the `finetune` arm of
-`spike/posttrain/rm_ladder.py`, run against the same training file the agent
+`research/posttrain/rm_ladder.py`, run against the same training file the agent
 gets. Keeping one recipe in two places is a known hazard -- the mol task shipped
 a reference script that did not reproduce the anchor it claimed, and the README
 still carries that as an open question -- so the invariant here is a measured

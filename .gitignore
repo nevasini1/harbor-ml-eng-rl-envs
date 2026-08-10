@@ -8,24 +8,24 @@ _research/
 **/__pycache__/
 *.pyc
 
-# Regenerable artifacts: spike/data is rebuilt by fetch_flip2.py and moleculenet.py
-# against pinned checksums, spike/cache holds embedding matrices, and spike/fixtures
+# Regenerable artifacts: research/data is rebuilt by fetch_flip2.py and moleculenet.py
+# against pinned checksums, research/cache holds embedding matrices, and research/fixtures
 # holds adversarial model checkpoints built by make_fixtures.py.
-spike/cache/
-spike/fixtures/
+research/cache/
+research/fixtures/
 
 # Exclude the downloaded datasets but keep PINS.json, which is the reproducibility
 # contract. Git cannot re-include a file whose parent directory is excluded, so the
 # path has to be reopened one level at a time.
-spike/data/*
-!spike/data/flip2/
-spike/data/flip2/*
-!spike/data/flip2/PINS.json
+research/data/*
+!research/data/flip2/
+research/data/flip2/*
+!research/data/flip2/PINS.json
 
 # Verifier model fixtures for the post-training tasks. The mol task commits its
 # base_model because ChemBERTa is 13 MB; distilroberta-base and two copies of
 # SmolLM2-135M are 850 MB, which does not belong in git. They are refetched at a
-# pinned revision by `python spike/posttrain/assemble_tasks.py`, which every task
+# pinned revision by `python research/posttrain/assemble_tasks.py`, which every task
 # tree needs before its verifier image can build.
 tasks/pref-reward-model/tests/grader/base_model/
 tasks/qa-sft-adapt/tests/grader/base_model/
@@ -33,19 +33,19 @@ tasks/qa-sft-adapt/tests/grader/siblings/
 
 # Locked post-training splits and corpora. Both are regenerable and neither is
 # the artifact of record: `fetch_data.py` rebuilds the corpora against the sha256
-# pins in spike/posttrain/data/PINS.json, and `make_splits.py` re-cuts the split
+# pins in research/posttrain/data/PINS.json, and `make_splits.py` re-cuts the split
 # deterministically from PRIVATE_SEED. What ships -- the agent's training file and
 # the held-out rows, anchors and fingerprints -- is copied into each task tree by
 # assemble_tasks.py and IS committed there.
-spike/posttrain/data/*.csv.gz
-spike/posttrain/split/
-spike/posttrain/fixtures/
+research/posttrain/data/*.csv.gz
+research/posttrain/split/
+research/posttrain/fixtures/
 
 .DS_Store
 
 # Local calibration caches (do not ship embeddings)
-sciml-protein-regression/tests/private_test/calib_emb.npz
-sciml-protein-regression/tests/calibrate_tiers.log
+tasks/sciml-protein-regression/tests/private_test/calib_emb.npz
+tasks/sciml-protein-regression/tests/calibrate_tiers.log
 
 # Submission weights inside post-training job artifacts. A SmolLM2-135M checkpoint
 # is ~513 MB, over GitHub's 100 MB per-file limit; the mol and protein tasks' 13-30
