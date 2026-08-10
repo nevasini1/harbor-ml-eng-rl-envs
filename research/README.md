@@ -10,6 +10,13 @@ record of the measurements behind it.
 | [`posttrain/RESULTS.md`](posttrain/RESULTS.md) | the two post-training tracks — screening, Gate A, anchor derivation, verifier costs |
 | `posttrain/` | corpora, splits, effort ladders, GPU measurement and the anchor derivation |
 | `results/` | measured anchors and ladders, as JSON, per track |
+| `plot_criterion.py` | the figure below: every eval set against the shipping criterion |
+| `plot_ladder.py` | the original mol/protein effort-ladder figure |
+
+![which eval sets may be used as a reward](results/shipping_criterion.png)
+
+Both plotting scripts read the committed anchor and ladder JSON, so a figure cannot drift
+from the measurement it claims to show.
 
 ## The pipeline
 

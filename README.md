@@ -89,6 +89,15 @@ sigma. `python common/shipping.py` prints the verdict for every task.
 | qa-sft-adapt | `openbookqa` | 5.63σ | 0.18 | ships |
 | pref-reward-model | `helpful_rs` | 3.10σ | 0.32 | **fails: imprecise** |
 
+![which eval sets may be used as a reward](research/results/shipping_criterion.png)
+
+Left panel: the base→reference band *is* the scoring range, so a submission's reward is its
+position along it. Right panel: the same nine eval sets against the bar. The preference
+track's bands are visibly hair-thin next to the SFT track's — and its `helpful_rs` band is
+statistically real (z = 5.5) yet still unusable, which is the distinction the two tests
+exist to draw. Regenerate with `research/.venv/bin/python research/plot_criterion.py`;
+it reads the committed anchor files rather than hardcoded numbers.
+
 The earlier bar was `band_sigma >= 3.0`, picked by going one notch below what the repo had
 already shipped, and a second criterion was **removed after it excluded the eval set I
 wanted to keep**. `pref-reward-model` passed under that and does not pass now. That is the
