@@ -1,0 +1,12 @@
+{
+    "job_name": "qa-sft-oracle-modal",
+    "n_concurrent_trials": 1,
+    "environment": {
+        "type": "modal"
+    },
+    "tasks": [
+        {
+            "path": "tasks/qa-sft-adapt"
+        }
+    ]
+}

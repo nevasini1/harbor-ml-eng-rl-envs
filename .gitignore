@@ -46,3 +46,12 @@ spike/posttrain/fixtures/
 # Local calibration caches (do not ship embeddings)
 sciml-protein-regression/tests/private_test/calib_emb.npz
 sciml-protein-regression/tests/calibrate_tiers.log
+
+# Submission weights inside post-training job artifacts. A SmolLM2-135M checkpoint
+# is ~513 MB, over GitHub's 100 MB per-file limit; the mol and protein tasks' 13-30
+# MB checkpoints are small enough to commit and are. What matters from a run is the
+# reward, the metrics and the agent log, all of which stay tracked.
+jobs/qa-sft-oracle-modal/**/artifacts/**/*.safetensors
+jobs/qa-sft-oracle-modal/**/artifacts/**/*.bin
+jobs/rm-oracle-modal/**/artifacts/**/*.safetensors
+jobs/rm-oracle-modal/**/artifacts/**/*.bin

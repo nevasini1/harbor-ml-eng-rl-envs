@@ -1,0 +1,11 @@
+{
+    "task": {
+        "path": "tasks/qa-sft-adapt"
+    },
+    "trial_name": "qa-sft-adapt__Spvo4Mn",
+    "trials_dir": "jobs/qa-sft-oracle-modal",
+    "environment": {
+        "type": "modal"
+    },
+    "job_id": "36202b89-8964-4869-82cb-519526d53275"
+}

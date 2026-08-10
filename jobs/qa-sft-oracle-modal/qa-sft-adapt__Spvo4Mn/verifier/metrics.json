@@ -1,0 +1,72 @@
+{
+  "eval_sets": {
+    "arc_easy": {
+      "base_acc": 0.603,
+      "reference_acc": 0.6957,
+      "submission_bytes": 542885527,
+      "arch_sha256": "1f694362d4991393b878828aaeff4cc6c87771ee02e5e3c1973dbd22a505cfaf",
+      "public_checkpoint_matches": 0,
+      "min_tensor_cosine": 0.999962,
+      "min_tensor_name": "layers.0.input_layernorm.weight",
+      "tensors_compared": 272,
+      "mean_cosine_to_base": 0.999997,
+      "sibling_cosines": {
+        "SmolLM2-135M-Instruct": 0.996949
+      },
+      "acc": 0.696667,
+      "n_test": 600,
+      "n_choices_mean": 3.998,
+      "artifact_shingles_seen": 194429,
+      "private_shingle_overlap": 0,
+      "recovery": 1.0,
+      "recovery_raw": 1.010431,
+      "status": "ok"
+    },
+    "sciq": {
+      "base_acc": 0.696,
+      "reference_acc": 0.827,
+      "submission_bytes": 542885527,
+      "arch_sha256": "1f694362d4991393b878828aaeff4cc6c87771ee02e5e3c1973dbd22a505cfaf",
+      "public_checkpoint_matches": 0,
+      "min_tensor_cosine": 0.999962,
+      "min_tensor_name": "layers.0.input_layernorm.weight",
+      "tensors_compared": 272,
+      "mean_cosine_to_base": 0.999997,
+      "sibling_cosines": {
+        "SmolLM2-135M-Instruct": 0.996949
+      },
+      "acc": 0.836667,
+      "n_test": 600,
+      "n_choices_mean": 4.0,
+      "artifact_shingles_seen": 194429,
+      "private_shingle_overlap": 0,
+      "recovery": 1.0,
+      "recovery_raw": 1.073794,
+      "status": "ok"
+    },
+    "openbookqa": {
+      "base_acc": 0.315,
+      "reference_acc": 0.3657,
+      "submission_bytes": 542885527,
+      "arch_sha256": "1f694362d4991393b878828aaeff4cc6c87771ee02e5e3c1973dbd22a505cfaf",
+      "public_checkpoint_matches": 0,
+      "min_tensor_cosine": 0.999962,
+      "min_tensor_name": "layers.0.input_layernorm.weight",
+      "tensors_compared": 272,
+      "mean_cosine_to_base": 0.999997,
+      "sibling_cosines": {
+        "SmolLM2-135M-Instruct": 0.996949
+      },
+      "acc": 0.37,
+      "n_test": 600,
+      "n_choices_mean": 4.0,
+      "artifact_shingles_seen": 194429,
+      "private_shingle_overlap": 0,
+      "recovery": 1.0,
+      "recovery_raw": 1.084813,
+      "status": "ok"
+    }
+  },
+  "status": "ok",
+  "reward": 1.0
+}

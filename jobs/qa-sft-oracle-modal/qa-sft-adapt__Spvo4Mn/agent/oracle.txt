@@ -1,0 +1,19 @@
+training items: 3,986
+  step 50/672 loss=4.1321 (65s)
+  step 100/672 loss=3.7984 (126s)
+  step 150/672 loss=3.0328 (190s)
+  step 200/672 loss=3.4568 (258s)
+epoch 1/3 val_acc=0.7186 (319s)
+  step 250/672 loss=2.3997 (354s)
+  step 300/672 loss=2.5015 (419s)
+  step 350/672 loss=3.0756 (490s)
+  step 400/672 loss=2.3624 (557s)
+  step 450/672 loss=2.6214 (617s)
+epoch 2/3 val_acc=0.7412 (642s)
+  step 500/672 loss=1.9478 (703s)
+  step 550/672 loss=1.2772 (767s)
+  step 600/672 loss=1.5658 (830s)
+  step 650/672 loss=2.2253 (889s)
+epoch 3/3 val_acc=0.7362 (945s)
+{"best_epoch": 2, "best_val_acc": 0.7412, "seconds": 945.0, "n_train": 3986}
+saved -> /app/final_model

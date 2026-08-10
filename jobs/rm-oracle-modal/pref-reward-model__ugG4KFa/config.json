@@ -1,0 +1,11 @@
+{
+    "task": {
+        "path": "tasks/pref-reward-model"
+    },
+    "trial_name": "pref-reward-model__ugG4KFa",
+    "trials_dir": "jobs/rm-oracle-modal",
+    "environment": {
+        "type": "modal"
+    },
+    "job_id": "39bdf43d-6db0-4819-a1ea-0cdb6068fe7f"
+}
