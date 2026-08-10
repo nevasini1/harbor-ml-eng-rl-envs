@@ -1,0 +1,48 @@
+tox21: 2000 molecules, 12 tasks
+Some weights of RobertaForSequenceClassification were not initialized from the model checkpoint at /app/base_model and are newly initialized: ['classifier.dense.bias', 'classifier.dense.weight', 'classifier.out_proj.bias', 'classifier.out_proj.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+  epoch 1/20 val_auc=0.6014
+  epoch 2/20 val_auc=0.6684
+  epoch 3/20 val_auc=0.7037
+  epoch 4/20 val_auc=0.7429
+  epoch 5/20 val_auc=0.7497
+  epoch 6/20 val_auc=0.7524
+  epoch 7/20 val_auc=0.7564
+  epoch 8/20 val_auc=0.7554
+  epoch 9/20 val_auc=0.7577
+  epoch 10/20 val_auc=0.7606
+  epoch 11/20 val_auc=0.7609
+  epoch 12/20 val_auc=0.7681
+  epoch 13/20 val_auc=0.7658
+  epoch 14/20 val_auc=0.7667
+  epoch 15/20 val_auc=0.7692
+  epoch 16/20 val_auc=0.7683
+  epoch 17/20 val_auc=0.7685
+  epoch 18/20 val_auc=0.7685
+  epoch 19/20 val_auc=0.7691
+  epoch 20/20 val_auc=0.7690
+  saved /app/final_model/tox21 (best val_auc=0.7692)
+bbbp: 1631 molecules, 1 tasks
+Some weights of RobertaForSequenceClassification were not initialized from the model checkpoint at /app/base_model and are newly initialized: ['classifier.dense.bias', 'classifier.dense.weight', 'classifier.out_proj.bias', 'classifier.out_proj.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+  epoch 1/20 val_auc=0.9034
+  epoch 2/20 val_auc=0.9502
+  epoch 3/20 val_auc=0.9611
+  epoch 4/20 val_auc=0.9693
+  epoch 5/20 val_auc=0.9710
+  epoch 6/20 val_auc=0.9701
+  epoch 7/20 val_auc=0.9675
+  epoch 8/20 val_auc=0.9693
+  epoch 9/20 val_auc=0.9708
+  epoch 10/20 val_auc=0.9692
+  epoch 11/20 val_auc=0.9700
+  epoch 12/20 val_auc=0.9692
+  epoch 13/20 val_auc=0.9680
+  epoch 14/20 val_auc=0.9666
+  epoch 15/20 val_auc=0.9675
+  epoch 16/20 val_auc=0.9680
+  epoch 17/20 val_auc=0.9682
+  epoch 18/20 val_auc=0.9674
+  epoch 19/20 val_auc=0.9664
+  epoch 20/20 val_auc=0.9665
+  saved /app/final_model/bbbp (best val_auc=0.9710)

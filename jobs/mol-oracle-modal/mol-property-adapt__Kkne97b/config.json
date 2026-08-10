@@ -1,0 +1,11 @@
+{
+    "task": {
+        "path": "tasks/mol-property-adapt"
+    },
+    "trial_name": "mol-property-adapt__Kkne97b",
+    "trials_dir": "jobs/mol-oracle-modal",
+    "environment": {
+        "type": "modal"
+    },
+    "job_id": "b7b690e3-7974-4ac0-9bb6-914391dc66f4"
+}

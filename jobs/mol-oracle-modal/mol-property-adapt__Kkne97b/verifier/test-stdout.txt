@@ -1,0 +1,43 @@
+{
+  "eval_sets": {
+    "tox21": {
+      "base_auc": 0.6341,
+      "reference_auc": 0.7019,
+      "submission_bytes": 13759706,
+      "arch_sha256": "4d1045c1456b732ac4dadad9a099c2ebcd7419b05b60a974bee78432208ab667",
+      "public_checkpoint_matches": 0,
+      "min_tensor_cosine": 0.999897,
+      "min_tensor_name": "encoder.layer.1.attention.self.value.weight",
+      "tensors_compared": 53,
+      "auc": 0.68965,
+      "n_test": 1566,
+      "n_tasks_scored": 12,
+      "artifact_molecules_seen": 0,
+      "private_test_overlap": 0,
+      "recovery": 0.819322,
+      "recovery_raw": 0.819322,
+      "status": "ok"
+    },
+    "bbbp": {
+      "base_auc": 0.8978,
+      "reference_auc": 0.9121,
+      "submission_bytes": 13742340,
+      "arch_sha256": "4d1045c1456b732ac4dadad9a099c2ebcd7419b05b60a974bee78432208ab667",
+      "public_checkpoint_matches": 0,
+      "min_tensor_cosine": 0.999935,
+      "min_tensor_name": "encoder.layer.0.output.LayerNorm.bias",
+      "tensors_compared": 53,
+      "auc": 0.915782,
+      "n_test": 407,
+      "n_tasks_scored": 1,
+      "artifact_molecules_seen": 0,
+      "private_test_overlap": 0,
+      "recovery": 1.0,
+      "recovery_raw": 1.257483,
+      "status": "ok"
+    }
+  },
+  "status": "ok",
+  "reward": 0.909661
+}
+{"reward": 0.909661}
