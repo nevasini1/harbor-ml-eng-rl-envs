@@ -42,7 +42,18 @@ FORBIDDEN_WEIGHT_SHA256 = {
 
 
 def write_reward(path: Path, payload: dict) -> None:
-    """Harbor VerifierResult.rewards must be dict[str, float|int] only."""
+    """Split a payload across three channels; reward.json carries `reward` alone.
+
+    Harbor's VerifierResult.rewards is dict[str, float|int], so a string anywhere
+    in reward.json fails validation and loses the whole score.
+
+    `reward` is also the only key that belongs there. Harbor's default dataset
+    metric (harbor.metrics.base.aggregate_reward_dicts) keys off the union of
+    reward names across trials: one extra key anywhere pushes the whole dataset
+    into the per-key branch, which drops the single `mean` headline and averages
+    every diagnostic against a fabricated 0 for tasks that never reported it.
+    Numeric detail goes to metrics.json, non-numeric to reward_meta.json.
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
     numeric = {}
     meta = {}
@@ -56,10 +67,14 @@ def write_reward(path: Path, payload: dict) -> None:
                 numeric[k] = float(v) if not isinstance(v, int) else v
         else:
             meta[k] = v
-    path.write_text(json.dumps(numeric, indent=2) + "\n")
+
+    reward = numeric.pop("reward", 0.0)
+    path.write_text(json.dumps({"reward": reward}, indent=2) + "\n")
+    if numeric:
+        (path.parent / "metrics.json").write_text(json.dumps(numeric, indent=2) + "\n")
     if meta:
         (path.parent / "reward_meta.json").write_text(json.dumps(meta, indent=2) + "\n")
-    (path.parent / "reward.txt").write_text(str(float(numeric.get("reward", 0.0))) + "\n")
+    (path.parent / "reward.txt").write_text(str(float(reward)) + "\n")
 
 
 def fail(out: Path, reason: str, **extra) -> int:
