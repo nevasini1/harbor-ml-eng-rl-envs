@@ -12,7 +12,7 @@ from pathlib import Path
 
 HERE = Path(__file__).parent
 TASK = HERE.parent / "tasks" / "mol-property-adapt"
-EVAL_SETS = ["tox21"]
+EVAL_SETS = ["tox21", "bbbp"]
 
 
 def main() -> None:
@@ -33,25 +33,44 @@ def main() -> None:
 
     # anchors.json drives the reward normalization.
     measured = json.loads((HERE / "results" / "anchors_private.json").read_text())
-    anchors = {
-        name: {
-            "n_tasks": measured[name]["n_tasks"],
-            "base_auc": measured[name]["base_auc"],
-            "reference_auc": measured[name]["reference_auc"],
-            "base_definition": "frozen backbone + logistic probe on mean-pooled embeddings",
-            "reference_definition": "tuned fine-tune (solution/train_reference.py)",
-        }
-        for name in EVAL_SETS
-    }
+    # Carried through, not restated. The definitions were previously hardcoded
+    # here and drifted: they still said "logistic probe on mean-pooled
+    # embeddings" long after both anchors had been re-measured on the CLS head
+    # the verifier actually accepts.
+    carry = ("n_tasks", "base_auc", "reference_auc", "t_implausible",
+             "base_definition", "reference_definition", "band", "band_sigma")
+    anchors = {}
+    for name in EVAL_SETS:
+        m = measured[name]
+        missing = [k for k in ("n_tasks", "base_auc", "reference_auc",
+                               "t_implausible") if k not in m]
+        if missing:
+            raise SystemExit(
+                f"REFUSING: anchors_private.json[{name}] is missing {missing}. "
+                "grade.py fails closed on these, so a partial anchor file would "
+                "produce a verifier that cannot run.")
+        anchors[name] = {k: m[k] for k in carry if k in m}
     (priv / "anchors.json").write_text(json.dumps(anchors, indent=2))
 
     shutil.copy2(HERE / "results" / "public_hashes.json", grader / "public_hashes.json")
 
+    # Fail loudly. This used to be `if base_src.is_dir(): copy`, and the fixture
+    # has never existed, so every assembly silently produced a grader with no
+    # /grader/base_model. tests/Dockerfile's `COPY grader/ /grader/` then failed
+    # to build; had it built, read_config would raise on the missing base, every
+    # eval set would floor, and the reward would be 0.0 for every submission --
+    # including the oracle, which is meant to score 1.0.
     base_src = HERE / "fixtures" / "base_model_chemberta"
-    if base_src.is_dir():
-        dest = grader / "base_model"
-        shutil.rmtree(dest, ignore_errors=True)
-        shutil.copytree(base_src, dest)
+    if not (base_src / "config.json").is_file():
+        raise SystemExit(
+            f"REFUSING: no ChemBERTa base fixture at {base_src}. "
+            "Run `python spike/make_chem_fixture.py` first."
+        )
+    dest = grader / "base_model"
+    shutil.rmtree(dest, ignore_errors=True)
+    shutil.copytree(base_src, dest)
+    if not any(dest.glob("*.safetensors")) and not (dest / "pytorch_model.bin").is_file():
+        raise SystemExit(f"REFUSING: base fixture at {dest} has no weights")
 
     leaks = [p for p in agent_data.rglob("*") if "test" in p.name.lower()]
     if leaks:

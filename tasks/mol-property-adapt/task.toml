@@ -9,7 +9,7 @@ name = "mleval/mol-property-adapt"
 version = "1.0.0"
 description = """Adapt a pretrained SMILES language model (ChemBERTa, 3.4M params) to two \
 molecular property prediction tasks under a CPU-only 4-hour budget. Scored by mean \
-ROC-AUC on private Bemis-Murcko scaffold splits the agent never sees."""
+ROC-AUC on private chemical-region holdouts the agent never sees."""
 authors = []
 keywords = ["ml-engineering", "cheminformatics", "cpu-only", "fine-tuning", "moleculenet"]
 

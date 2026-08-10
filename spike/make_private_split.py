@@ -151,6 +151,10 @@ def main() -> None:
     ap.add_argument("--seed", type=int, default=None,
                     help="private seed; defaults to the value in PRIVATE_SEED")
     ap.add_argument("--test-frac", type=float, default=0.2)
+    ap.add_argument(
+        "--datasets", nargs="+", default=EVAL_SETS, choices=EVAL_SETS,
+        help="regenerate only these eval sets; others are left untouched",
+    )
     args = ap.parse_args()
 
     seed_file = HERE / "PRIVATE_SEED"
@@ -163,15 +167,27 @@ def main() -> None:
         raise SystemExit("no --seed given and no PRIVATE_SEED file present")
 
     OUT.mkdir(exist_ok=True)
-    manifest = {"test_frac": args.test_frac, "datasets": {}}
-    all_keys = {}
-    for name in EVAL_SETS:
+    # Merge into the existing records rather than rewriting them. main() used to
+    # rebuild manifest.json and test_inchikeys.json from whichever sets it just
+    # built, so regenerating one eval set silently deleted the other's entries --
+    # including the InChIKeys the contamination check is supposed to read.
+    man_path, keys_path = OUT / "private" / "manifest.json", OUT / "private" / "test_inchikeys.json"
+    manifest = json.loads(man_path.read_text()) if man_path.exists() else {"datasets": {}}
+    all_keys = json.loads(keys_path.read_text()) if keys_path.exists() else {}
+    manifest["test_frac"] = args.test_frac
+    manifest.setdefault("datasets", {})
+
+    for name in args.datasets:
         info, keys = build(name, seed, args.test_frac)
         manifest["datasets"][name] = info
         all_keys[name] = sorted(k for k in keys if k)
 
-    (OUT / "private" / "manifest.json").write_text(json.dumps(manifest, indent=2))
-    (OUT / "private" / "test_inchikeys.json").write_text(json.dumps(all_keys, indent=2))
+    untouched = [n for n in manifest["datasets"] if n not in args.datasets]
+    if untouched:
+        print(f"left untouched: {untouched}")
+
+    man_path.write_text(json.dumps(manifest, indent=2))
+    keys_path.write_text(json.dumps(all_keys, indent=2))
     print(f"\nwrote {OUT}/agent and {OUT}/private")
     print("NOTE: split/private and PRIVATE_SEED must never enter the agent container.")
 

@@ -1,0 +1,330 @@
+{
+  "DeepChem/ChemBERTa-77M-MLM": {
+    "sha": "ed8a5374f2024ec8da53760af91a33fb8f6a15ff",
+    "files": {
+      ".gitattributes": {
+        "size": 1175
+      },
+      "added_tokens.json": {
+        "size": 25
+      },
+      "config.json": {
+        "size": 631
+      },
+      "merges.txt": {
+        "size": 52
+      },
+      "pytorch_model.bin": {
+        "size": 13734116,
+        "sha256": "95571af26b61ba8d56b9d61ff108b5c9afe96fd69ea3cbd1901d9421e3d2dd6d"
+      },
+      "special_tokens_map.json": {
+        "size": 420
+      },
+      "tokenizer.json": {
+        "size": 8262
+      },
+      "tokenizer_config.json": {
+        "size": 1271
+      },
+      "training_args.bin": {
+        "size": 2274,
+        "sha256": "c35bd60b030915e7dbf3ee5ce1474929ca5d971d823c17dcc84abe318860fc17"
+      },
+      "vocab.json": {
+        "size": 6963
+      }
+    }
+  },
+  "DeepChem/ChemBERTa-77M-MTR": {
+    "sha": "66b895cab8adebea0cb59a8effa66b2020f204ca",
+    "files": {
+      ".gitattributes": {
+        "size": 1175
+      },
+      "added_tokens.json": {
+        "size": 25
+      },
+      "config.json": {
+        "size": 17669
+      },
+      "merges.txt": {
+        "size": 52
+      },
+      "pytorch_model.bin": {
+        "size": 14036589,
+        "sha256": "7882205587d3985c07e425632d0e57ba0fc2fc778e3b47aab02aef9b7961407f"
+      },
+      "special_tokens_map.json": {
+        "size": 420
+      },
+      "tokenizer.json": {
+        "size": 8262
+      },
+      "tokenizer_config.json": {
+        "size": 1271
+      },
+      "training_args.bin": {
+        "size": 2276,
+        "sha256": "2ac3a1574692f8e05c6159c6eb1bcf352d9cfbec240999640180ff4bc179a375"
+      },
+      "vocab.json": {
+        "size": 6963
+      }
+    }
+  },
+  "DeepChem/ChemBERTa-10M-MLM": {
+    "sha": "a5cfe173103cff3149e7322130342a4880010cba",
+    "files": {
+      ".gitattributes": {
+        "size": 1175
+      },
+      "added_tokens.json": {
+        "size": 25
+      },
+      "config.json": {
+        "size": 631
+      },
+      "merges.txt": {
+        "size": 52
+      },
+      "pytorch_model.bin": {
+        "size": 13734116,
+        "sha256": "16bf91a1333b6b76e7e679fdb8732f37ca748f4deb5cae09490984f9e4eaa5b7"
+      },
+      "special_tokens_map.json": {
+        "size": 420
+      },
+      "tokenizer.json": {
+        "size": 8262
+      },
+      "tokenizer_config.json": {
+        "size": 1271
+      },
+      "training_args.bin": {
+        "size": 2274,
+        "sha256": "19c3d24858b7ba0fd278a938504db27bdded20b543ea3dbed421096069465486"
+      },
+      "vocab.json": {
+        "size": 6963
+      }
+    }
+  },
+  "DeepChem/ChemBERTa-10M-MTR": {
+    "sha": "b65d0a6af3156071d9519e867d695aa265bb393f",
+    "files": {
+      ".gitattributes": {
+        "size": 1175
+      },
+      "README.md": {
+        "size": 3581
+      },
+      "added_tokens.json": {
+        "size": 25
+      },
+      "config.json": {
+        "size": 17669
+      },
+      "merges.txt": {
+        "size": 52
+      },
+      "pytorch_model.bin": {
+        "size": 14036589,
+        "sha256": "f4363d33047eef060388f6b2b1a95ac057bc58c396404c503c2b4fa3eda44d83"
+      },
+      "special_tokens_map.json": {
+        "size": 420
+      },
+      "tokenizer.json": {
+        "size": 8262
+      },
+      "tokenizer_config.json": {
+        "size": 1271
+      },
+      "training_args.bin": {
+        "size": 2275,
+        "sha256": "b8c10a272d20d770ee5aec47c9f7a7e1dd0bee8987674a1b5184d9486c1abcb5"
+      },
+      "vocab.json": {
+        "size": 6963
+      }
+    }
+  },
+  "DeepChem/ChemBERTa-5M-MLM": {
+    "sha": "695672a601a8077ace5d0a6fc2529e93cc9cfa9c",
+    "files": {
+      ".gitattributes": {
+        "size": 1175
+      },
+      "added_tokens.json": {
+        "size": 25
+      },
+      "config.json": {
+        "size": 631
+      },
+      "merges.txt": {
+        "size": 52
+      },
+      "pytorch_model.bin": {
+        "size": 13734116,
+        "sha256": "2eb1f1c94c3a27d842746ec4e82c9a9e8ea506d7f53fa4ff7ced7ebae5d02474"
+      },
+      "special_tokens_map.json": {
+        "size": 420
+      },
+      "tokenizer.json": {
+        "size": 8262
+      },
+      "tokenizer_config.json": {
+        "size": 1271
+      },
+      "training_args.bin": {
+        "size": 2274,
+        "sha256": "fb3cd4b5c339b2edf74ad481afd3998060d65255a5db7e15b762927767db280e"
+      },
+      "vocab.json": {
+        "size": 6963
+      }
+    }
+  },
+  "DeepChem/ChemBERTa-5M-MTR": {
+    "sha": "a642f2611383af9c37550b805ca0ecc279079914",
+    "files": {
+      ".gitattributes": {
+        "size": 1175
+      },
+      "added_tokens.json": {
+        "size": 25
+      },
+      "config.json": {
+        "size": 17669
+      },
+      "merges.txt": {
+        "size": 52
+      },
+      "pytorch_model.bin": {
+        "size": 14036589,
+        "sha256": "29b1340b985ae21cb5d631d18df105f39253f8c822230bae9dfd0082d18dd8d8"
+      },
+      "special_tokens_map.json": {
+        "size": 420
+      },
+      "tokenizer.json": {
+        "size": 8262
+      },
+      "tokenizer_config.json": {
+        "size": 1271
+      },
+      "training_args.bin": {
+        "size": 2274,
+        "sha256": "d7a61abea1394a8414686e8c22b7c266c83b55f23cc7fd0bba9d6bf71e781547"
+      },
+      "vocab.json": {
+        "size": 6963
+      }
+    }
+  },
+  "DeepChem/ChemBERTa-100M-MLM": {
+    "sha": "f5c45f44d3061f0346888f5c09db17ec1146d29d",
+    "files": {
+      ".gitattributes": {
+        "size": 1519
+      },
+      "README.md": {
+        "size": 502
+      },
+      "config.json": {
+        "size": 636
+      },
+      "merges.txt": {
+        "size": 101307
+      },
+      "model.safetensors": {
+        "size": 368569864,
+        "sha256": "cb04edf30124fbd44817ba7715b174aa80b1981b423f721bc8a6007a0c798a99"
+      },
+      "special_tokens_map.json": {
+        "size": 957
+      },
+      "tokenizer.json": {
+        "size": 384023
+      },
+      "tokenizer_config.json": {
+        "size": 1269
+      },
+      "vocab.json": {
+        "size": 148693
+      }
+    }
+  },
+  "seyonec/ChemBERTa-zinc-base-v1": {
+    "sha": "761d6a18cf99db371e0b43baf3e2d21b3e865a20",
+    "files": {
+      ".gitattributes": {
+        "size": 391
+      },
+      "README.md": {
+        "size": 2132
+      },
+      "config.json": {
+        "size": 501
+      },
+      "flax_model.msgpack": {
+        "size": 176428793,
+        "sha256": "a1dbf11b565a6bf4c3c1135ff64959041eec43f65e749dd6be8723243a793482"
+      },
+      "merges.txt": {
+        "size": 3213
+      },
+      "pytorch_model.bin": {
+        "size": 178812144,
+        "sha256": "bf8a23d93cca196c3712c94ec379494a74be64c83d86a63b08f03e26db547267"
+      },
+      "special_tokens_map.json": {
+        "size": 150
+      },
+      "tokenizer_config.json": {
+        "size": 166
+      },
+      "vocab.json": {
+        "size": 9429
+      }
+    }
+  },
+  "ibm-research/MoLFormer-XL-both-10pct": {
+    "sha": "361063d0ad524ef77cf39b08469f6be770dc550f",
+    "files": {
+      ".gitattributes": {
+        "size": 1519
+      },
+      "README.md": {
+        "size": 6279
+      },
+      "config.json": {
+        "size": 1015
+      },
+      "configuration_molformer.py": {
+        "size": 7101
+      },
+      "convert_molformer_original_checkpoint_to_pytorch.py": {
+        "size": 3545
+      },
+      "model.safetensors": {
+        "size": 187248784,
+        "sha256": "0795977fe7192c4acdaf052f0e8464af57bc4bb59211271c5e61aaba2637b9c6"
+      },
+      "modeling_molformer.py": {
+        "size": 36884
+      },
+      "pipeline.jpeg": {
+        "size": 241085
+      },
+      "tokenizer.json": {
+        "size": 54010
+      },
+      "tokenizer_config.json": {
+        "size": 1132
+      }
+    }
+  }
+}

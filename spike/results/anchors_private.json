@@ -1,12 +1,105 @@
 {
   "tox21": {
-    "n_train": 6265,
+    "n_train": 2000,
     "n_test": 1566,
     "n_tasks": 12,
-    "base_auc": 0.6783,
-    "reference_auc": 0.701,
-    "gap": 0.0227,
-    "head_only_auc": 0.6595,
-    "gap_vs_head_only": 0.0415
-  }
+    "base_auc": 0.6341,
+    "reference_auc": 0.7019,
+    "band": 0.0678,
+    "band_sigma": 6.48,
+    "base_definition": "encoder frozen, RobertaClassificationHead trained on the CLS embedding; 5-seed mean",
+    "reference_definition": "full fine-tune through the CLS head, body lr 3e-5 + OneCycle, 20 epochs, best-val epoch; 5-seed mean",
+    "contract": "RobertaForSequenceClassification + .logits (CLS head). Every arm below is a legal submission; mean-pooled arms are not and were discarded.",
+    "measured_arms_n5_legal": {
+      "frozen_logreg_cls": {
+        "mean": 0.5822,
+        "std": 0.0
+      },
+      "frozen_head_cls": {
+        "mean": 0.6341,
+        "std": 0.0089,
+        "min": 0.6244,
+        "max": 0.6436
+      },
+      "finetune_cls": {
+        "mean": 0.7019,
+        "std": 0.0055,
+        "min": 0.6967,
+        "max": 0.7111
+      }
+    },
+    "noise_as_pct_of_band": {
+      "frozen_head": 13.1,
+      "finetune": 8.1
+    },
+    "superseded_off_contract": {
+      "base_auc": 0.643,
+      "reference_auc": 0.7324,
+      "why": "mean-pooling is not expressible in RobertaForSequenceClassification, so neither anchor was reachable by a legal submission"
+    },
+    "superseded_single_seed": {
+      "base_auc": 0.6027,
+      "head_only_auc": 0.6287,
+      "reference_auc": 0.6907,
+      "gap": 0.088,
+      "why": "single-run, no error bars; the 0.042 shortfall in reference was ~0.010 seed noise and ~0.032 an off-contract recipe comparison"
+    },
+    "open_issues": [
+      "frozen_head noise is 13.1% of band; separation is 6.48 sigma, which is the criterion that governs"
+    ],
+    "t_implausible": 0.85
+  },
+  "bbbp": {
+    "n_train": 1631,
+    "n_test": 407,
+    "n_tasks": 1,
+    "base_auc": 0.8978,
+    "reference_auc": 0.9121,
+    "band": 0.0143,
+    "band_sigma": 4.09,
+    "base_definition": "ceiling of the frozen-encoder methods: logistic probe on the CLS embedding, 0.8978 (deterministic), which beats the trained head at 0.8934 +/- 0.0028",
+    "reference_definition": "full fine-tune through the CLS head, body lr 3e-5 + OneCycle, 20 epochs, best-val epoch; 5-seed mean",
+    "split": "Tanimoto anchor-region holdout; anchor selected on band/pooled-noise among candidates with >= 100 minority-class test molecules, all survivors fine-tuned",
+    "measured_arms_n5_legal": {
+      "frozen_head_cls": {
+        "mean": 0.8934,
+        "std": 0.0028
+      },
+      "finetune_cls": {
+        "mean": 0.9121,
+        "std": 0.0021
+      },
+      "frozen_logreg_cls": {
+        "mean": 0.8978,
+        "std": 0.0
+      }
+    },
+    "noise_as_pct_of_band": {
+      "frozen_head": 19.6,
+      "finetune": 14.7
+    },
+    "runner_up_measured": {
+      "anchor": 1379,
+      "band": 0.0364,
+      "band_sigma": 3.87,
+      "why_not": "nearly double the band but 22.3% agent-seed noise per reward range vs 11.2%; the 3-seed screen ranked it 6.89 sigma and it measured 3.87, which is why runners-up are re-measured before a split is written"
+    },
+    "superseded_split": {
+      "design": "rare-scaffold tail, tail_frac 0.35 (rejected in region_split.py)",
+      "frozen_logreg": 0.9671,
+      "frozen_head": 0.9668,
+      "finetune": 0.9677,
+      "band": 0.0006,
+      "band_sigma": 0.34
+    },
+    "base_note": "base is the max over frozen-encoder methods, not the trained head alone. On tox21 the trained head wins (0.6341 vs 0.5822) so the two agree; on bbbp the logistic probe wins, and taking the head would have set base 0.0044 low and paid every head-only submission ~31% of the reward for free.",
+    "superseded_base": {
+      "base_auc": 0.8934,
+      "band": 0.0187,
+      "band_sigma": 5.34,
+      "why": "used the trained head alone; the logistic probe scores higher on this split"
+    },
+    "t_implausible": 0.97
+  },
+  "_note": "band_sigma is the criterion. Per-arm 'noise as % of band' is not independent of it -- sigma = band / pooled noise -- so requiring both sigma >= 3 and per-arm <= 10% implicitly demands sigma >= 7, which tox21 itself does not meet at 6.48."
 }

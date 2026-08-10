@@ -4,6 +4,15 @@ Recipe: discriminative learning rates (higher for the fresh head than the
 pretrained encoder), one-cycle warmup and linear decay, masked BCE so missing
 labels are excluded from the loss rather than treated as negatives, and epoch
 selection on a validation slice held out of the agent's own training data.
+
+The hyperparameters here must stay identical to the `legal_finetune` arm of
+scripts/modal_legal_anchors.py, because reference_auc is *defined* as what this
+script produces (0.7019, 5-seed mean, std 0.0055). If the two drift apart the
+anchor stops being reproducible from its own definition.
+
+Body LR is 3e-5 rather than 5e-5 and the validation slice is 20% rather than 10%,
+matching that arm. reference_ablation.json measured 3e-5 at 0.7019 against 5e-5 at
+0.7006 -- inside noise, so this is an alignment change, not a tuning claim.
 """
 
 import os
@@ -18,7 +27,7 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification
 BASE = os.environ.get("BASE_MODEL_DIR", "/app/base_model")
 DATA = Path(os.environ.get("DATA_DIR", "/app/data"))
 OUT = Path(os.environ.get("OUTPUT_DIR", "/app/final_model"))
-EVAL_SETS = ["tox21"]
+EVAL_SETS = ["tox21", "bbbp"]
 EPOCHS = int(os.environ.get("EPOCHS", "20"))
 SEED = 0
 
@@ -57,7 +66,7 @@ def train(name: str) -> None:
 
     rng = np.random.default_rng(SEED)
     order = rng.permutation(len(smiles))
-    n_val = int(0.1 * len(order))
+    n_val = int(0.2 * len(order))
     val_idx, fit_idx = order[:n_val], order[n_val:]
 
     tok = AutoTokenizer.from_pretrained(BASE)
@@ -71,12 +80,12 @@ def train(name: str) -> None:
 
     head = [p for n, p in model.named_parameters() if n.startswith("classifier")]
     body = [p for n, p in model.named_parameters() if not n.startswith("classifier")]
-    opt = torch.optim.AdamW([{"params": body, "lr": 5e-5},
+    opt = torch.optim.AdamW([{"params": body, "lr": 3e-5},
                              {"params": head, "lr": 1e-3}], weight_decay=0.01)
     bs = 32
     steps = EPOCHS * max(1, len(fit_smiles) // bs)
     sched = torch.optim.lr_scheduler.OneCycleLR(
-        opt, max_lr=[5e-5, 1e-3], total_steps=steps, pct_start=0.1,
+        opt, max_lr=[3e-5, 1e-3], total_steps=steps, pct_start=0.1,
         anneal_strategy="linear")
 
     best_val, best_state, step = -1.0, None, 0

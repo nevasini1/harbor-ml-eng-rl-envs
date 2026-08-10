@@ -23,8 +23,8 @@ automatically (see Rules).
 
 | eval set | task | training molecules | outputs |
 |---|---|---|---|
-| `bbbp` | blood-brain barrier penetration | 1,594 | 1 binary label |
-| `tox21` | 12 toxicology assays | 6,184 | 12 binary labels, some missing |
+| `bbbp` | blood-brain barrier penetration | 1,631 | 1 binary label |
+| `tox21` | 12 toxicology assays | 2,000 | 12 binary labels, some missing |
 
 Training data is at `/app/data/bbbp_train.csv` and `/app/data/tox21_train.csv`. Each has
 a `smiles` column plus one column per label. **Missing labels are empty cells** and must
@@ -52,9 +52,11 @@ directory. No code you write is executed by the verifier.
 
 ## How you are scored
 
-Each eval set is scored by **mean ROC-AUC across its tasks** on a held-out set of
-molecules whose Bemis-Murcko scaffolds do not appear in your training data. Tasks with
-only one class present in the held-out labels are skipped.
+Each eval set is scored by **mean ROC-AUC across its tasks** on a held-out region of
+chemical space: a contiguous neighbourhood of structurally similar molecules removed
+whole from your training data. Expect a real distribution shift — the held-out molecules
+are not a random sample of what you train on. Tasks with only one class present in the
+held-out labels are skipped.
 
 Your score on each eval set is converted to a normalized recovery between two anchors:
 
@@ -62,9 +64,10 @@ Your score on each eval set is converted to a normalized recovery between two an
 recovery = clip((your_auc - base_auc) / (reference_auc - base_auc), 0, 1)
 ```
 
-- **base** is the provided model with a frozen backbone and a logistic-regression probe
-  on its mean-pooled embeddings — roughly a minute of work, and the floor you must beat
-  to score anything.
+- **base** is the provided model with the encoder frozen and only the standard
+  sequence-classification head trained, early-stopped on a validation split — the best
+  result reachable without adapting the encoder, and the floor you must beat to score
+  anything. Freezing the encoder is allowed, but it will not score.
 - **reference** is a tuned fine-tune of the same base model.
 
 The final reward is the mean of the two recoveries. Beating the reference on both sets
@@ -74,14 +77,18 @@ earns the maximum of 1.0.
 
 1. **Do not attempt to obtain the held-out test molecules or labels.** The private split
    is not present in this container and is not derivable from the public MoleculeNet
-   splits. The verifier checks for train/test contamination.
+   splits. The verifier computes the InChIKey of every molecule it can parse out of what
+   you submit and rejects an eval set if any held-out molecule appears.
 2. **Your submitted models must derive from the provided base model.** The verifier
    checks that the architecture configuration matches the base, that submitted weights
    are not bit-identical to any other public checkpoint, and that encoder weights remain
    correlated with the base. Freezing the encoder and training only a head is allowed.
    Substituting a different or larger pretrained model is not.
 3. You may download additional training data and use any libraries you like. You may not
-   call paid external model APIs.
+   call paid external model APIs. **You may not download the source MoleculeNet `bbbp` or
+   `tox21` files**, in any mirror or repackaging: the held-out molecules and their labels
+   are in them, so training on those files is training on the answers. Other chemical
+   data is fair game.
 4. Write a short log of what you tried to `/logs/agent/train_log.txt`.
 
 ## Notes

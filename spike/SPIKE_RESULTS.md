@@ -50,6 +50,78 @@ near-saturated and learnable from SMILES syntax alone, so it measures nothing.
 **BACE and SIDER favour fingerprints** over ChemBERTa. They are useful as robustness or
 trap eval sets, not as the primary reward.
 
+## Private-split gap widening (locked)
+
+Full-data region holdouts only gave **+0.023** base→reference headroom. Screening
+train sizes on the hard region (anchor 2576) found a low-data sweet spot:
+
+| train N | frozen probe | fine-tune | gap |
+|---|---|---|---|
+| 500 | 0.601 | 0.643 | +0.042 |
+| 1000 | 0.655 | 0.667 | +0.011 |
+| **2000** | **0.603** | **0.691** | **+0.088** |
+| 4000 | 0.655 | 0.706 | +0.051 |
+| full (~6.3k) | 0.678 | 0.701 | +0.023 |
+
+**Locked task shape:** tox21 only, chemical-region holdout test (1,566 mols),
+agent gets 2,000 labelled train molecules. Anchors:
+`base_auc=0.6027`, `reference_auc=0.6907`, **gap=+0.088**.
+
+> **Superseded.** Both anchors above are off-contract and both eval sets were
+> re-measured; see *Anchors, re-measured inside the contract* below.
+
+## Anchors, re-measured inside the contract
+
+The anchors above could not be reached by a legal submission. `tests/grade.py`
+loads with `AutoModelForSequenceClassification` and reads `.logits`, and the base
+is `model_type: roberta`, so a submission *is* a `RobertaForSequenceClassification`
+whose head reads `features[:, 0, :]` — the CLS token. Both anchors had been
+measured with **mean-pooling**, which that architecture cannot express. Setting
+`reference_auc` from a mean-pooled fine-tune (0.7324) would have put reward 1.0
+permanently out of reach.
+
+Two further errors compounded it. `base_auc=0.6027` was a logistic probe, while a
+trained head reaches higher at the same zero effort — so head-only collected ~46%
+of the reward for freezing the backbone. And `reference_auc=0.6907` was a single
+run: five seeds of that same recipe average 0.7006, so ~0.010 of the apparent
+shortfall was seed noise rather than recipe.
+
+Every arm below is a legal submission, 5 seeds, on the private split:
+
+| eval set | base | reference | band | separation | measurement |
+|---|---|---|---|---|---|
+| **tox21** | 0.6341 | 0.7019 | 0.0678 | **6.48σ** | `scripts/legal_anchors.json` |
+| **bbbp** | 0.8978 | 0.9121 | 0.0143 | **4.09σ** | `scripts/bbbp_split_v2.json` |
+
+`base` is the **ceiling** of the methods that do not adapt the encoder, not any
+single one of them. On tox21 the trained head wins (0.6341 vs a 0.5822 probe); on
+bbbp the probe wins (0.8978 vs 0.8934). Taking the head on both would have set
+bbbp's base 0.0044 low and paid every head-only submission ~31% for free.
+
+**bbbp is back, on a rebuilt split.** The shipped bbbp split was the rare-scaffold
+tail this file already records as rejected, and it measured a band of +0.0006 at
+0.34σ — frozen logreg 0.9671, frozen head 0.9668, fine-tune 0.9677, all inside
+seed noise. A Tanimoto anchor-region holdout was rebuilt instead, screening 40
+candidate anchors and selecting on **band ÷ pooled noise** rather than raw band,
+subject to at least 100 minority-class test molecules. That balance floor is not
+cosmetic: AUC variance is governed by the scarcer class, and the first attempt
+maximised raw band and won with a test set 89% positive (~44 negatives), whose
+fine-tune noise was 24.7% of band against tox21's 8.1%.
+
+**Separation is the criterion**, not per-arm noise as a share of band. The two are
+not independent — σ = band ÷ pooled noise — so demanding σ ≥ 3 *and* per-arm ≤ 10%
+implicitly demands σ ≳ 7, which tox21 itself does not meet at 6.48.
+
+**End to end**, the oracle scores **0.9097** through the real agent image on CPU
+(6.9 min) and the real verifier image: tox21 recovery 0.819, bbbp 1.000 (uncapped
+1.258). One caveat stands: the tox21 oracle landed at 0.6897, below the minimum of
+the five seeds that set the anchor (0.6967–0.7111), because `train_reference.py`
+and the anchor arm are the same recipe in two implementations. Either re-measure
+the anchor from the shipped script or drop the claim in its docstring that the
+anchor is defined as what it produces.
+
+Figure: [`results/anchor_ladder.png`](results/anchor_ladder.png).
+
 ## Gate B — budget: PASS decisively
 
 | workload | wall clock (8 threads) |
