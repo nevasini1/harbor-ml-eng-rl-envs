@@ -31,16 +31,24 @@ build_image() {
     echo "    ok"
 }
 
-# Reads a numeric field out of a reward.json, or prints "-".
+# Reads a numeric field out of a reward.json, or prints "-". reward.json is
+# single-key by design, so diagnostics (spearman, thresholds) live in the sibling
+# metrics.json; fall back to it. Trials graded before that split still carry
+# everything in reward.json, so both layouts read correctly.
 field() {
     python3 -c "
 import json,sys
-try:
-    d=json.load(open(sys.argv[1]))
-    v=d.get(sys.argv[2])
-    print('-' if v is None else (f'{v:.4f}' if isinstance(v,float) else v))
-except Exception:
-    print('-')
+from pathlib import Path
+p, key = Path(sys.argv[1]), sys.argv[2]
+def get(f):
+    try:
+        return json.load(open(f)).get(key)
+    except Exception:
+        return None
+v = get(p)
+if v is None:
+    v = get(p.parent / 'metrics.json')
+print('-' if v is None else (f'{v:.4f}' if isinstance(v,float) else v))
 " "$1" "$2" 2>/dev/null || echo "-"
 }
 
