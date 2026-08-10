@@ -1,0 +1,122 @@
+{
+  "frozen_logreg": {
+    "n": 5,
+    "mean": 0.6027,
+    "std": 0.0,
+    "min": 0.6027,
+    "max": 0.6027
+  },
+  "frozen_head": {
+    "n": 5,
+    "mean": 0.643,
+    "std": 0.0334,
+    "min": 0.6074,
+    "max": 0.683
+  },
+  "finetune": {
+    "n": 5,
+    "mean": 0.7324,
+    "std": 0.0059,
+    "min": 0.7251,
+    "max": 0.74
+  },
+  "headroom_vs_best_frozen": 0.0894,
+  "headroom_sigma": 2.64,
+  "recorded_anchors": {
+    "base": 0.6027,
+    "head_only": 0.6287,
+    "reference": 0.6907
+  },
+  "protein_task_for_contrast": {
+    "frozen": 0.5494,
+    "finetune": 0.5214,
+    "headroom": -0.028
+  },
+  "raw": [
+    {
+      "arm": "frozen_logreg",
+      "seed": 0,
+      "private_auc": 0.6027301954065302
+    },
+    {
+      "arm": "frozen_logreg",
+      "seed": 1,
+      "private_auc": 0.6027301954065302
+    },
+    {
+      "arm": "frozen_logreg",
+      "seed": 2,
+      "private_auc": 0.6027301954065302
+    },
+    {
+      "arm": "frozen_logreg",
+      "seed": 3,
+      "private_auc": 0.6027301954065302
+    },
+    {
+      "arm": "frozen_logreg",
+      "seed": 4,
+      "private_auc": 0.6027301954065302
+    },
+    {
+      "arm": "frozen_head",
+      "seed": 0,
+      "private_auc": 0.6727530460368496,
+      "val_auc": 0.7454277143293778
+    },
+    {
+      "arm": "frozen_head",
+      "seed": 1,
+      "private_auc": 0.6340340209419494,
+      "val_auc": 0.7317801319484936
+    },
+    {
+      "arm": "frozen_head",
+      "seed": 2,
+      "private_auc": 0.6829789813714092,
+      "val_auc": 0.7494729894433426
+    },
+    {
+      "arm": "frozen_head",
+      "seed": 3,
+      "private_auc": 0.6179911997388196,
+      "val_auc": 0.6428003077043539
+    },
+    {
+      "arm": "frozen_head",
+      "seed": 4,
+      "private_auc": 0.6073730888031583,
+      "val_auc": 0.7282425864381321
+    },
+    {
+      "arm": "finetune",
+      "seed": 0,
+      "private_auc": 0.7366544580717215,
+      "val_auc": 0.7506606725835535
+    },
+    {
+      "arm": "finetune",
+      "seed": 1,
+      "private_auc": 0.7299527652700881,
+      "val_auc": 0.7541497674343517
+    },
+    {
+      "arm": "finetune",
+      "seed": 2,
+      "private_auc": 0.7400468734658974,
+      "val_auc": 0.7491820423392966
+    },
+    {
+      "arm": "finetune",
+      "seed": 3,
+      "private_auc": 0.725059319811876,
+      "val_auc": 0.7609038228218452
+    },
+    {
+      "arm": "finetune",
+      "seed": 4,
+      "private_auc": 0.730418751462603,
+      "val_auc": 0.7612788975434418
+    }
+  ]
+}

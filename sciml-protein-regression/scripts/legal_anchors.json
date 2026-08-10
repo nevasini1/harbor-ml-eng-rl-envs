@@ -1,0 +1,133 @@
+{
+  "contract": "RobertaForSequenceClassification + .logits (CLS head); every arm here is a legal submission",
+  "legal_frozen_logreg": {
+    "n": 5,
+    "mean": 0.5822,
+    "std": 0.0,
+    "min": 0.5822,
+    "max": 0.5822
+  },
+  "legal_frozen_head": {
+    "n": 5,
+    "mean": 0.6341,
+    "std": 0.0089,
+    "min": 0.6244,
+    "max": 0.6436
+  },
+  "legal_finetune": {
+    "n": 5,
+    "mean": 0.7019,
+    "std": 0.0055,
+    "min": 0.6967,
+    "max": 0.7111
+  },
+  "proposed_anchors": {
+    "base_auc": 0.6341,
+    "base_arm": "legal_frozen_head",
+    "reference_auc": 0.7019,
+    "reference_arm": "legal_finetune",
+    "band": 0.0678,
+    "band_sigma": 6.48
+  },
+  "noise_as_pct_of_band": {
+    "frozen_head": 13.1,
+    "finetune": 8.1
+  },
+  "superseded_off_contract": {
+    "base_meanpool_mlp": 0.643,
+    "reference_meanpool_linear": 0.7324,
+    "why": "mean-pooling is not expressible in RobertaForSequenceClassification"
+  },
+  "raw": [
+    {
+      "arm": "legal_frozen_logreg",
+      "seed": 0,
+      "private_auc": 0.5821759341468771
+    },
+    {
+      "arm": "legal_frozen_logreg",
+      "seed": 1,
+      "private_auc": 0.5821759341468771
+    },
+    {
+      "arm": "legal_frozen_logreg",
+      "seed": 2,
+      "private_auc": 0.5821759341468771
+    },
+    {
+      "arm": "legal_frozen_logreg",
+      "seed": 3,
+      "private_auc": 0.5821759341468771
+    },
+    {
+      "arm": "legal_frozen_logreg",
+      "seed": 4,
+      "private_auc": 0.5821759341468771
+    },
+    {
+      "arm": "legal_frozen_head",
+      "seed": 0,
+      "private_auc": 0.643556675540037,
+      "val_auc": 0.7055257879297324
+    },
+    {
+      "arm": "legal_frozen_head",
+      "seed": 1,
+      "private_auc": 0.6244264007407369,
+      "val_auc": 0.7170473972746936
+    },
+    {
+      "arm": "legal_frozen_head",
+      "seed": 2,
+      "private_auc": 0.6417035586509832,
+      "val_auc": 0.7091614832709242
+    },
+    {
+      "arm": "legal_frozen_head",
+      "seed": 3,
+      "private_auc": 0.6355309795710129,
+      "val_auc": 0.7136689617967353
+    },
+    {
+      "arm": "legal_frozen_head",
+      "seed": 4,
+      "private_auc": 0.6254174351806293,
+      "val_auc": 0.6829126924578817
+    },
+    {
+      "arm": "legal_finetune",
+      "seed": 0,
+      "private_auc": 0.7111178719118524,
+      "val_auc": 0.7234222895469372,
+      "best_epoch": 13
+    },
+    {
+      "arm": "legal_finetune",
+      "seed": 1,
+      "private_auc": 0.6996697076935633,
+      "val_auc": 0.7493950770426739,
+      "best_epoch": 20
+    },
+    {
+      "arm": "legal_finetune",
+      "seed": 2,
+      "private_auc": 0.7003830832721126,
+      "val_auc": 0.7605662514777568,
+      "best_epoch": 17
+    },
+    {
+      "arm": "legal_finetune",
+      "seed": 3,
+      "private_auc": 0.7014236180883037,
+      "val_auc": 0.7591242355990954,
+      "best_epoch": 15
+    },
+    {
+      "arm": "legal_finetune",
+      "seed": 4,
+      "private_auc": 0.6967317138109109,
+      "val_auc": 0.7215932733426733,
+      "best_epoch": 17
+    }
+  ]
+}

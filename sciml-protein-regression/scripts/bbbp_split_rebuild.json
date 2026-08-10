@@ -1,0 +1,323 @@
+{
+  "selection_rule": "largest measured band (legal_finetune - legal_frozen_head) among scoreable candidates; replaces 'lowest frozen-probe AUC', which selects difficulty rather than headroom",
+  "contract": "RobertaForSequenceClassification + .logits (CLS head)",
+  "n_molecules": 2038,
+  "n_test": 407,
+  "winning_anchor": 938,
+  "screen": [
+    {
+      "anchor": 1727,
+      "n_scoreable_tasks": 1,
+      "frozen_logreg": 0.8462,
+      "frozen_head": 0.8402,
+      "best_frozen": 0.8462,
+      "n_train": 1631,
+      "n_test": 407,
+      "test_pos_rate": 0.8182,
+      "train_pos_rate": 0.7517,
+      "mean_sim_in_test": 0.1286
+    },
+    {
+      "anchor": 1416,
+      "n_scoreable_tasks": 1,
+      "frozen_logreg": 0.8696,
+      "frozen_head": 0.8653,
+      "best_frozen": 0.8696,
+      "n_train": 1631,
+      "n_test": 407,
+      "test_pos_rate": 0.8575,
+      "train_pos_rate": 0.7419,
+      "mean_sim_in_test": 0.2169
+    },
+    {
+      "anchor": 938,
+      "n_scoreable_tasks": 1,
+      "frozen_logreg": 0.8953,
+      "frozen_head": 0.8884,
+      "best_frozen": 0.8953,
+      "n_train": 1631,
+      "n_test": 407,
+      "test_pos_rate": 0.8919,
+      "train_pos_rate": 0.7333,
+      "mean_sim_in_test": 0.223
+    },
+    {
+      "anchor": 23,
+      "n_scoreable_tasks": 1,
+      "frozen_logreg": 0.8934,
+      "frozen_head": 0.8979,
+      "best_frozen": 0.8979,
+      "n_train": 1631,
+      "n_test": 407,
+      "test_pos_rate": 0.7862,
+      "train_pos_rate": 0.7597,
+      "mean_sim_in_test": 0.1324
+    },
+    {
+      "anchor": 871,
+      "n_scoreable_tasks": 1,
+      "frozen_logreg": 0.8947,
+      "frozen_head": 0.8995,
+      "best_frozen": 0.8995,
+      "n_train": 1631,
+      "n_test": 407,
+      "test_pos_rate": 0.7273,
+      "train_pos_rate": 0.7744,
+      "mean_sim_in_test": 0.1673
+    },
+    {
+      "anchor": 396,
+      "n_scoreable_tasks": 1,
+      "frozen_logreg": 0.8993,
+      "frozen_head": 0.9,
+      "best_frozen": 0.9,
+      "n_train": 1631,
+      "n_test": 407,
+      "test_pos_rate": 0.8256,
+      "train_pos_rate": 0.7498,
+      "mean_sim_in_test": 0.2039
+    },
+    {
+      "anchor": 292,
+      "n_scoreable_tasks": 1,
+      "frozen_logreg": 0.9011,
+      "frozen_head": 0.8926,
+      "best_frozen": 0.9011,
+      "n_train": 1631,
+      "n_test": 407,
+      "test_pos_rate": 0.5872,
+      "train_pos_rate": 0.8093,
+      "mean_sim_in_test": 0.1413
+    },
+    {
+      "anchor": 1278,
+      "n_scoreable_tasks": 1,
+      "frozen_logreg": 0.9042,
+      "frozen_head": 0.906,
+      "best_frozen": 0.906,
+      "n_train": 1631,
+      "n_test": 407,
+      "test_pos_rate": 0.7936,
+      "train_pos_rate": 0.7578,
+      "mean_sim_in_test": 0.1811
+    },
+    {
+      "anchor": 221,
+      "n_scoreable_tasks": 1,
+      "frozen_logreg": 0.909,
+      "frozen_head": 0.8989,
+      "best_frozen": 0.909,
+      "n_train": 1631,
+      "n_test": 407,
+      "test_pos_rate": 0.6953,
+      "train_pos_rate": 0.7823,
+      "mean_sim_in_test": 0.1883
+    },
+    {
+      "anchor": 1321,
+      "n_scoreable_tasks": 1,
+      "frozen_logreg": 0.9069,
+      "frozen_head": 0.9111,
+      "best_frozen": 0.9111,
+      "n_train": 1631,
+      "n_test": 407,
+      "test_pos_rate": 0.8722,
+      "train_pos_rate": 0.7382,
+      "mean_sim_in_test": 0.1692
+    },
+    {
+      "anchor": 312,
+      "n_scoreable_tasks": 1,
+      "frozen_logreg": 0.9215,
+      "frozen_head": 0.9096,
+      "best_frozen": 0.9215,
+      "n_train": 1631,
+      "n_test": 407,
+      "test_pos_rate": 0.7273,
+      "train_pos_rate": 0.7744,
+      "mean_sim_in_test": 0.2388
+    },
+    {
+      "anchor": 198,
+      "n_scoreable_tasks": 1,
+      "frozen_logreg": 0.9235,
+      "frozen_head": 0.9253,
+      "best_frozen": 0.9253,
+      "n_train": 1631,
+      "n_test": 407,
+      "test_pos_rate": 0.7568,
+      "train_pos_rate": 0.767,
+      "mean_sim_in_test": 0.1494
+    },
+    {
+      "anchor": 1779,
+      "n_scoreable_tasks": 1,
+      "frozen_logreg": 0.9328,
+      "frozen_head": 0.9244,
+      "best_frozen": 0.9328,
+      "n_train": 1631,
+      "n_test": 407,
+      "test_pos_rate": 0.7961,
+      "train_pos_rate": 0.7572,
+      "mean_sim_in_test": 0.1721
+    },
+    {
+      "anchor": 1472,
+      "n_scoreable_tasks": 1,
+      "frozen_logreg": 0.9419,
+      "frozen_head": 0.9346,
+      "best_frozen": 0.9419,
+      "n_train": 1631,
+      "n_test": 407,
+      "test_pos_rate": 0.887,
+      "train_pos_rate": 0.7345,
+      "mean_sim_in_test": 0.1446
+    },
+    {
+      "anchor": 1354,
+      "n_scoreable_tasks": 1,
+      "frozen_logreg": 0.9444,
+      "frozen_head": 0.9325,
+      "best_frozen": 0.9444,
+      "n_train": 1631,
+      "n_test": 407,
+      "test_pos_rate": 0.8821,
+      "train_pos_rate": 0.7357,
+      "mean_sim_in_test": 0.1843
+    },
+    {
+      "anchor": 755,
+      "n_scoreable_tasks": 1,
+      "frozen_logreg": 0.9494,
+      "frozen_head": 0.9531,
+      "best_frozen": 0.9531,
+      "n_train": 1631,
+      "n_test": 407,
+      "test_pos_rate": 0.5823,
+      "train_pos_rate": 0.8105,
+      "mean_sim_in_test": 0.1931
+    }
+  ],
+  "screen_finetune": {
+    "1727": {
+      "finetune_mean": 0.8768,
+      "best_frozen": 0.8462,
+      "band": 0.0306
+    },
+    "1416": {
+      "finetune_mean": 0.8962,
+      "best_frozen": 0.8696,
+      "band": 0.0266
+    },
+    "938": {
+      "finetune_mean": 0.9279,
+      "best_frozen": 0.8953,
+      "band": 0.0326
+    },
+    "23": {
+      "finetune_mean": 0.924,
+      "best_frozen": 0.8979,
+      "band": 0.0261
+    },
+    "871": {
+      "finetune_mean": 0.9245,
+      "best_frozen": 0.8995,
+      "band": 0.025
+    }
+  },
+  "final": {
+    "legal_frozen_head": {
+      "n": 5,
+      "mean": 0.887,
+      "std": 0.0034,
+      "min": 0.8814,
+      "max": 0.8905
+    },
+    "legal_finetune": {
+      "n": 5,
+      "mean": 0.9226,
+      "std": 0.0088,
+      "min": 0.9115,
+      "max": 0.9344
+    }
+  },
+  "proposed_anchors": {
+    "base_auc": 0.887,
+    "reference_auc": 0.9226,
+    "band": 0.0356,
+    "band_sigma": 3.77
+  },
+  "noise_as_pct_of_band": {
+    "frozen_head": 9.6,
+    "finetune": 24.7
+  },
+  "shipped_split_for_contrast": {
+    "design": "rare-scaffold tail (rejected in region_split.py)",
+    "frozen_logreg": 0.9671,
+    "frozen_head": 0.9668,
+    "finetune": 0.9677,
+    "band": 0.0006,
+    "band_sigma": 0.34
+  },
+  "raw": {
+    "finetune": [
+      {
+        "anchor": 938,
+        "seed": 0,
+        "finetune_auc": 0.9344164788379664,
+        "val_auc": 0.9439176245210729
+      },
+      {
+        "anchor": 938,
+        "seed": 1,
+        "finetune_auc": 0.9214562985224142,
+        "val_auc": 0.9655367765083562
+      },
+      {
+        "anchor": 938,
+        "seed": 2,
+        "finetune_auc": 0.918137991485099,
+        "val_auc": 0.9599545723879124
+      },
+      {
+        "anchor": 938,
+        "seed": 3,
+        "finetune_auc": 0.9115013774104683,
+        "val_auc": 0.9671354899203001
+      },
+      {
+        "anchor": 938,
+        "seed": 4,
+        "finetune_auc": 0.9275920360631105,
+        "val_auc": 0.9477777777777777
+      }
+    ],
+    "frozen_head": [
+      {
+        "anchor": 938,
+        "seed": 0,
+        "frozen_head_auc": 0.8883984472827449
+      },
+      {
+        "anchor": 938,
+        "seed": 1,
+        "frozen_head_auc": 0.8880853994490359
+      },
+      {
+        "anchor": 938,
+        "seed": 2,
+        "frozen_head_auc": 0.8904645629852241
+      },
+      {
+        "anchor": 938,
+        "seed": 3,
+        "frozen_head_auc": 0.8867705985474581
+      },
+      {
+        "anchor": 938,
+        "seed": 4,
+        "frozen_head_auc": 0.8814487853744053
+      }
+    ]
+  }
+}

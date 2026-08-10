@@ -1,0 +1,22 @@
+{
+  "anchor": 1379,
+  "n_seeds": 5,
+  "legal_frozen_head": {
+    "n": 5,
+    "mean": 0.884,
+    "std": 0.0048,
+    "min": 0.8763,
+    "max": 0.8881
+  },
+  "legal_finetune": {
+    "n": 5,
+    "mean": 0.9204,
+    "std": 0.0081,
+    "min": 0.9077,
+    "max": 0.9304
+  },
+  "base_auc": 0.884,
+  "reference_auc": 0.9204,
+  "band": 0.0364,
+  "band_sigma": 3.87
+}

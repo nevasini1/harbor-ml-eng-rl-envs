@@ -1,0 +1,291 @@
+{
+  "checks": [
+    {
+      "check": "legit: reward.json numeric",
+      "pass": true,
+      "detail": "{\"reward\": 0.0}"
+    },
+    {
+      "check": "nan_weight: reward.json numeric",
+      "pass": true,
+      "detail": "{\"reward\": 0.0}"
+    },
+    {
+      "check": "one_tensor: reward.json numeric",
+      "pass": true,
+      "detail": "{\"reward\": 0.0}"
+    },
+    {
+      "check": "no_anchors: reward.json numeric",
+      "pass": true,
+      "detail": "{\"reward\": 0.0}"
+    },
+    {
+      "check": "contaminated: reward.json numeric",
+      "pass": true,
+      "detail": "{\"reward\": 0.0}"
+    },
+    {
+      "check": "no_test_keys: reward.json numeric",
+      "pass": true,
+      "detail": "{\"reward\": 0.0}"
+    },
+    {
+      "check": "legit submission is not rejected",
+      "pass": true,
+      "detail": "status=ok reason=-"
+    },
+    {
+      "check": "legit compares 53 encoder tensors",
+      "pass": true,
+      "detail": "tensors_compared=53"
+    },
+    {
+      "check": "legit cosine is 1.0 (encoder untouched)",
+      "pass": true,
+      "detail": "min_tensor_cosine=1.0"
+    },
+    {
+      "check": "legit records uncapped recovery_raw",
+      "pass": true,
+      "detail": "recovery_raw=-1.841622 recovery=0.0"
+    },
+    {
+      "check": "NaN weight is rejected",
+      "pass": true,
+      "detail": "status=rejected reason=non-finite weights in encoder.layer.0.attention.self.query.weight"
+    },
+    {
+      "check": "single-tensor lineage is rejected",
+      "pass": true,
+      "detail": "status=rejected reason=only 1 encoder tensors comparable against the base (need 50); submission does not appear t"
+    },
+    {
+      "check": "legit submission passes the contamination check",
+      "pass": true,
+      "detail": "overlap=0 molecules_seen=0"
+    },
+    {
+      "check": "planted held-out molecules are rejected",
+      "pass": true,
+      "detail": "status=rejected reason=694 held-out tox21 molecules found in the submitted artifacts; the private split is not de"
+    },
+    {
+      "check": "missing anchors.json is a grader_error, not a default",
+      "pass": true,
+      "detail": "status=grader_error reason=RuntimeError: anchors.json missing at /grader/private/anchors.json; verifier image is brok"
+    },
+    {
+      "check": "missing test_inchikeys.json fails closed",
+      "pass": true,
+      "detail": "status=grader_error reason=RuntimeError: test_inchikeys.json missing at /grader/private/test_inchikeys.json; the cont"
+    }
+  ],
+  "failures": [],
+  "raw": {
+    "legit": {
+      "mode": "legit",
+      "exit_code": 0,
+      "reward.json": {
+        "reward": 0.0
+      },
+      "metrics.json": {
+        "eval_sets": {
+          "tox21": {
+            "base_auc": 0.6341,
+            "reference_auc": 0.7019,
+            "submission_bytes": 13759456,
+            "arch_sha256": "4d1045c1456b732ac4dadad9a099c2ebcd7419b05b60a974bee78432208ab667",
+            "public_checkpoint_matches": 0,
+            "min_tensor_cosine": 1.0,
+            "min_tensor_name": "encoder.layer.0.output.dense.bias",
+            "tensors_compared": 53,
+            "auc": 0.509238,
+            "n_test": 1566,
+            "n_tasks_scored": 12,
+            "artifact_molecules_seen": 0,
+            "private_test_overlap": 0,
+            "recovery": 0.0,
+            "recovery_raw": -1.841622,
+            "status": "ok"
+          },
+          "bbbp": {
+            "base_auc": 0.8978,
+            "reference_auc": 0.9121,
+            "submission_bytes": 13742090,
+            "arch_sha256": "4d1045c1456b732ac4dadad9a099c2ebcd7419b05b60a974bee78432208ab667",
+            "public_checkpoint_matches": 0,
+            "min_tensor_cosine": 1.0,
+            "min_tensor_name": "encoder.layer.0.output.dense.bias",
+            "tensors_compared": 53,
+            "auc": 0.470407,
+            "n_test": 407,
+            "n_tasks_scored": 1,
+            "artifact_molecules_seen": 0,
+            "private_test_overlap": 0,
+            "recovery": 0.0,
+            "recovery_raw": -29.887622,
+            "status": "ok"
+          }
+        },
+        "status": "ok",
+        "reward": 0.0
+      },
+      "stderr_tail": ""
+    },
+    "nan_weight": {
+      "mode": "nan_weight",
+      "exit_code": 0,
+      "reward.json": {
+        "reward": 0.0
+      },
+      "metrics.json": {
+        "eval_sets": {
+          "tox21": {
+            "base_auc": 0.6341,
+            "reference_auc": 0.7019,
+            "recovery": 0.0,
+            "status": "rejected",
+            "reason": "non-finite weights in encoder.layer.0.attention.self.query.weight"
+          },
+          "bbbp": {
+            "base_auc": 0.8978,
+            "reference_auc": 0.9121,
+            "submission_bytes": 13742090,
+            "arch_sha256": "4d1045c1456b732ac4dadad9a099c2ebcd7419b05b60a974bee78432208ab667",
+            "public_checkpoint_matches": 0,
+            "min_tensor_cosine": 1.0,
+            "min_tensor_name": "encoder.layer.0.output.dense.bias",
+            "tensors_compared": 53,
+            "auc": 0.627573,
+            "n_test": 407,
+            "n_tasks_scored": 1,
+            "artifact_molecules_seen": 0,
+            "private_test_overlap": 0,
+            "recovery": 0.0,
+            "recovery_raw": -18.896993,
+            "status": "ok"
+          }
+        },
+        "status": "ok",
+        "reward": 0.0
+      },
+      "stderr_tail": ""
+    },
+    "one_tensor": {
+      "mode": "one_tensor",
+      "exit_code": 0,
+      "reward.json": {
+        "reward": 0.0
+      },
+      "metrics.json": {
+        "eval_sets": {
+          "tox21": {
+            "base_auc": 0.6341,
+            "reference_auc": 0.7019,
+            "recovery": 0.0,
+            "status": "rejected",
+            "reason": "only 1 encoder tensors comparable against the base (need 50); submission does not appear to be derived from it"
+          },
+          "bbbp": {
+            "base_auc": 0.8978,
+            "reference_auc": 0.9121,
+            "submission_bytes": 13742090,
+            "arch_sha256": "4d1045c1456b732ac4dadad9a099c2ebcd7419b05b60a974bee78432208ab667",
+            "public_checkpoint_matches": 0,
+            "min_tensor_cosine": 1.0,
+            "min_tensor_name": "encoder.layer.0.output.dense.bias",
+            "tensors_compared": 53,
+            "auc": 0.676303,
+            "n_test": 407,
+            "n_tasks_scored": 1,
+            "artifact_molecules_seen": 0,
+            "private_test_overlap": 0,
+            "recovery": 0.0,
+            "recovery_raw": -15.489301,
+            "status": "ok"
+          }
+        },
+        "status": "ok",
+        "reward": 0.0
+      },
+      "stderr_tail": ""
+    },
+    "no_anchors": {
+      "mode": "no_anchors",
+      "exit_code": 0,
+      "reward.json": {
+        "reward": 0.0
+      },
+      "metrics.json": {
+        "eval_sets": {},
+        "status": "grader_error",
+        "reason": "RuntimeError: anchors.json missing at /grader/private/anchors.json; verifier image is broken",
+        "traceback": "Traceback (most recent call last):\n  File \"/tests/grade.py\", line 470, in main\n    anchors = load_anchors(Path(args.anchors))\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tests/grade.py\", line 430, in load_anchors\n    raise RuntimeError(f\"anchors.json missing at {path}; verifier image is broken\")\nRuntimeError: anchors.json missing at /grader/private/anchors.json; verifier image is broken\n",
+        "reward": 0.0
+      },
+      "stderr_tail": ""
+    },
+    "contaminated": {
+      "mode": "contaminated",
+      "exit_code": 0,
+      "reward.json": {
+        "reward": 0.0
+      },
+      "metrics.json": {
+        "eval_sets": {
+          "tox21": {
+            "base_auc": 0.6341,
+            "reference_auc": 0.7019,
+            "submission_bytes": 13911262,
+            "arch_sha256": "4d1045c1456b732ac4dadad9a099c2ebcd7419b05b60a974bee78432208ab667",
+            "public_checkpoint_matches": 0,
+            "min_tensor_cosine": 1.0,
+            "min_tensor_name": "encoder.layer.0.output.dense.bias",
+            "tensors_compared": 53,
+            "auc": 0.50841,
+            "n_test": 1566,
+            "n_tasks_scored": 12,
+            "recovery": 0.0,
+            "status": "rejected",
+            "reason": "694 held-out tox21 molecules found in the submitted artifacts; the private split is not derivable from the agent's data"
+          },
+          "bbbp": {
+            "base_auc": 0.8978,
+            "reference_auc": 0.9121,
+            "submission_bytes": 13742090,
+            "arch_sha256": "4d1045c1456b732ac4dadad9a099c2ebcd7419b05b60a974bee78432208ab667",
+            "public_checkpoint_matches": 0,
+            "min_tensor_cosine": 1.0,
+            "min_tensor_name": "encoder.layer.0.output.dense.bias",
+            "tensors_compared": 53,
+            "auc": 0.349463,
+            "n_test": 407,
+            "n_tasks_scored": 1,
+            "recovery": 0.0,
+            "status": "rejected",
+            "reason": "37 held-out bbbp molecules found in the submitted artifacts; the private split is not derivable from the agent's data"
+          }
+        },
+        "status": "ok",
+        "reward": 0.0
+      },
+      "stderr_tail": ""
+    },
+    "no_test_keys": {
+      "mode": "no_test_keys",
+      "exit_code": 0,
+      "reward.json": {
+        "reward": 0.0
+      },
+      "metrics.json": {
+        "eval_sets": {},
+        "status": "grader_error",
+        "reason": "RuntimeError: test_inchikeys.json missing at /grader/private/test_inchikeys.json; the contamination check instruction.md promises cannot run and the verifier image is broken",
+        "traceback": "Traceback (most recent call last):\n  File \"/tests/grade.py\", line 471, in main\n    private_keys = load_private_keys(Path(args.test_keys))\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tests/grade.py\", line 320, in load_private_keys\n    raise RuntimeError(\nRuntimeError: test_inchikeys.json missing at /grader/private/test_inchikeys.json; the contamination check instruction.md promises cannot run and the verifier image is broken\n",
+        "reward": 0.0
+      },
+      "stderr_tail": ""
+    }
+  }
+}

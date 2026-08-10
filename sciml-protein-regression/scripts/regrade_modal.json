@@ -6,7 +6,7 @@
       "reward": 0.5
     },
     "metrics.json": {
-      "spearman": 0.43121436319307954,
+      "spearman": 0.43121570365616635,
       "t_weak": 0.3887,
       "t_strong": 0.45,
       "n_test": 3427,
@@ -17,7 +17,7 @@
       "reason": "ok"
     },
     "reward_txt": "0.5",
-    "stdout_tail": "{\"reward\": 0.5, \"spearman\": 0.43121436319307954, \"t_weak\": 0.3887, \"t_strong\": 0.45, \"n_test\": 3427, \"cosine_min\": 0.9997906237378942, \"n_tensors_compared\": 108, \"reason\": \"ok\"}\n",
+    "stdout_tail": "{\"reward\": 0.5, \"spearman\": 0.43121570365616635, \"t_weak\": 0.3887, \"t_strong\": 0.45, \"n_test\": 3427, \"cosine_min\": 0.9997906237378942, \"n_tensors_compared\": 108, \"reason\": \"ok\"}\n",
     "stderr_tail": ""
   },
   {
