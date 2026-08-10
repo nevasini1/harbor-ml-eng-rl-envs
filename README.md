@@ -237,6 +237,41 @@ The agent phase took 945 s of its 4-hour budget (3 epochs, best val_acc 0.7412 a
 2), leaving ~3.7 h for an agent to actually experiment. Shingle overlap was 0 against a
 real Harbor artifact set including `logs/agent/train_log.txt` — no false positives.
 
+### `pref-reward-model` — oracle through Harbor, Modal backend, GPU
+
+`jobs/rm-oracle-modal/`, 1 trial, 0 errors.
+
+| eval set | status | accuracy | recovery | raw | shingle overlap |
+|---|---|---|---|---|---|
+| `helpful_rs` | ok | 0.6189 | 0.5828 | 0.5828 | 0 |
+| | | | **reward 0.582804** | | |
+
+Agent phase: 514 s on GPU for 2 epochs over 38,420 pairs, best val pairwise accuracy
+0.6296.
+
+**Reward 0.58 for the oracle is the expected shape here, and the reason generalises.**
+0.6189 is −1.29σ on the reference arm's seed spread and 0.0008 below the lowest of the
+five seeds that set the anchor. `reference` is a five-seed **mean**, so a single-seed run
+of the very same recipe lands below it roughly half the time by construction. An oracle
+trial should be read as "recovery near, and often under, 1.0" — not as a pass/fail. To
+get an oracle that reliably clears its own bar you must either anchor on a lower quantile
+than the mean or run the oracle multi-seed, and both change what `reference` means.
+
+This is the first run for which that distinction was measurable, and it is a partial
+reframing of [Open question 1](#open-questions): mol's tox21 oracle is a *different*
+problem, because it lands below the minimum of its seeds by far more than one σ.
+
+**This run took two attempts, and the first failure is the useful part.** The task was
+moved to a GPU after length-balancing made 8,000 pairs too few — but
+`environment/Dockerfile` still installed torch from the CPU wheel index, and
+`train_reference.py`, written when the task was CPU-only, never called `.to(device)`.
+Either alone silently pins the reference to CPU at 2.85 pairs/s: **6.7 hours against a
+4-hour timeout**, failing as a wall-clock timeout with no error, an hour after the
+interesting part. No verifier suite can see this — it grades a checkpoint and never runs
+the agent container — and no config review catches it, because `gpus = 1` is right and
+the Dockerfile is right *for a different task*. **A task's compute class is not one
+setting**, and the only thing that checks you changed all of it is an end-to-end run.
+
 ### The two post-training tasks — verifier regression suites
 
 Not Harbor runs: these are `spike/posttrain/verify_graders.py`, which builds each real
@@ -328,7 +363,18 @@ failures rhyme.
 8. **Fail closed on your own configuration.** Missing anchors, missing held-out keys or a
    missing sibling checkpoint are a broken image, not a default. Robustness to *agent*
    input and robustness to *your own* config are different problems.
-9. **Separate measuring from deciding.** `modal_measure.py` records what every arm
+9. **An anchor that is a mean is not a bar a single run clears.** `reference` is a
+   five-seed mean, so the shipped oracle — the same recipe — lands below it about half
+   the time by construction. `pref-reward-model`'s oracle returned recovery 0.5828 at
+   −1.29σ, which is the distribution working, not a bug. Read an oracle trial as "near
+   1.0, often under"; if you need it to clear reliably, anchor on a quantile instead and
+   say so.
+10. **A task's compute class is not one setting.** Moving `pref-reward-model` to a GPU
+   meant `gpus = 1` in `task.toml` — and also the torch wheel index in the environment
+   image, and a `.to(device)` in the reference script that was correct to omit when the
+   task was CPU-only. Missing either pins the reference to CPU at 6.7 h against a 4 h
+   timeout, and it fails as a silent wall-clock timeout. Only an end-to-end run finds it.
+11. **Separate measuring from deciding.** `modal_measure.py` records what every arm
    scored; `finalize_anchors.py` turns that into anchors by stated rules. The rules can
    then be re-read and re-run in a second without a GPU — which is the difference between
    an anchor that is measured and one that was chosen once in a session nobody kept.

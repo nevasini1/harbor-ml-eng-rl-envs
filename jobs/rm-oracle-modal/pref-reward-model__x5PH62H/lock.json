@@ -3,7 +3,7 @@
     "task": {
         "name": "pref-reward-model",
         "type": "local",
-        "digest": "sha256:995d74b6ea9f2684cdddb3de74154950d69186f641d2c5f156b951de63fc8349",
+        "digest": "sha256:5e125f6742da9b8c05c5d99f4e29be3fe917949b95a4cc8b2977ca7b34c16829",
         "path": "tasks/pref-reward-model"
     },
     "install_only": false,

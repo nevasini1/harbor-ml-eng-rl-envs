@@ -240,7 +240,33 @@ $V spike/posttrain/assemble_tasks.py                              # populate the
 $V spike/posttrain/verify_graders.py                              # verifier regression suite
 ```
 
-The anchors survive the round trip. Running the shipped `solution/solve.sh` through
+### What only a Harbor run caught
+
+`pref-reward-model` was moved to a GPU after length-balancing made 8,000 pairs too few
+(see above). Two things did not move with it, and **nothing in the repo could have told
+you**:
+
+1. `environment/Dockerfile` still installed torch from
+   `--extra-index-url https://download.pytorch.org/whl/cpu`, copied from the CPU-only
+   tasks. `torch.cuda.is_available()` is then False on a machine that has a GPU.
+2. `solution/train_reference.py` never called `.to(device)` at all — written when the
+   task was CPU-only, and correct then.
+
+Either alone is enough. The reference recipe silently runs on CPU at 2.85 pairs/s, which
+is **6.7 hours against a 4-hour timeout**: no exception, no wrong number, just a trial
+that dies at the wall an hour after the interesting part. The verifier regression suite
+cannot see this — it grades a checkpoint and never runs the agent container. Neither can
+a config review, because `gpus = 1` is right and the Dockerfile is right *for a different
+task*.
+
+The fix is in both places, and the oracle now prints its device and warns if it is CPU.
+The general point: **a task's compute class is not one setting.** Changing it means
+re-reading the environment image and the reference script, and the only thing that checks
+you did is an end-to-end run.
+
+### The anchors survive the round trip
+
+Running the shipped `solution/solve.sh` through
 Harbor on Modal — different hardware from the A10G the anchors were measured on — the
 `qa-sft-adapt` oracle reproduced its `reference_acc` on all three eval sets, at uncapped
 recovery **1.0104 / 1.0738 / 1.0848**. An anchor that a shipped script cannot reproduce

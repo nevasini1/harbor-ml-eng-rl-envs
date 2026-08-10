@@ -16,10 +16,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN curl -LsSf https://astral.sh/uv/0.9.7/install.sh | sh
 ENV PATH="/root/.local/bin:${PATH}"
 
-# CPU-only torch. The CPU wheel index keeps the image ~2 GB smaller than default.
-RUN uv pip install --system --index-strategy unsafe-best-match \
-        --extra-index-url https://download.pytorch.org/whl/cpu \
-        torch==2.6.0 \
+# CUDA torch, NOT the CPU wheel. This task has a GPU, and the CPU wheel index --
+# copied from the CPU-only tasks in this repo -- silently produces a build that
+# cannot see it. `torch.cuda.is_available()` returns False, everything falls back
+# to CPU, and the reference recipe (2 epochs over 38,420 pairs) takes 6.7 hours
+# against a 4-hour timeout. It fails as a timeout with no error message, an hour
+# after the interesting part of the run. The default index is the CUDA build.
+RUN uv pip install --system torch==2.6.0 \
     && uv pip install --system \
         transformers==4.49.0 \
         safetensors==0.4.5 \

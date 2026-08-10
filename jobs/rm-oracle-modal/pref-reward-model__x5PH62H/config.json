@@ -2,10 +2,10 @@
     "task": {
         "path": "tasks/pref-reward-model"
     },
-    "trial_name": "pref-reward-model__ugG4KFa",
+    "trial_name": "pref-reward-model__x5PH62H",
     "trials_dir": "jobs/rm-oracle-modal",
     "environment": {
         "type": "modal"
     },
-    "job_id": "39bdf43d-6db0-4819-a1ea-0cdb6068fe7f"
+    "job_id": "8d3b3fc5-5cb0-430b-899d-173022b53054"
 }
