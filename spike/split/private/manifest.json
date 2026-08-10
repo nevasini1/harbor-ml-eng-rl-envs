@@ -20,13 +20,45 @@
         "SR-MMP",
         "SR-p53"
       ],
-      "n_train": 6265,
+      "n_train": 2000,
       "n_test": 1566,
       "n_dropped_duplicates": 0,
       "train_test_inchikey_overlap": 0,
       "test_mean_similarity_to_anchor": 0.1365,
       "train_pos_rate": 0.0715,
-      "test_pos_rate": 0.0911
+      "test_pos_rate": 0.0911,
+      "train_regime": "low-data subsample of region complement",
+      "n_train_locked": 2000,
+      "subsample_seed": 0
+    },
+    "bbbp": {
+      "dataset": "bbbp",
+      "n_tasks": 1,
+      "labels": [
+        "p_np"
+      ],
+      "split": "Tanimoto anchor-region holdout (private anchor index)",
+      "n_train": 1631,
+      "n_test": 407,
+      "n_dropped_duplicates": 0,
+      "train_test_inchikey_overlap": 0,
+      "test_mean_similarity_to_anchor": 0.1822,
+      "train_pos_rate": 0.7676,
+      "test_pos_rate": 0.7543,
+      "n_minority_in_test": 100,
+      "selection_rule": "largest band / pooled noise among candidates with >= 100 minority-class test molecules; all survivors fine-tuned",
+      "anchors": {
+        "base_auc": 0.8934,
+        "reference_auc": 0.9121,
+        "band": 0.0187,
+        "band_sigma": 5.34
+      },
+      "supersedes": {
+        "design": "rare-scaffold tail (tail_frac 0.35), rejected in region_split.py",
+        "measured_band": 0.0006,
+        "measured_band_sigma": 0.34
+      }
     }
-  }
+  },
+  "selection_rule_bbbp": "largest band / pooled noise among candidates with >= 100 minority-class test molecules; all survivors fine-tuned"
 }
