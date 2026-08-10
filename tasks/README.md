@@ -8,11 +8,14 @@ between them.
 |---|---|---|---|---|---|
 | [`mol-property-adapt`](mol-property-adapt/) | encoder adaptation on molecules | 8 CPU, 4 h | recovery between measured anchors | 6.5σ / 4.1σ | 0.9097 |
 | [`qa-sft-adapt`](qa-sft-adapt/) | supervised fine-tuning of a 135M causal LM | 8 CPU, 4 h | same | 6.0σ / 16.0σ / 5.6σ | **1.0** |
-| [`pref-reward-model`](pref-reward-model/) | reward modelling on human preferences | 1 GPU, 4 h | same | 3.1σ — thin | 0.5828 |
+| [`pref-reward-model`](pref-reward-model/) | **provisional** — reward modelling on human preferences | 1 GPU, 4 h | same | 3.1σ, fails the 4.0σ bar | 0.5828 |
 | [`sciml-protein-regression`](sciml-protein-regression/) | **shelved** — encoder adaptation on proteins | 1 GPU, 4 h | 3 fixed tiers | inverted | 1.0, and so does a frozen probe |
 
-`separation` is `band_sigma` per eval set: the width of the base→reference band divided by
-seed noise. It is the criterion for whether an eval set ships. `oracle` is the reward the
+`separation` is `band_sigma`: the base→reference band divided by seed noise. Whether that
+is good enough is decided by [`common/shipping.py`](../common/shipping.py), which derives
+the bar (4.0σ) from a stated tolerance on reward noise (0.25) rather than choosing it.
+`pref-reward-model` does not clear it and is assembled only under
+`--allow-provisional`. `oracle` is the reward the
 task's own shipped `solution/` earned through Harbor — see the root
 [README](../README.md#what-has-actually-been-run) for why those three numbers differ and
 why 1.0 is not always the good one.

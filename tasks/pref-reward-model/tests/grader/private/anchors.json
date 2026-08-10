@@ -7,6 +7,11 @@
     "base_definition": "ceiling of the no-adaptation arms ['length_only', 'frozen_probe', 'frozen_head']: frozen_head at 0.6079 +/- 0.0046 over 5 seeds",
     "reference_definition": "finetune, 2 epochs, lr 2e-05, bs 8, best-val epoch; 5-seed mean 0.6268 +/- 0.0061",
     "band": 0.0189,
-    "band_sigma": 3.1
+    "band_sigma": 3.1,
+    "reward_noise_on_rerun": 0.323,
+    "min_band_sigma": 4.0,
+    "pretraining_gain": 0.0743,
+    "provisional": true,
+    "provisional_reason": "imprecise: band_sigma 3.10 < 4.00, so a rerun of the same submission moves the reward by 0.32 against a tolerance of 0.25"
   }
 }

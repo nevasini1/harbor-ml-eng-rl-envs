@@ -24,7 +24,7 @@ docs/       background reading
 |---|---|---|---|---|
 | [`mol-property-adapt`](tasks/mol-property-adapt/) | encoder adaptation on molecules | 8 CPU, 4 h | 6.5σ / 4.1σ | 0.9097 |
 | [`qa-sft-adapt`](tasks/qa-sft-adapt/) | supervised fine-tuning of a 135M causal LM | 8 CPU, 4 h | 6.0σ / 16.0σ / 5.6σ | **1.0** |
-| [`pref-reward-model`](tasks/pref-reward-model/) | reward modelling on human preferences | 1 GPU, 4 h | 3.1σ — thin | 0.5828 |
+| [`pref-reward-model`](tasks/pref-reward-model/) | reward modelling on human preferences | 1 GPU, 4 h | 3.1σ — **fails the bar** | 0.5828 |
 | [`sciml-protein-regression`](tasks/sciml-protein-regression/) | **shelved** — proteins; the negative result | 1 GPU, 4 h | inverted | 1.0, and so does a frozen probe |
 
 All four have been run end to end through Harbor with their own shipped oracle — agent
@@ -61,8 +61,38 @@ Both anchors are **measurements** over 5 seeds on the private split, each re-der
 a committed script. The uncapped `recovery_raw` is recorded beside the capped value,
 because the clip is what hides a mis-set anchor.
 
-`band_sigma` — the band's width divided by seed noise — decides whether an eval set ships
-at all. It is the criterion, not a diagnostic.
+### Whether an eval set may ship
+
+One rule, in one place — [`common/shipping.py`](common/shipping.py) — applied to every task,
+including ones that shipped before it existed. It starts from a stated tolerance rather
+than a chosen threshold:
+
+```
+MAX_REWARD_NOISE = 0.25      ->      band_sigma >= 4.0
+```
+
+"Rerunning the same submission with a different seed must not move its reward by more than
+a quarter." Since recovery is `(score − base) / band`, that tolerance *is* the bar. Change
+the tolerance and the bar moves with it, visibly.
+
+Three further tests: the band must be positive; it must be significantly non-zero after a
+Bonferroni correction for how many eval sets were screened (shipping the best of k inflates
+the winner); and the reference must beat a randomly-initialised control by more than one
+sigma. `python common/shipping.py` prints the verdict for every task.
+
+| task | eval set | band σ | reward noise on a rerun | verdict |
+|---|---|---|---|---|
+| mol-property-adapt | `tox21` | 6.48σ | 0.15 | ships |
+| mol-property-adapt | `bbbp` | 4.09σ | 0.24 | ships |
+| qa-sft-adapt | `sciq` | 15.98σ | 0.06 | ships |
+| qa-sft-adapt | `arc_easy` | 6.02σ | 0.17 | ships |
+| qa-sft-adapt | `openbookqa` | 5.63σ | 0.18 | ships |
+| pref-reward-model | `helpful_rs` | 3.10σ | 0.32 | **fails: imprecise** |
+
+The earlier bar was `band_sigma >= 3.0`, picked by going one notch below what the repo had
+already shipped, and a second criterion was **removed after it excluded the eval set I
+wanted to keep**. `pref-reward-model` passed under that and does not pass now. That is the
+point of deriving the bar instead of choosing it.
 
 ---
 

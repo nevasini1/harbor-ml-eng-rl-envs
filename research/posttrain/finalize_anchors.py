@@ -35,10 +35,12 @@ from __future__ import annotations
 
 import argparse
 import json
-import statistics as st
+import sys
 from pathlib import Path
 
 HERE = Path(__file__).parent
+sys.path.insert(0, str(HERE.parent.parent / "common"))
+from shipping import criterion_record, evaluate  # noqa: E402
 
 NO_ADAPT = {"rm": ["length_only", "frozen_probe", "frozen_head"],
             "qa": ["zero_shot", "head_only"]}
@@ -46,84 +48,66 @@ REFERENCE_ARM = {"rm": "finetune", "qa": "sft_full"}
 T_FLOOR = {"rm": 0.85, "qa": 0.85}
 
 
-def derive(track: str, data: dict, min_sigma: float, min_band: float) -> dict:
+def derive(track: str, data: dict) -> dict:
+    """Turn a measured ladder into anchors, and apply the shipping criterion.
+
+    The decision is not made here. It is made by `common/shipping.py`, which every
+    task shares, so an eval set cannot be admitted by a threshold that was tuned
+    to admit it. This function only assembles the inputs that criterion needs.
+    """
     cfg = data["config"]
     arms = data["arms"]
     metric = cfg.get("metric", "acc")
     ref_arm = REFERENCE_ARM[track]
     no_adapt = [a for a in NO_ADAPT[track] if a in arms]
+    names = [n for n in cfg["eval_sets"]
+             if ref_arm in arms and n in arms[ref_arm]]
+    k = len(names)  # how many eval sets were screened; the winner is corrected for it
 
     anchors, rejected = {}, {}
-    for name in cfg["eval_sets"]:
-        if ref_arm not in arms or name not in arms[ref_arm]:
-            rejected[name] = f"no {ref_arm} measurement"
-            continue
+    for name in names:
         ceiling_arm = max(no_adapt, key=lambda a: arms[a].get(name, {})
                           .get("mean", -1.0))
-        base = arms[ceiling_arm][name]["mean"]
-        ref = arms[ref_arm][name]["mean"]
-        base_std = arms[ceiling_arm][name]["std"]
-        ref_std = arms[ref_arm][name]["std"]
-        sigma = max(base_std, ref_std, 1e-6)
-        band = ref - base
+        base = arms[ceiling_arm][name]
+        ref = arms[ref_arm][name]
+        ri = arms.get("random_init", {}).get(name)
+
+        verdict = evaluate(
+            band=ref["mean"] - base["mean"],
+            base_std=base["std"], ref_std=ref["std"],
+            n_seeds=len(ref["seeds"]), k_screened=k,
+            random_init_gain=(ref["mean"] - ri["mean"]) if ri else None,
+            random_init_std=ri["std"] if ri else None)
 
         seeds = [v for a in arms.values() if name in a for v in a[name]["seeds"]]
         best_observed = max(seeds)
-        t_imp = round(min(0.98, max(best_observed + 0.15, T_FLOOR[track])), 2)
 
         entry = {
-            f"base_{metric}": round(base, 4),
-            f"reference_{metric}": round(ref, 4),
-            "band": round(band, 4),
-            "band_sigma": round(band / sigma, 2),
-            "t_implausible": t_imp,
+            f"base_{metric}": round(base["mean"], 4),
+            f"reference_{metric}": round(ref["mean"], 4),
+            "t_implausible": round(min(0.98, max(best_observed + 0.15,
+                                                 T_FLOOR[track])), 2),
             "best_observed": round(best_observed, 4),
             "base_arm": ceiling_arm,
             "base_definition":
                 f"ceiling of the no-adaptation arms {no_adapt}: {ceiling_arm} at "
-                f"{base:.4f} +/- {base_std:.4f} over "
-                f"{len(arms[ceiling_arm][name]['seeds'])} seeds",
+                f"{base['mean']:.4f} +/- {base['std']:.4f} over {len(base['seeds'])} seeds",
             "reference_definition":
                 f"{ref_arm}, {cfg['epochs']} epochs, lr {cfg['lr']}, bs {cfg['bs']}, "
-                f"best-val epoch; {len(arms[ref_arm][name]['seeds'])}-seed mean "
-                f"{ref:.4f} +/- {ref_std:.4f}",
+                f"best-val epoch; {len(ref['seeds'])}-seed mean {ref['mean']:.4f} "
+                f"+/- {ref['std']:.4f}",
+            **verdict,
         }
-
-        why = []
-        if band <= 0:
-            why.append(f"inverted: {ref_arm} ({ref:.4f}) does not beat "
-                       f"{ceiling_arm} ({base:.4f})")
-        elif band < min_band:
-            why.append(f"band {band:.4f} < {min_band}")
-        if entry["band_sigma"] < min_sigma and band > 0:
-            why.append(f"band_sigma {entry['band_sigma']} < {min_sigma}")
-        ri = arms.get("random_init", {}).get(name, {}).get("mean")
-        if ri is not None:
-            entry["random_init"] = round(ri, 4)
-            entry["pretraining_gain"] = round(ref - ri, 4)
-            # Gate A, and the one that is easiest to pass by accident: an eval
-            # set can have a clean band between `base` and `reference` while the
-            # pretrained weights contribute nothing, because both arms are
-            # learning the same surface feature. The first cut of the preference
-            # track did exactly that -- a randomly-initialized encoder reached
-            # 0.594 against the pretrained fine-tune's 0.604, a gain smaller than
-            # the seed noise. Requiring the gain to clear 2 sigma is what turns
-            # "the number went up" into "the model is doing the work".
-            if ref - ri < max(min_band, 2 * sigma):
-                why.append(
-                    f"pretrained weights do too little work: {ref_arm} {ref:.4f} "
-                    f"vs random_init {ri:.4f} is +{ref - ri:.4f}, under "
-                    f"max(min_band, 2 sigma) = {max(min_band, 2 * sigma):.4f}")
-        if why:
-            rejected[name] = "; ".join(why)
-            entry["shipped"] = False
-        else:
-            entry["shipped"] = True
+        if ri:
+            entry["random_init"] = round(ri["mean"], 4)
+        entry["shipped"] = verdict["ships"]
+        if not verdict["ships"]:
+            rejected[name] = "; ".join(verdict["failed"])
         anchors[name] = entry
 
-    return {"anchors": {k: v for k, v in anchors.items() if v.get("shipped")},
+    return {"anchors": {k2: v for k2, v in anchors.items() if v["shipped"]},
             "screened": anchors, "rejected": rejected,
-            "criteria": {"min_band_sigma": min_sigma, "min_band": min_band}}
+            "criterion": criterion_record()}
 
 
 def markdown(track: str, data: dict, out: dict) -> str:
@@ -156,14 +140,8 @@ def markdown(track: str, data: dict, out: dict) -> str:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--track", choices=["rm", "qa", "both"], default="both")
-    ap.add_argument("--min-sigma", type=float, default=3.0)
-    # An absolute band floor is deliberately NOT the criterion. The mol task's
-    # `bbbp` ships on a band of 0.0143 at 4.09 sigma, so a 0.02 floor would have
-    # excluded an eval set this repo already considers good. What matters is the
-    # band relative to noise; the absolute width is reported, not gated. The
-    # value below is still used as the floor for the pretraining-gain check,
-    # where an absolute minimum does make sense.
-    ap.add_argument("--min-band", type=float, default=0.0)
+
+
     ap.add_argument("--markdown", action="store_true")
     args = ap.parse_args()
 
@@ -173,19 +151,21 @@ def main() -> None:
             print(f"SKIP {track}: {path} not measured yet")
             continue
         data = json.loads(path.read_text())
-        out = derive(track, data, args.min_sigma, args.min_band)
+        out = derive(track, data)
         data.update(out)
         path.write_text(json.dumps(data, indent=2))
 
         metric = data["config"].get("metric", "acc")
-        print(f"\n== {track}")
-        print(f"{'eval set':<14}{'base':>9}{'ref':>9}{'band':>9}{'sigma':>8}"
-              f"{'rand':>8}  ship")
+        c = out["criterion"]
+        print(f"\n== {track}   bar: band_sigma >= {c['min_band_sigma']} "
+              f"(from max_reward_noise {c['max_reward_noise']})")
+        print(f"{'eval set':<14}{'base':>9}{'ref':>9}{'band':>9}{'sigma':>7}"
+              f"{'noise':>8}{'z':>7}  ship")
         for name, a in out["screened"].items():
             print(f"{name:<14}{a['base_'+metric]:>9.4f}{a['reference_'+metric]:>9.4f}"
-                  f"{a['band']:>9.4f}{a['band_sigma']:>8.2f}"
-                  f"{a.get('random_init', float('nan')):>8.4f}"
-                  f"  {'yes' if a['shipped'] else 'NO -- ' + out['rejected'][name]}")
+                  f"{a['band']:>9.4f}{a['band_sigma']:>7.2f}"
+                  f"{a['reward_noise_on_rerun']:>8.2f}{a['band_z']:>7.2f}  "
+                  + ("yes" if a["shipped"] else "NO -- " + out["rejected"][name]))
         print(f"shipping {len(out['anchors'])} of {len(out['screened'])} eval sets")
         if args.markdown:
             print()

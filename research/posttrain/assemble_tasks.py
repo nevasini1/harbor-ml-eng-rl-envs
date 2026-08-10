@@ -64,8 +64,13 @@ TRACKS = {
 # Carried through from the measurement, not restated here. The mol assembler had
 # these hardcoded once and they drifted: the shipped definitions still described
 # a pooling the anchors had not used for weeks.
+# One eval set is ~966s of verifier time for this task; test.sh allows 3,000s.
+PROVISIONAL_MAX_EVAL_SETS = 1
+
 CARRY = ("base_acc", "reference_acc", "t_implausible", "base_arm",
-         "base_definition", "reference_definition", "band", "band_sigma")
+         "base_definition", "reference_definition", "band", "band_sigma",
+         "reward_noise_on_rerun", "min_band_sigma", "pretraining_gain",
+         "provisional", "provisional_reason")
 
 
 def download(repo: str, revision: str, dest: Path, patterns: list[str]) -> None:
@@ -80,7 +85,7 @@ def download(repo: str, revision: str, dest: Path, patterns: list[str]) -> None:
     print(f"    fetched {repo}@{revision[:12]} -> {dest.relative_to(ROOT)}")
 
 
-def assemble(track: str, cfg: dict) -> None:
+def assemble(track: str, cfg: dict, allow_provisional: bool = False) -> None:
     task = cfg["task"]
     agent_data = task / "environment" / "data"
     grader = task / "tests" / "grader"
@@ -97,7 +102,34 @@ def assemble(track: str, cfg: dict) -> None:
         raise SystemExit(
             f"REFUSING: {measured_path} does not exist. The anchors are a "
             "measurement; there is no default to fall back on.")
-    measured = json.loads(measured_path.read_text())["anchors"]
+    doc = json.loads(measured_path.read_text())
+    measured = doc["anchors"]
+    if not measured:
+        # Every eval set failed common/shipping.py. The task is a complete
+        # environment and its recorded runs are real, so it can still be
+        # assembled -- but only on purpose, and only stamped as such.
+        if not allow_provisional:
+            reasons = "; ".join(f"{k}: {v}" for k, v in doc.get("rejected", {}).items())
+            raise SystemExit(
+                f"REFUSING: no eval set in {cfg['anchors']} passes the shipping "
+                f"criterion.\n  {reasons}\n"
+                "Pass --allow-provisional to assemble it anyway; the anchors will be "
+                "stamped provisional and the reward must not be treated as validated.")
+        # Cap at the single best screened set, by band_sigma. Not a stylistic
+        # choice: this verifier was measured at 1,933s for two eval sets against
+        # test.sh's 3,000s allowance, so four would be killed mid-run and score 0.
+        # The cap is announced rather than applied silently.
+        ranked = sorted(((k, v) for k, v in doc["screened"].items()
+                         if k in doc.get("rejected", {})),
+                        key=lambda kv: kv[1].get("band_sigma", 0), reverse=True)
+        keep, dropped = ranked[:PROVISIONAL_MAX_EVAL_SETS], \
+            ranked[PROVISIONAL_MAX_EVAL_SETS:]
+        measured = {k: dict(v, provisional=True,
+                            provisional_reason=doc["rejected"][k]) for k, v in keep}
+        print(f"    PROVISIONAL: no eval set passes the shipping criterion; "
+              f"assembling the best {len(measured)} of {len(ranked)} screened "
+              f"(kept {[k for k, _ in keep]}, dropped {[k for k, _ in dropped]} "
+              f"— verifier wall time, not quality)")
 
     anchors = {}
     for name, m in measured.items():
@@ -113,6 +145,15 @@ def assemble(track: str, cfg: dict) -> None:
         print(f"    private: {name}_test.csv  base={m['base_acc']} "
               f"reference={m['reference_acc']}")
     (priv / "anchors.json").write_text(json.dumps(anchors, indent=2))
+
+    # Prune held-out CSVs for eval sets that are no longer shipped. Without this,
+    # tightening the criterion leaves the previous run's private rows inside the
+    # verifier build context: dead weight in the image, and held-out data the
+    # grader no longer accounts for.
+    for stale in priv.glob("*_test.csv"):
+        if stale.stem[:-len("_test")] not in anchors:
+            stale.unlink()
+            print(f"    pruned stale private split: {stale.name}")
 
     fp_src = SPLIT / "private" / cfg["fingerprint"]
     fp = json.loads(fp_src.read_text())
@@ -148,11 +189,13 @@ def assemble(track: str, cfg: dict) -> None:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--track", choices=["rm", "qa", "both"], default="both")
+    ap.add_argument("--allow-provisional", action="store_true",
+                    help="assemble a task whose eval sets all fail common/shipping.py")
     args = ap.parse_args()
 
     for track, cfg in TRACKS.items():
         if args.track in (track, "both"):
-            assemble(track, cfg)
+            assemble(track, cfg, args.allow_provisional)
 
     # Keep the shared grader modules in step with common/; a task whose copy has
     # drifted grades with code the repo no longer shows.

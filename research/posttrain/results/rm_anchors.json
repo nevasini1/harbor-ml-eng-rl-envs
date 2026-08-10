@@ -238,87 +238,135 @@
       }
     }
   },
-  "anchors": {
-    "helpful_rs": {
-      "base_acc": 0.6079,
-      "reference_acc": 0.6268,
-      "band": 0.0189,
-      "band_sigma": 3.1,
-      "t_implausible": 0.85,
-      "best_observed": 0.6334,
-      "base_arm": "frozen_head",
-      "base_definition": "ceiling of the no-adaptation arms ['length_only', 'frozen_probe', 'frozen_head']: frozen_head at 0.6079 +/- 0.0046 over 5 seeds",
-      "reference_definition": "finetune, 2 epochs, lr 2e-05, bs 8, best-val epoch; 5-seed mean 0.6268 +/- 0.0061",
-      "random_init": 0.5525,
-      "pretraining_gain": 0.0743,
-      "shipped": true
-    }
-  },
+  "anchors": {},
   "screened": {
     "helpful_base": {
       "base_acc": 0.6082,
       "reference_acc": 0.6315,
-      "band": 0.0233,
-      "band_sigma": 2.68,
       "t_implausible": 0.85,
       "best_observed": 0.6466,
       "base_arm": "frozen_head",
       "base_definition": "ceiling of the no-adaptation arms ['length_only', 'frozen_probe', 'frozen_head']: frozen_head at 0.6082 +/- 0.0056 over 5 seeds",
       "reference_definition": "finetune, 2 epochs, lr 2e-05, bs 8, best-val epoch; 5-seed mean 0.6315 +/- 0.0087",
-      "random_init": 0.5496,
+      "band": 0.0233,
+      "sigma": 0.0087,
+      "band_sigma": 2.68,
+      "reward_noise_on_rerun": 0.373,
+      "min_band_sigma": 4.0,
+      "band_z": 5.04,
+      "z_crit_bonferroni": 2.24,
+      "k_screened": 4,
+      "n_seeds": 5,
       "pretraining_gain": 0.0819,
+      "gain_z": 17.24,
+      "ships": false,
+      "failed": [
+        "imprecise: band_sigma 2.68 < 4.00, so a rerun of the same submission moves the reward by 0.37 against a tolerance of 0.25"
+      ],
+      "random_init": 0.5496,
       "shipped": false
     },
     "helpful_rs": {
       "base_acc": 0.6079,
       "reference_acc": 0.6268,
-      "band": 0.0189,
-      "band_sigma": 3.1,
       "t_implausible": 0.85,
       "best_observed": 0.6334,
       "base_arm": "frozen_head",
       "base_definition": "ceiling of the no-adaptation arms ['length_only', 'frozen_probe', 'frozen_head']: frozen_head at 0.6079 +/- 0.0046 over 5 seeds",
       "reference_definition": "finetune, 2 epochs, lr 2e-05, bs 8, best-val epoch; 5-seed mean 0.6268 +/- 0.0061",
-      "random_init": 0.5525,
+      "band": 0.0189,
+      "sigma": 0.0061,
+      "band_sigma": 3.1,
+      "reward_noise_on_rerun": 0.323,
+      "min_band_sigma": 4.0,
+      "band_z": 5.53,
+      "z_crit_bonferroni": 2.24,
+      "k_screened": 4,
+      "n_seeds": 5,
       "pretraining_gain": 0.0743,
-      "shipped": true
+      "gain_z": 13.98,
+      "ships": false,
+      "failed": [
+        "imprecise: band_sigma 3.10 < 4.00, so a rerun of the same submission moves the reward by 0.32 against a tolerance of 0.25"
+      ],
+      "random_init": 0.5525,
+      "shipped": false
     },
     "online": {
       "base_acc": 0.561,
       "reference_acc": 0.5633,
-      "band": 0.0023,
-      "band_sigma": 0.4,
       "t_implausible": 0.85,
       "best_observed": 0.57,
       "base_arm": "frozen_head",
       "base_definition": "ceiling of the no-adaptation arms ['length_only', 'frozen_probe', 'frozen_head']: frozen_head at 0.5610 +/- 0.0042 over 5 seeds",
       "reference_definition": "finetune, 2 epochs, lr 2e-05, bs 8, best-val epoch; 5-seed mean 0.5633 +/- 0.0057",
-      "random_init": 0.5174,
+      "band": 0.0023,
+      "sigma": 0.0057,
+      "band_sigma": 0.4,
+      "reward_noise_on_rerun": 2.478,
+      "min_band_sigma": 4.0,
+      "band_z": 0.73,
+      "z_crit_bonferroni": 2.24,
+      "k_screened": 4,
+      "n_seeds": 5,
       "pretraining_gain": 0.0459,
+      "gain_z": 14.74,
+      "ships": false,
+      "failed": [
+        "imprecise: band_sigma 0.40 < 4.00, so a rerun of the same submission moves the reward by 2.48 against a tolerance of 0.25",
+        "not distinguishable from zero: z 0.73 < 2.24 (Bonferroni over 4 screened eval sets)"
+      ],
+      "random_init": 0.5174,
       "shipped": false
     },
     "harmless": {
       "base_acc": 0.6219,
       "reference_acc": 0.639,
-      "band": 0.0171,
-      "band_sigma": 1.69,
       "t_implausible": 0.85,
       "best_observed": 0.6457,
       "base_arm": "frozen_head",
       "base_definition": "ceiling of the no-adaptation arms ['length_only', 'frozen_probe', 'frozen_head']: frozen_head at 0.6219 +/- 0.0101 over 5 seeds",
       "reference_definition": "finetune, 2 epochs, lr 2e-05, bs 8, best-val epoch; 5-seed mean 0.6390 +/- 0.0064",
-      "random_init": 0.4649,
+      "band": 0.0171,
+      "sigma": 0.0101,
+      "band_sigma": 1.69,
+      "reward_noise_on_rerun": 0.591,
+      "min_band_sigma": 4.0,
+      "band_z": 3.2,
+      "z_crit_bonferroni": 2.24,
+      "k_screened": 4,
+      "n_seeds": 5,
       "pretraining_gain": 0.1741,
+      "gain_z": 32.33,
+      "ships": false,
+      "failed": [
+        "imprecise: band_sigma 1.69 < 4.00, so a rerun of the same submission moves the reward by 0.59 against a tolerance of 0.25"
+      ],
+      "random_init": 0.4649,
       "shipped": false
     }
   },
   "rejected": {
-    "helpful_base": "band_sigma 2.68 < 3.0",
-    "online": "band_sigma 0.4 < 3.0",
-    "harmless": "band_sigma 1.69 < 3.0"
+    "helpful_base": "imprecise: band_sigma 2.68 < 4.00, so a rerun of the same submission moves the reward by 0.37 against a tolerance of 0.25",
+    "helpful_rs": "imprecise: band_sigma 3.10 < 4.00, so a rerun of the same submission moves the reward by 0.32 against a tolerance of 0.25",
+    "online": "imprecise: band_sigma 0.40 < 4.00, so a rerun of the same submission moves the reward by 2.48 against a tolerance of 0.25; not distinguishable from zero: z 0.73 < 2.24 (Bonferroni over 4 screened eval sets)",
+    "harmless": "imprecise: band_sigma 1.69 < 4.00, so a rerun of the same submission moves the reward by 0.59 against a tolerance of 0.25"
   },
   "criteria": {
     "min_band_sigma": 3.0,
     "min_band": 0.0
+  },
+  "criterion": {
+    "max_reward_noise": 0.25,
+    "min_band_sigma": 4.0,
+    "alpha_one_sided": 0.05,
+    "selection_correction": "bonferroni over screened eval sets",
+    "tests": [
+      "band positive",
+      "precision: band_sigma >= min_band_sigma",
+      "existence: band significantly > 0 after correction",
+      "gate A: reference beats random_init by >1 sigma, significantly"
+    ],
+    "source": "common/shipping.py"
   }
 }

@@ -5,8 +5,15 @@ Reward modelling — RLHF stage 2 — as an RL environment. The agent gets
 must post-train the encoder into something that reads a conversation and a candidate
 response and returns a scalar, higher for the response a human preferred.
 
-**Status: active, and the weakest thing in this repo.** It ships on one eval set at 3.10σ
-against a 3.0σ bar. Read [Honest limits](#honest-limits) before using it.
+**Status: provisional — it does not pass the shipping criterion.** Its best eval set reaches
+3.10σ against a bar of 4.0σ derived from a stated tolerance on reward noise
+([`common/shipping.py`](../../common/shipping.py)). The environment is complete and every
+integrity check passes; what fails is the *reward*, which would move by 0.32 on a rerun of
+the same submission against a tolerance of 0.25. It is assembled only under
+`assemble_tasks.py --allow-provisional` and the anchors carry `provisional: true`.
+
+Use it as a worked example of a task that is built correctly and still is not usable. Do not
+report scores from it as validated.
 
 ## How it is scored
 
@@ -34,7 +41,20 @@ only convention that leaves an uninformative model at exactly chance.
 | `finetune` — **reference** | 0.6315 ± 0.0087 | 0.6268 ± 0.0061 | 0.5633 ± 0.0057 | 0.6390 ± 0.0064 |
 | `random_init` | 0.5496 ± 0.0061 | 0.5525 ± 0.0102 | 0.5174 ± 0.0040 | 0.4649 ± 0.0102 |
 
-Only `helpful_rs` ships, at band 0.0189 and **3.10σ**.
+No eval set passes. `helpful_rs` is the best at band 0.0189 and **3.10σ**, and it is the one
+assembled provisionally — the other three are dropped for verifier wall time, not quality
+(one eval set is ~966 s against test.sh's 3,000 s).
+
+| eval set | band | band σ | reward noise on a rerun | verdict |
+|---|---|---|---|---|
+| `helpful_rs` | 0.0189 | 3.10σ | 0.32 | fails: imprecise |
+| `helpful_base` | 0.0233 | 2.68σ | 0.37 | fails: imprecise |
+| `harmless` | 0.0171 | 1.69σ | 0.59 | fails: imprecise |
+| `online` | 0.0023 | 0.40σ | 2.48 | fails: imprecise, and not distinguishable from zero |
+
+The distinction the criterion draws is worth reading: `helpful_rs`'s band **is** real
+(z = 5.5, far above the Bonferroni-corrected bar), and it is still not usable as a reward.
+An effect can exist and be too small to score with.
 
 ## Why the data is length-balanced
 
@@ -68,10 +88,13 @@ keeping the task at a scale where nothing separates the arms.
 
 ## Honest limits
 
-- **3.10σ against a 3.0σ bar is a hair.** A third of the reward band is seed noise. For
-  scale, `mol-property-adapt`'s `bbbp` ships at 4.09σ.
-- **It is the best of four screened eval sets.** Taking the maximum of four marginal
-  measurements inflates it; read it as "around 3σ".
+- **It fails the bar.** 3.10σ against 4.0σ; a third of the reward band would be seed noise.
+  For scale, `mol-property-adapt`'s `bbbp` passes at 4.09σ and a reward noise of 0.24.
+- **It was the best of four screened eval sets.** Taking the maximum of four marginal
+  measurements inflates it, which is why the existence test is Bonferroni-corrected by four.
+- **An earlier, looser bar passed it.** The criterion used to be 3.0σ, chosen one notch below
+  what the repo had already shipped, plus an absolute band floor that was removed after it
+  excluded this eval set. Deriving the bar from a tolerance instead reversed the verdict.
 - **The obstacle is real, not a tuning failure.** A trained head on frozen embeddings
   reaches 0.6082 where a full fine-tune reaches 0.6315. A 3-epoch reference was measured
   and *rejected* — it made things worse (0.6255 ± 0.0104).

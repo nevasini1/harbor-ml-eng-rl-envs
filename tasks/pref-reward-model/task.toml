@@ -22,6 +22,11 @@ base_model_revision = "fb53ab8802853c8e4fbdbcd0529f21fc6f459b2b"
 # Anchors are measured on the private split; see tests/grader/private/anchors.json.
 # reward = mean over eval sets of clip((acc - base) / (reference - base), 0, 1)
 reward_definition = "normalized recovery vs the frozen-encoder ceiling and a tuned fine-tune"
+# PROVISIONAL: no eval set passes common/shipping.py. The best reaches 3.10 sigma
+# against a 4.0 bar derived from a 0.25 tolerance on reward noise, so a rerun of
+# the same submission moves the reward by 0.32. The environment is complete and
+# the integrity checks pass; the reward is not validated. See README.md.
+status = "provisional"
 
 [agent]
 timeout_sec = 14400  # 4h all-inclusive: setup, training, evaluation

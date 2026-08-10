@@ -7,7 +7,10 @@
     "base_definition": "ceiling of the no-adaptation arms ['zero_shot', 'head_only']: head_only at 0.6030 +/- 0.0154 over 5 seeds",
     "reference_definition": "sft_full, 3 epochs, lr 2e-05, bs 16, best-val epoch; 5-seed mean 0.6957 +/- 0.0071",
     "band": 0.0927,
-    "band_sigma": 6.02
+    "band_sigma": 6.02,
+    "reward_noise_on_rerun": 0.166,
+    "min_band_sigma": 4.0,
+    "pretraining_gain": 0.452
   },
   "sciq": {
     "base_acc": 0.696,
@@ -17,7 +20,10 @@
     "base_definition": "ceiling of the no-adaptation arms ['zero_shot', 'head_only']: head_only at 0.6960 +/- 0.0067 over 5 seeds",
     "reference_definition": "sft_full, 3 epochs, lr 2e-05, bs 16, best-val epoch; 5-seed mean 0.8270 +/- 0.0082",
     "band": 0.131,
-    "band_sigma": 15.98
+    "band_sigma": 15.98,
+    "reward_noise_on_rerun": 0.063,
+    "min_band_sigma": 4.0,
+    "pretraining_gain": 0.588
   },
   "openbookqa": {
     "base_acc": 0.315,
@@ -27,6 +33,9 @@
     "base_definition": "ceiling of the no-adaptation arms ['zero_shot', 'head_only']: zero_shot at 0.3150 +/- 0.0000 over 1 seeds",
     "reference_definition": "sft_full, 3 epochs, lr 2e-05, bs 16, best-val epoch; 5-seed mean 0.3657 +/- 0.0090",
     "band": 0.0507,
-    "band_sigma": 5.63
+    "band_sigma": 5.63,
+    "reward_noise_on_rerun": 0.178,
+    "min_band_sigma": 4.0,
+    "pretraining_gain": 0.146
   }
 }
