@@ -1,0 +1,12 @@
+{
+    "task": {
+        "path": "sciml-protein-regression"
+    },
+    "trial_name": "sciml-protein-regression__xri57Hw",
+    "trials_dir": "jobs/codex-tiered-rerun",
+    "agent": {
+        "name": "codex",
+        "model_name": "openai/gpt-5.6-sol"
+    },
+    "job_id": "49b2161b-d2ef-4cf0-bc81-9b31a246ca80"
+}
