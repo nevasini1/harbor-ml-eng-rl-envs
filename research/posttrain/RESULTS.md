@@ -240,6 +240,25 @@ $V research/posttrain/assemble_tasks.py                              # populate 
 $V research/posttrain/verify_graders.py                              # verifier regression suite
 ```
 
+### Verifier regression suites
+
+`verify_graders.py` builds each real image and runs it under `--network none` against
+fixtures it constructs. The **accept path is asserted first**: a false reject is
+indistinguishable, in the reward, from an agent that did nothing.
+
+| fixture | `qa-sft-adapt` | `pref-reward-model` |
+|---|---|---|
+| `base_unchanged` — provided base, fresh head | **accepted**, reward 0.0 (raw recovery −0.014 / −0.364 / 0.0 recorded, not hidden) | **accepted**, reward 0.0 |
+| `shuffled` — one embedding tensor permuted | rejected: `min per-tensor cosine 0.0002 < 0.9` | rejected: `min per-tensor cosine 0.0071 < 0.9` |
+| `nan` — one tensor NaN'd | rejected: `non-finite weights in embed_tokens.weight` | rejected: `non-finite weights in embeddings.word_embeddings.weight` |
+| `truncated` — config.json deleted | rejected: `missing config.json` | rejected: `missing config.json` |
+| `public_twin` — bit-identical `all-distilroberta-v1` | n/a | rejected by **sha256**, the only layer that sees it |
+| `laundered` — `SmolLM2-135M-Instruct` + 1e-4 noise | rejected by **nearest-ancestor** | n/a |
+| `contaminated` — agent log quoting held-out rows | rejected: shingle overlap | rejected: shingle overlap |
+
+Every case wrote a `reward.json`. That is the invariant that matters most: a missing reward
+file is a trial error, not a zero.
+
 ### What only a Harbor run caught
 
 `pref-reward-model` was moved to a GPU after length-balancing made 8,000 pairs too few

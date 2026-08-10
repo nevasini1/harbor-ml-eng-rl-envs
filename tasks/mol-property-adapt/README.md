@@ -56,8 +56,17 @@ harbor run -c tasks/mol-property-adapt/configs/job-modal.json --agent oracle
 ./tasks/mol-property-adapt/scripts/regrade.sh --all
 ```
 
-The oracle scored **reward 0.909661** through Harbor (`jobs/mol-oracle-modal/`) with 0
-contamination overlap and 53 encoder tensors compared.
+The oracle scored **reward 0.909661** through Harbor (`jobs/mol-oracle-modal/`):
+
+| eval set | status | AUC | recovery | raw | overlap | tensors |
+|---|---|---|---|---|---|---|
+| `tox21` | ok | 0.6896 | 0.8193 | 0.8193 | 0 | 53 |
+| `bbbp` | ok | 0.9158 | 1.0000 | **1.2575** | 0 | 53 |
+
+The `raw` column is why the uncapped recovery is recorded at all: on bbbp the oracle beat
+the reference by 26%, and the capped `recovery` of 1.0000 hides that completely. Logging
+the uncapped value is how a mis-set anchor becomes visible instead of silently flattening
+to 1.0.
 
 ## Known issue
 
