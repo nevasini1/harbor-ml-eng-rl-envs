@@ -58,6 +58,9 @@ An effect can exist and be too small to score with.
 
 ## Why the data is length-balanced
 
+![the preference task measured response length, not preference](../../research/results/length_shortcut.png)
+
+
 The first cut of this task measured **response length and nothing else**. On a natural
 sample of hh-rlhf, "pick the longer response" — no model, no parameters — scored
 **0.6031** against a full fine-tune's 0.6042 and a frozen-encoder ceiling of 0.5646. That

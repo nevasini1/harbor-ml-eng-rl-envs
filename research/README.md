@@ -11,6 +11,7 @@ record of the measurements behind it.
 | `posttrain/` | corpora, splits, effort ladders, GPU measurement and the anchor derivation |
 | `results/` | measured anchors and ladders, as JSON, per track |
 | `plot_criterion.py` | the figure below: every eval set against the shipping criterion |
+| `plot_shortcut.py` | the length-shortcut finding and its repair |
 | `plot_ladder.py` | the original mol/protein effort-ladder figure |
 
 ![which eval sets may be used as a reward](results/shipping_criterion.png)

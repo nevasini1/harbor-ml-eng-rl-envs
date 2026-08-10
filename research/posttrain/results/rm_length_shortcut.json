@@ -1,0 +1,22 @@
+{
+  "what": "Response length as a predictor of human preference, before and after the split was length-balanced.",
+  "why": "The first cut of pref-reward-model measured length and not preference. These are the numbers that showed it, recorded here so the figure and the write-up read the same source instead of restating prose.",
+  "metric": "longer-wins: fraction of pairs where the preferred response is the longer one, ties counted as half. A model that has only learned length scores exactly this.",
+  "measured_by": "research/posttrain/make_splits.py (balance_length) + direct character counts over the split files",
+  "unbalanced": {
+    "note": "natural sample of Anthropic/hh-rlhf, 1,000 held-out pairs per eval set",
+    "train": {"longer_wins": 0.5356},
+    "helpful_base": {"longer_wins": 0.6031, "chars_chosen": 254, "chars_rejected": 189},
+    "helpful_rs": {"longer_wins": 0.5704, "chars_chosen": 363, "chars_rejected": 314},
+    "online": {"longer_wins": 0.4450, "chars_chosen": 662, "chars_rejected": 684},
+    "harmless": {"longer_wins": 0.4116, "chars_chosen": 158, "chars_rejected": 204}
+  },
+  "balanced": {
+    "note": "equal counts of longer-chosen and shorter-chosen pairs, ties dropped, applied to the training file and every holdout. 0.5000 holds by construction, not approximately.",
+    "train": {"longer_wins": 0.5},
+    "helpful_base": {"longer_wins": 0.5},
+    "helpful_rs": {"longer_wins": 0.5},
+    "online": {"longer_wins": 0.5},
+    "harmless": {"longer_wins": 0.5}
+  }
+}
