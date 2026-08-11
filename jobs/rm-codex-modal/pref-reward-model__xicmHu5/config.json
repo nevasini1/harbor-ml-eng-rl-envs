@@ -1,0 +1,15 @@
+{
+    "task": {
+        "path": "tasks/pref-reward-model"
+    },
+    "trial_name": "pref-reward-model__xicmHu5",
+    "trials_dir": "jobs/rm-codex-modal",
+    "agent": {
+        "name": "codex",
+        "model_name": "openai/gpt-5.6-sol"
+    },
+    "environment": {
+        "type": "modal"
+    },
+    "job_id": "ae42d327-c782-4fa0-9aed-85224070a3a6"
+}

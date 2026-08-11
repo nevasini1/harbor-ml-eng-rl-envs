@@ -51,7 +51,16 @@ tasks/sciml-protein-regression/tests/calibrate_tiers.log
 # is ~513 MB, over GitHub's 100 MB per-file limit; the mol and protein tasks' 13-30
 # MB checkpoints are small enough to commit and are. What matters from a run is the
 # reward, the metrics and the agent log, all of which stay tracked.
-jobs/qa-sft-oracle-modal/**/artifacts/**/*.safetensors
-jobs/qa-sft-oracle-modal/**/artifacts/**/*.bin
-jobs/rm-oracle-modal/**/artifacts/**/*.safetensors
-jobs/rm-oracle-modal/**/artifacts/**/*.bin
+# Named per job at first, which was wrong: a new job name (mol-codex-modal,
+# rm-codex-modal) slipped a 313 MB submission past the rule and GitHub rejected
+# the push with GH001. The rule belongs on the shape of the path, not on the
+# names of the jobs that happen to exist today. The mol and protein tasks'
+# 13-30 MB checkpoints are small enough to keep and are kept, by exception below.
+jobs/**/artifacts/**/*.safetensors
+jobs/**/artifacts/**/*.bin
+!jobs/2026-08-09__*/**/artifacts/**/*.safetensors
+!jobs/2026-08-09__*/**/artifacts/**/*.bin
+!jobs/codex-tiered-rerun/**/artifacts/**/*.safetensors
+!jobs/frozen-probe-check/**/artifacts/**/*.safetensors
+!jobs/mol-oracle-modal/**/artifacts/**/*.bin
+!jobs/protein-oracle-*/**/artifacts/**/*.safetensors

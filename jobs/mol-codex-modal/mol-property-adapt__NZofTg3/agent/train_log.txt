@@ -1,0 +1,25 @@
+ChemBERTa CPU adaptation log (2026-08-11)
+
+Data/model audit
+- Loaded only the supplied /app/base_model checkpoint and the two supplied training CSVs.
+- BBBP: 1,631 rows, 23.2% negatives / 76.8% positives.
+- Tox21: 2,000 rows, 12 tasks, missing labels retained as NaN and excluded from loss. Task positives range from 29 to 274.
+- Token lengths fit within 256 tokens (maximum 242 for BBBP and 239 for Tox21).
+
+Validation and experiments
+- Built Morgan-radius-2 fingerprint neighbourhood groups with Butina clustering and used group-held-out validation folds to approximate the stated chemical-space shift.
+- Fully fine-tuned the 3-layer encoder plus the standard Roberta classification head. Compared encoder rates 3e-5, 5e-5, and 1e-4; head rates 3e-4 and 4e-4; no, fourth-root, square-root, and full inverse-frequency positive weighting; task-balanced masked loss; and randomized-SMILES augmentation.
+- BBBP plain full fine-tuning reached neighbourhood-CV mean ROC-AUC 0.9510. One randomized-SMILES per canonical training SMILES improved the first validation fold from 0.9453 to 0.9620.
+- Tox21 weighting comparison favored mild fourth-root inverse-frequency weights overall. Approximate three-fold mean ROC-AUC: none 0.6883, fourth-root 0.6898, square-root 0.6884. Full inverse-frequency and randomized-SMILES augmentation did not improve validation.
+- Pre-adapting the encoder on dense BBBP supervision before Tox21 improved all three Tox21 neighbourhood folds. Fold AUCs were 0.7272, 0.6876, and 0.6937 (mean 0.7028), versus about 0.6898 without the intermediate BBBP adaptation.
+
+Selected final training
+- BBBP: initialized from supplied base; all encoder weights trainable; one randomized SMILES per row; batch 32; encoder LR 3e-5; head LR 3e-4; cosine decay with 10% warmup; 3 full-data epochs; unweighted BCE.
+- Tox21: initialized from the final BBBP-derived encoder with a new 12-output head; all encoder weights trainable; batch 32; encoder LR 5e-5; head LR 4e-4; cosine decay with 10% warmup; 6 full-data epochs; per-task masked BCE; fourth-root inverse-frequency positive weights. Missing cells never contributed to loss.
+
+Packaging checks
+- Saved with save_pretrained to /app/final_model/bbbp and /app/final_model/tox21, including tokenizers.
+- Clean AutoModelForSequenceClassification/AutoTokenizer reload succeeded. Output shapes are (batch, 1) and (batch, 12), all logits finite, with Tox21 labels in CSV column order.
+- Architecture tuple matches the supplied checkpoint: hidden 384, 3 layers, 12 heads, intermediate 464, vocab 600.
+- Submitted/base encoder weight correlations: BBBP 0.999988; Tox21 0.999958. No encoder state tensor remained bit-identical.
+- Final-model training-set sanity ROC-AUC: BBBP 0.9625; Tox21 mean 0.7876. These are sanity checks, not model-selection estimates.

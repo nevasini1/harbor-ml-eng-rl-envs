@@ -1,0 +1,19 @@
+{
+    "job_name": "mol-codex-modal",
+    "n_concurrent_trials": 1,
+    "quiet": true,
+    "environment": {
+        "type": "modal"
+    },
+    "agents": [
+        {
+            "name": "codex",
+            "model_name": "openai/gpt-5.6-sol"
+        }
+    ],
+    "tasks": [
+        {
+            "path": "tasks/mol-property-adapt"
+        }
+    ]
+}

@@ -1,0 +1,13 @@
+{
+  "eval_sets": {
+    "helpful_rs": {
+      "base_acc": 0.6079,
+      "reference_acc": 0.6268,
+      "recovery": 0.0,
+      "status": "rejected",
+      "reason": "encoder lineage check failed: min per-tensor cosine 0.8541 < 0.9 on encoder.layer.0.attention.self.key.bias"
+    }
+  },
+  "status": "ok",
+  "reward": 0.0
+}

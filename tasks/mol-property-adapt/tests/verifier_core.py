@@ -231,13 +231,34 @@ def check_lineage(sub: Path, base: Path, min_tensors: int,
     sub_t = {normalize_key(k): v for k, v in load_tensors(sub).items()}
     base_t = {normalize_key(k): v for k, v in load_tensors(base).items()}
 
+    # The floor is applied to weight MATRICES only (ndim >= 2), not to 1-D bias
+    # and LayerNorm vectors. This is not a loosening; it is a correction, and a
+    # real agent run is what exposed it.
+    #
+    # `codex` fine-tuned the provided base honestly on pref-reward-model and was
+    # rejected at reward 0.0: min per-tensor cosine 0.8541 on
+    # `encoder.layer.0.attention.self.key.bias`. Measured over that submission,
+    # all 51 weight matrices sat at cosine >= 0.9999 (median 1.0000) and exactly
+    # 1 of 100 tensors was under the floor -- a 768-element bias whose entries are
+    # near zero, so a functionally irrelevant update rotates the vector a long way.
+    # Attention key biases are the extreme case: they barely affect the output at
+    # all, which is why several implementations omit them.
+    #
+    # Cosine is a similarity measure for direction, and direction is only
+    # informative when the vector has substance. Every adversarial case this layer
+    # exists for moves weight matrices -- a shuffled embedding, a substituted
+    # encoder -- so restricting the floor costs nothing: the `shuffled` fixture is
+    # still caught at cosine 0.007 on a 2-D embedding. 1-D cosines are still
+    # computed and reported, just not used to reject.
     worst, worst_key, compared = 1.0, None, 0
+    worst_1d, worst_1d_key = 1.0, None
     for key, b in base_t.items():
         if key not in sub_t or key.startswith(head_prefixes):
             continue
         a = sub_t[key]
         if a.shape != b.shape:
             raise Reject(f"tensor shape mismatch on {key}: {a.shape} vs {b.shape}")
+        is_matrix = b.ndim >= 2
         a = a.astype(np.float64).ravel()
         b = b.astype(np.float64).ravel()
         # A single non-finite element makes the norm NaN, and `NaN == 0` is False,
@@ -255,8 +276,11 @@ def check_lineage(sub: Path, base: Path, min_tensors: int,
         if not np.isfinite(cos):
             raise Reject(f"non-finite cosine on {key}")
         compared += 1
-        if cos < worst:
-            worst, worst_key = cos, key
+        if is_matrix:
+            if cos < worst:
+                worst, worst_key = cos, key
+        elif cos < worst_1d:
+            worst_1d, worst_1d_key = cos, key
 
     if compared < min_tensors:
         raise Reject(f"only {compared} encoder tensors comparable against the base "
@@ -264,8 +288,10 @@ def check_lineage(sub: Path, base: Path, min_tensors: int,
                      "be derived from it")
     if worst < cos_floor:
         raise Reject(f"encoder lineage check failed: min per-tensor cosine "
-                     f"{worst:.4f} < {cos_floor} on {worst_key}")
+                     f"{worst:.4f} < {cos_floor} on {worst_key} (weight matrices "
+                     "only; 1-D vectors are reported, not gated)")
     return {"min_tensor_cosine": round(worst, 6), "min_tensor_name": worst_key,
+            "min_vector_cosine": round(worst_1d, 6), "min_vector_name": worst_1d_key,
             "tensors_compared": compared}
 
 

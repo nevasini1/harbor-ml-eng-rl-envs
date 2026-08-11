@@ -1,0 +1,15 @@
+{
+    "task": {
+        "path": "tasks/mol-property-adapt"
+    },
+    "trial_name": "mol-property-adapt__NZofTg3",
+    "trials_dir": "jobs/mol-codex-modal",
+    "agent": {
+        "name": "codex",
+        "model_name": "openai/gpt-5.6-sol"
+    },
+    "environment": {
+        "type": "modal"
+    },
+    "job_id": "8faec6dc-ec1d-4aef-ae67-a3668e57ad67"
+}
