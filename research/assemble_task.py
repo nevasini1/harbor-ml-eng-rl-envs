@@ -49,6 +49,35 @@ def main() -> None:
                 f"REFUSING: anchors_private.json[{name}] is missing {missing}. "
                 "grade.py fails closed on these, so a partial anchor file would "
                 "produce a verifier that cannot run.")
+
+        # Presence is not legality. `lock_lowdata_anchors.py` still writes this
+        # same file, with the mean-pooled base and single-seed reference that were
+        # measured and then deliberately discarded -- mean pooling is not
+        # expressible in RobertaForSequenceClassification, so a base measured that
+        # way is a ceiling over methods no agent may submit.
+        #
+        # Today that script is blocked only by luck: it happens not to emit
+        # `t_implausible`, so the check above catches it. That is a safety property
+        # held by coincidence rather than by design -- add the key to that script
+        # and the off-contract anchors ship silently. So check the arm, not the
+        # keys. The docstring in lock_lowdata_anchors.py says DO NOT RUN; this is
+        # what makes that a refusal instead of a request.
+        if "mean-pool" in m["base_definition"].lower():
+            raise SystemExit(
+                f"REFUSING: anchors_private.json[{name}].base_definition describes a "
+                f"mean-pooled arm:\n    {m['base_definition']}\n"
+                "Mean pooling is not expressible in RobertaForSequenceClassification, "
+                "so that base is a ceiling over methods no legal submission can reach. "
+                "Re-derive with modal_legal_anchors.py (tox21) / modal_bbbp_split.py "
+                "(bbbp); do not run lock_lowdata_anchors.py, which is stale.")
+        if "measured_arms_n5_legal" not in m:
+            raise SystemExit(
+                f"REFUSING: anchors_private.json[{name}] carries no "
+                "`measured_arms_n5_legal` block, which is the record that every arm "
+                "behind these anchors is a legal submission measured over 5 seeds. "
+                "Without it there is nothing to distinguish a contract-legal anchor "
+                "from a discarded one.")
+
         anchors[name] = {k: m[k] for k in carry if k in m}
     (priv / "anchors.json").write_text(json.dumps(anchors, indent=2))
 
