@@ -7,6 +7,28 @@ from the region-complement train pool. Screened gaps:
   N=2000 → +0.098   ← selected
   N=4000 → +0.051
   full   → +0.023
+
+STALE -- DO NOT RUN. It still writes results/anchors_private.json, which is what
+assemble_task.py copies into the verifier, but the anchors it writes are the
+OFF-CONTRACT ones that were measured and then deliberately discarded:
+
+    this script writes          the shipped anchors are
+    base:  mean-pooled probe    encoder frozen, RobertaClassificationHead on CLS
+    ref:   1 seed, body lr 5e-5 5-seed mean, body lr 3e-5 + OneCycle
+
+Mean pooling is not expressible in RobertaForSequenceClassification, so a base
+measured that way is a ceiling over methods no agent may submit -- the reason
+modal_legal_anchors.py re-measured both anchors inside the submission contract.
+
+Running this today would silently replace 0.6341/0.7019 with numbers the verifier
+disagrees with, and assemble_task.py would carry them into the task without
+complaint: its guard checks that the required KEYS exist, not that the values came
+from a legal arm. The split-locking half is still the record of how the 2000-row
+train set was chosen; the anchor half has been superseded.
+
+To re-derive the anchors, run modal_legal_anchors.py (tox21) and
+modal_bbbp_split.py (bbbp) and carry their means across by hand -- a hand step
+that is itself open question 1's neighbour, since nothing scripts it.
 """
 
 import json

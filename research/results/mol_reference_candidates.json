@@ -1,0 +1,78 @@
+{
+  "arms": {
+    "current": {
+      "tox21": {
+        "mean": 0.6896,
+        "std": 0.0037,
+        "seeds": [
+          0.6904,
+          0.6943,
+          0.6904,
+          0.6886,
+          0.6842
+        ]
+      },
+      "bbbp": {
+        "mean": 0.9151,
+        "std": 0.0077,
+        "seeds": [
+          0.92,
+          0.9202,
+          0.9075,
+          0.9218,
+          0.906
+        ]
+      }
+    },
+    "grouped": {
+      "tox21": {
+        "mean": 0.6858,
+        "std": 0.005,
+        "seeds": [
+          0.6826,
+          0.6936,
+          0.6883,
+          0.6822,
+          0.6825
+        ]
+      },
+      "bbbp": {
+        "mean": 0.9079,
+        "std": 0.0048,
+        "seeds": [
+          0.9135,
+          0.9057,
+          0.9055,
+          0.9023,
+          0.9124
+        ]
+      }
+    },
+    "stronger": {
+      "tox21": {
+        "mean": 0.6787,
+        "std": 0.0217,
+        "seeds": [
+          0.6518,
+          0.6944,
+          0.7015,
+          0.6601,
+          0.6857
+        ]
+      },
+      "bbbp": {
+        "mean": 0.9122,
+        "std": 0.0044,
+        "seeds": [
+          0.9166,
+          0.9141,
+          0.9113,
+          0.905,
+          0.914
+        ]
+      }
+    }
+  },
+  "note": "candidate references for the mol task; see the module docstring for why each arm exists",
+  "control_reproduces_shipped_anchor": false
+}

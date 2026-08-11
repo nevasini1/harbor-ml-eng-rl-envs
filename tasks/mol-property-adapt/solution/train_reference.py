@@ -14,11 +14,42 @@ change, not a tuning claim.
 UNRESOLVED: this script does not currently reproduce the anchor it is supposed to
 define. Run end to end on CPU it scored tox21 0.6897 (scripts/e2e_mol.json),
 below the *minimum* of the five seeds that set reference_auc = 0.7019
-(range 0.6967-0.7111). Same recipe, two implementations: this one shuffles
-batches with torch.randperm and the anchor arm with rng.permutation, on different
-hardware. bbbp landed on the other side, beating its own anchor at 0.9158 vs
-0.9121, which is the tell -- the anchors track a GPU sibling of this script
-rather than this script.
+(range 0.6967-0.7111). bbbp landed on the other side, beating its own anchor at
+0.9158 vs 0.9121.
+
+This docstring used to blame torch.randperm vs rng.permutation on different
+hardware. That cause is noise-shaped and the effect is not: three independent
+measurements of this recipe agree with EACH OTHER and disagree with the anchor,
+with no overlap across 5 seeds each.
+
+    modal_legal_anchors.py (defines the anchor)   0.7019, re-run 2026-08-11: 0.7024
+    this script, CPU, end to end                  0.6897
+    independent reimplementation, A10G, 5 seeds   0.6896 +/- 0.0037
+    this oracle's saved checkpoint, re-scored     0.689651
+
+The anchor side is reproducible: re-running modal_legal_anchors.py unmodified
+returns 0.7024, seeds 0/2/3/4 matching the committed values to four decimals.
+
+Five candidate causes have been eliminated by measurement -- do not re-guess them:
+
+  * loss normalisation (/M.sum() vs the /M.numel() that `weight=` gives below).
+    The reimplementation uses /M.sum(), matching the anchor, and still lands at
+    0.6896. Worth knowing anyway: the two forms differ by the observed-label
+    fraction, so they diverge on tox21 (83.8% observed) and are identical on
+    bbbp (100%) -- a real asymmetry, just not this one.
+  * the training split moving after the anchors were measured. The deterministic
+    frozen-logreg arm re-runs bit-exactly at 0.5822, which is impossible if the
+    2000-row train set had changed under it.
+  * the AUC task-skip rule (obs < 10 vs two-unique). Both average over all 12
+    tox21 assays on this test set.
+  * eval batch size (128 vs 64) -- identical AUC to six decimals on one checkpoint.
+  * score transform (raw logits vs float32 sigmoid) -- bit-identical AUC, logit
+    range [-7.98, 4.15], zero saturated cells.
+
+The non-overlapping seed ranges argue for an evaluation-side systematic, yet every
+evaluation-side candidate above is excluded. So the remaining difference is
+training-side, and the next step is a component-by-component bisect of this loop
+against arm_legal_finetune rather than another hypothesis.
 
 Two coherent resolutions, and the repo currently implies both:
 

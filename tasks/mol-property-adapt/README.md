@@ -85,16 +85,70 @@ rule 4 is followable.
 
 **This is a problem for the task, not a triumph.** Both eval sets clipped at recovery 1.0,
 so the reward no longer discriminates at the top: a stronger agent and this one score
-identically. The `raw` column is the only reason that is visible at all. The reference wants
-re-measuring against a better recipe — tracked as open question 3 in the root
-[README](../../README.md#open-questions).
+identically. The `raw` column is the only reason that is visible at all.
 
-## Known issue
+## The reference was re-measured, and could not be raised
 
-`tox21`'s oracle does not reproduce its own anchor: 0.6896 against `reference_auc = 0.7019`,
-below the minimum of the five seeds that set it. `solution/train_reference.py` and the
-anchor arm are the same recipe in two implementations, and the repo currently asserts both.
-Either re-measure the anchor from the shipped script or drop the claim in its docstring —
-tracked as open question 1 in the root [README](../../README.md#open-questions).
+The obvious repair is a stronger `reference`. Three candidate recipes were measured against
+the private split, 5 seeds each
+([`research/modal_mol_reference.py`](../../research/modal_mol_reference.py) →
+[`mol_reference_candidates.json`](../../research/results/mol_reference_candidates.json)):
+
+| arm | tox21 | bbbp |
+|---|---|---|
+| `current` — the shipped recipe, as a control | **0.6896 ± 0.0037** | **0.9151 ± 0.0077** |
+| `grouped` — best epoch chosen on held-out scaffold *groups* | 0.6858 ± 0.0050 | 0.9079 ± 0.0048 |
+| `stronger` — the agent's LRs, cosine schedule, class weights | 0.6787 ± 0.0217 | 0.9122 ± 0.0044 |
+
+**Neither candidate beats the control on either eval set.** Scaffold-grouped validation —
+the change the agent's own log pointed at hardest, and the one defensible as a *defect* fix
+rather than a tuning preference — makes it worse on both. The agent's hyperparameters make
+tox21 worse and far noisier (±0.0217; two seeds collapse to ~0.65).
+
+So the reference cannot currently be raised on evidence. Editing it upward would produce a
+number no script here emits, which is the failure this repo shelved the protein task for.
+The reward's top-end blindness is real, but the fix is not a bigger anchor.
+
+**The first run of this was void, and the control arm is the only reason that is known.**
+It had batch 16, a 10% validation slice, and a loss normalised over all label slots rather
+than observed ones. Under it, `stronger` looked like a clean tox21 win — 0.6990 against
+0.6830. The ordering **reversed** once the recipe was transcribed correctly. Without a
+control reproducing the shipped number, that run would have shipped the opposite conclusion.
+
+## Known issue: the reference is reproducible, but not from the oracle
+
+`reference_auc = 0.7019` is sound. Re-running
+[`modal_legal_anchors.py`](../sciml-protein-regression/scripts/modal_legal_anchors.py)
+unmodified returns **0.7024**, with seeds 0/2/3/4 matching the committed values to four
+decimals and only seed 1 flipping its best-val epoch
+([`legal_anchors_rerun_2026-08-11.json`](../../research/results/legal_anchors_rerun_2026-08-11.json)).
+
+What does not reproduce is the anchor *from the shipped solution*. Four measurements of what
+is, on paper, one recipe:
+
+| source | tox21 |
+|---|---|
+| `modal_legal_anchors.py` — defines the anchor | 0.7019 / 0.7024 |
+| `solution/train_reference.py` — shipped oracle, CPU | 0.6897 |
+| independent reimplementation, A10G, 5 seeds | 0.6896 ± 0.0037 |
+| the oracle's saved checkpoint, re-scored directly | 0.689651 |
+
+The two groups do not overlap across 5 seeds each. That is why the oracle scores 0.9097
+rather than 1.0: **the task's upper anchor is defined by a script the shipped solution
+cannot reach.**
+
+Five hypotheses have been eliminated by measurement, so they need not be re-guessed:
+
+| hypothesis | how it died |
+|---|---|
+| loss normalisation (`/M.sum()` vs `/M.numel()`) | the anchor script and the reimplementation now share `/M.sum()` and still differ |
+| the training split moved after the anchor was measured | the deterministic frozen-logreg arm re-runs bit-exactly at 0.5822; it could not if the data had changed |
+| AUC task-skip rule (`obs < 10` vs 2-unique) | both average over all 12 tox21 assays on this test set |
+| eval batch size (128 vs 64) | identical AUC to 6 decimals on the same checkpoint |
+| score transform (raw logits vs float32 sigmoid) | bit-identical AUC; logit range [−7.98, 4.15], zero saturated cells |
+
+The non-overlapping seed ranges point at an evaluation-side systematic, but every
+evaluation-side candidate is now excluded — so the difference is training-side despite that.
+Tracked as open question 1 in the root [README](../../README.md#open-questions).
 
 Split construction and anchor measurement live in [`research/`](../../research/SPIKE_RESULTS.md).

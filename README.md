@@ -273,6 +273,14 @@ Ten eval sets across four tracks failed in different ways, and the failures rhym
 13. **Separate measuring from deciding.** `modal_measure.py` records what every arm scored;
     `finalize_anchors.py` turns that into anchors by stated rules. That is the difference
     between an anchor that is measured and one chosen once in a session nobody kept.
+14. **A re-measurement needs a control arm that reproduces the number being re-measured,
+    and the check has to be stated before the results are read.** Re-measuring mol's
+    reference meant transcribing the shipped recipe into a new script — and the
+    transcription was wrong in three places at once (batch size, validation fraction, loss
+    normalisation). Every candidate was then compared against a baseline the task does not
+    have, and **the ordering reversed**: the arm that looked like a clear win became the
+    worst one once the control reproduced 0.7019. A re-measurement without a control does
+    not measure the thing it names; it measures your transcription of it.
 
 ---
 
@@ -308,17 +316,29 @@ measurements are in [`research/SPIKE_RESULTS.md`](research/SPIKE_RESULTS.md).
 
 ## Open questions
 
-1. **tox21's oracle does not reproduce its own anchor** — 0.6896 against
-   `reference_auc = 0.7019`, below the minimum of the 5 seeds that set it. The shipped
-   script and the anchor arm are the same recipe in two implementations, and the repo
-   currently asserts both.
+1. **tox21's oracle does not reproduce its own anchor**, and five explanations have been
+   ruled out. The anchor itself is sound — re-running `modal_legal_anchors.py` unmodified
+   returns 0.7024 against the committed 0.7019, seeds 0/2/3/4 exact. But the shipped
+   `train_reference.py` (0.6897), an independent reimplementation (0.6896 ± 0.0037 over
+   5 seeds) and the oracle's own saved checkpoint (0.689651) all agree with each other and
+   not with it, with **no overlap** across 5 seeds each. Eliminated by measurement: loss
+   normalisation, a moved training split, the AUC task-skip rule, eval batch size, and the
+   logits-vs-sigmoid score transform. Every *evaluation-side* candidate is gone, so despite
+   the non-overlapping spread the cause is training-side; next step is a component bisect,
+   not another hypothesis.
 2. **`pref-reward-model` ships on one eval set at 3.10σ, chosen as the best of four.** A
    third of that reward band is seed noise, and taking the maximum of four marginal
    measurements inflates the figure — read it as "around 3σ". It is the weakest thing here.
-3. **mol's reference is too soft.** An agent's first attempt beat it by 28% of the band on
-   tox21 and 47% on bbbp, and its 0.7209 exceeds the best of the 25 seeds (0.7111) that set
-   the anchor. Both eval sets clipped at recovery 1.0, so the task no longer discriminates at
-   the top. The anchor wants re-measuring against a stronger reference recipe.
+3. **mol's reference is too soft, and could not be raised on evidence.** An agent's first
+   attempt beat it by 28% of the band on tox21 and 47% on bbbp; both eval sets clipped at
+   recovery 1.0, so the task no longer discriminates at the top. Two stronger candidate
+   recipes were measured, 5 seeds each — held-out *scaffold-group* validation, and the
+   agent's own LRs/schedule/class weights — and **neither beat the shipped recipe on either
+   eval set**; grouped validation was worse on both. So the defect is real but the anchor is
+   not the fix, and raising it would invent a number no script emits. A first pass at this
+   was **void** — its control arm did not reproduce the shipped number, and under it the
+   losing arm looked like a clear win. See
+   [`mol_reference_candidates.json`](research/results/mol_reference_candidates.json).
 4. **`base` is a max over noisy means, which biases it upward.** On `arc_easy` the two
    no-adaptation arms are 0.0013 apart with σ 0.0154, so which one wins is near a coin flip.
    The bias is in the safe direction; a proper treatment would use an upper confidence bound.
