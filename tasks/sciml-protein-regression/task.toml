@@ -13,6 +13,10 @@ authors = [{ name = "mleval", email = "mleval@example.com" }]
 category = "scientific-ml"
 subcategory = "protein-property-regression"
 tags = ["protein", "esm2", "gpu", "fine-tuning", "flip2", "meltome"]
+# The only task not scored by normalized recovery between two measured anchors.
+# Both tiers were set below the on-contract frozen ceiling of 0.5332 (scripts/lpft.json),
+# so a submission that never adapts the encoder also scores 1.0. See README.md.
+reward_definition = "three fixed tiers on Spearman: 0 below t_weak, 0.5 to t_strong, 1.0 above — pending replacement by normalized recovery"
 
 [agent]
 timeout_sec = 14400

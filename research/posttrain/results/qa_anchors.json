@@ -298,10 +298,6 @@
     }
   },
   "rejected": {},
-  "criteria": {
-    "min_band_sigma": 3.0,
-    "min_band": 0.02
-  },
   "criterion": {
     "max_reward_noise": 0.25,
     "min_band_sigma": 4.0,

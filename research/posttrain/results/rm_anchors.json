@@ -352,10 +352,6 @@
     "online": "imprecise: band_sigma 0.40 < 4.00, so a rerun of the same submission moves the reward by 2.48 against a tolerance of 0.25; not distinguishable from zero: z 0.73 < 2.24 (Bonferroni over 4 screened eval sets)",
     "harmless": "imprecise: band_sigma 1.69 < 4.00, so a rerun of the same submission moves the reward by 0.59 against a tolerance of 0.25"
   },
-  "criteria": {
-    "min_band_sigma": 3.0,
-    "min_band": 0.0
-  },
   "criterion": {
     "max_reward_noise": 0.25,
     "min_band_sigma": 4.0,

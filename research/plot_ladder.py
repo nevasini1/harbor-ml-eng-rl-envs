@@ -8,11 +8,25 @@ width. That is itself the finding, so the magnitude is not faked: each dot
 carries its own +/-1 sd and, below it, that sd as a share of the band the reward
 has to resolve. Both numbers sit at the dot they describe.
 
+Every number below is read from a committed file. It used to be typed in here,
+and the figure went stale the moment a measurement moved: the meltome panel
+carried the verdict "Inverted -- unfixable" for two days after
+`tasks/sciml-protein-regression/README.md` had overturned it on the strength of
+`scripts/lpft.json`, while the rendered PNG stayed embedded in the mol task's
+README. A figure that restates numbers cannot be re-derived, so it silently
+becomes the oldest claim in the repo. `common/check_reward.py` now fails if any
+plot script hardcodes a value a committed anchor owns.
+
 Sources:
-  tox21, bbbp   tasks/sciml-protein-regression/scripts/mol_headroom{,_bbbp}.json  (n=5)
-  bbbp          scripts/bbbp_split_v2.json (re-split, anchor selected on separation)
-  meltome       commit ef5f524 (shipped split), tests/tiers.json
+  tox21, bbbp   research/results/anchors_private.json  (measured_arms_n5_legal, n=5)
+                tasks/mol-property-adapt/tests/grader/private/anchors.json (the
+                shipped base/reference, so the band drawn is the band that scores)
+  meltome       tasks/sciml-protein-regression/scripts/lpft.json  (n=5, on-contract
+                CLS frozen head vs LP-FT) and tests/tiers.json (the tiers that ship)
 """
+
+import json
+from pathlib import Path
 
 import matplotlib
 matplotlib.use("Agg")
@@ -37,46 +51,94 @@ COLORS = [C_PROBE, C_HEAD, C_FT]
 
 NOISE_LIMIT = 10.0  # % of band; above this, rerunning the same submission regrades it
 
-PANELS = [
-    dict(
-        title="tox21  ·  ROC-AUC",
+ROOT = Path(__file__).resolve().parent.parent
+
+
+def load(rel: str) -> dict:
+    return json.loads((ROOT / rel).read_text())
+
+
+MOL_MEASURED = load("research/results/anchors_private.json")
+MOL_SHIPPED = load("tasks/mol-property-adapt/tests/grader/private/anchors.json")
+LPFT = load("tasks/sciml-protein-regression/scripts/lpft.json")
+TIERS = load("tasks/sciml-protein-regression/tests/tiers.json")
+
+# The three rungs, in the order they are drawn, and the key each is stored under.
+MOL_ARMS = ("frozen_logreg_cls", "frozen_head_cls", "finetune_cls")
+
+
+def mol_panel(name: str, title: str, xlim: tuple[float, float], note: str) -> dict:
+    """A mol panel, with the band taken from the file the verifier divides by.
+
+    The base arm is not nominated here: it is recovered by matching the shipped
+    `base_auc` against the measured arms. That is the "base is the ceiling of the
+    trivial class" rule made visible -- tox21's ceiling is the trained head and
+    bbbp's is the logistic probe, and the caption follows the measurement rather
+    than being written to agree with it.
+    """
+    measured = MOL_MEASURED[name]
+    shipped = MOL_SHIPPED[name]
+    arms = measured["measured_arms_n5_legal"]
+    base, ref = shipped["base_auc"], shipped["reference_auc"]
+    pct = measured["noise_as_pct_of_band"]
+
+    base_arm = min(MOL_ARMS, key=lambda a: abs(arms[a]["mean"] - base))
+    base_label = "frozen head" if base_arm == "frozen_head_cls" else "best frozen"
+
+    return dict(
+        title=title,
         verdict="Ordered and separated",
-        detail="fine-tune +0.068 over frozen head (6.5$\\sigma$)   ·   band = 0.0678",
-        xlim=(0.56, 0.76),
-        vals=[0.5822, 0.6341, 0.7019],
-        errs=[0.0, 0.0089, 0.0055],
-        noise=[None, 13.1, 8.1],
-        band=(0.6341, 0.7019),
+        detail=f"fine-tune +{ref - base:.3f} over {base_label} "
+               f"({shipped['band_sigma']:.1f}$\\sigma$)   ·   band = {ref - base:.4f}",
+        xlim=xlim,
+        vals=[arms[a]["mean"] for a in MOL_ARMS],
+        errs=[arms[a].get("std", 0.0) for a in MOL_ARMS],
+        noise=[None, pct["frozen_head"], pct["finetune"]],
+        band=(base, ref),
         band_label="reward band\n(base $\\rightarrow$ reference)",
         marks=[],
-        note="band edges land on the two dots it\nmust separate — this is the target shape",
-    ),
-    dict(
+        note=note,
+    )
+
+
+def meltome_panel() -> dict:
+    """The protein panel, re-measured on contract.
+
+    What this panel used to say -- "Inverted -- unfixable" -- was drawn from an
+    arm that unfroze two layers from a randomly initialised head, and against a
+    frozen ceiling that used mean pooling the submission contract cannot express.
+    `lpft.json` re-measured both on contract and the ordering holds. What is
+    actually broken is the reward: `t_weak` and `t_strong` are drawn as marks
+    here precisely because they both sit *below* the frozen ceiling, so a
+    submission that never touches the encoder also scores 1.0.
+    """
+    frozen, lpft = LPFT["frozen"], LPFT["lpft"]
+    pct = LPFT["noise_as_pct_of_band"]
+    return dict(
         title="meltome (protein)  ·  Spearman",
-        verdict="Inverted — unfixable",
-        detail="fine-tune $-$0.028 BELOW frozen head ($-$7.5$\\sigma$)   ·   band = 0.0613",
-        xlim=(0.37, 0.57),
-        vals=[0.3887, 0.5494, 0.5214],
-        errs=[0.0, 0.0033, 0.0017],
-        noise=[None, 5.4, 2.8],
-        band=(0.3887, 0.45),
-        band_label="reward band\n($t_{weak} \\rightarrow t_{strong}$)",
-        marks=[],
-        note="both frozen and fine-tune clear the top tier;\nnoise is fine — the ordering is what kills it",
-    ),
-    dict(
-        title="bbbp  ·  ROC-AUC  (re-split)",
-        verdict="Ordered and separated",
-        detail="fine-tune +0.014 over best frozen (4.1$\\sigma$)   ·   band = 0.0143",
-        xlim=(0.80, 1.00),
-        vals=[0.8978, 0.8934, 0.9121],
-        errs=[0.0, 0.0028, 0.0021],
-        noise=[None, 19.6, 14.7],
-        band=(0.8978, 0.9121),
-        band_label="reward band\n(base $\\rightarrow$ reference)",
-        marks=[],
-        note="the probe beats the trained head here, so base is\nthe probe: the ceiling of both, not one of them",
-    ),
+        verdict="Ordered — but the shipped tiers miss the band",
+        detail=f"LP-FT +{lpft['mean'] - frozen['mean']:.3f} over frozen head "
+               f"({LPFT['band_sigma']:.2f}$\\sigma$)   ·   band = {LPFT['band']:.4f}",
+        xlim=(0.375, 0.575),
+        vals=[TIERS["t_weak"], frozen["mean"], lpft["mean"]],
+        errs=[0.0, frozen["std"], lpft["std"]],
+        noise=[None, pct["frozen"], pct["lpft"]],
+        band=(frozen["mean"], lpft["mean"]),
+        band_label="measured band\n(frozen $\\rightarrow$ LP-FT)",
+        marks=[(TIERS["t_weak"], "$t_{weak}$", CRITICAL),
+               (TIERS["t_strong"], "$t_{strong}$", CRITICAL)],
+        note="both shipped tiers sit below the frozen ceiling,\n"
+             "so a submission that never adapts also scores 1.0",
+    )
+
+
+PANELS = [
+    mol_panel("tox21", "tox21  ·  ROC-AUC", (0.56, 0.76),
+              "band edges land on the two dots it\nmust separate — this is the target shape"),
+    meltome_panel(),
+    mol_panel("bbbp", "bbbp  ·  ROC-AUC  (re-split)", (0.80, 1.00),
+              "the probe beats the trained head here, so base is\n"
+              "the probe: the ceiling of both, not one of them"),
 ]
 
 plt.rcParams.update({
@@ -86,7 +148,9 @@ plt.rcParams.update({
 })
 
 fig, axes = plt.subplots(1, 3, figsize=(15.0, 6.4), dpi=200)
-fig.subplots_adjust(left=0.135, right=0.985, top=0.735, bottom=0.185, wspace=0.20)
+# top leaves room for three stacked labels above each panel (title, verdict,
+# detail) plus the two-line figure subtitle above those, which used to collide.
+fig.subplots_adjust(left=0.135, right=0.985, top=0.705, bottom=0.185, wspace=0.20)
 
 y = [0, 1, 2]
 
@@ -126,9 +190,12 @@ for ax, p in zip(axes, PANELS):
         ax.annotate(sub, (cx, yi), textcoords="offset points", xytext=(0, -24),
                     ha="center", fontsize=8.2, color=subcol)
 
+    # Threshold marks are labelled at the top, level with the band label: they
+    # sit far to the left of the band by construction (that is the finding), so
+    # the two never collide, and the bottom of the panel stays clear for the note.
     for xv, lab, col in p["marks"]:
         ax.axvline(xv, color=col, lw=1.6, zorder=2)
-        ax.text(xv, -0.85, lab, ha="center", va="center", fontsize=8.2,
+        ax.text(xv, 2.72, lab, ha="center", va="center", fontsize=8.2,
                 color=col, fontweight="bold")
 
     ax.set_xlim(*p["xlim"])
@@ -158,7 +225,7 @@ fig.text(
     0.0135, 0.925,
     "The band's left edge belongs on the highest rung that does not adapt the encoder; its right edge on the rung that does. "
     "It must also be wide relative to seed noise.\n"
-    "tox21 and bbbp are the on-contract measurements that now ship; meltome is shown as measured when it was diagnosed and is not part of the task.",
+    "tox21 and bbbp ship this band as their reward. meltome's is measured but not shipped: its reward is three fixed tiers, and both of them fall short of the band's left edge.",
     ha="left", va="top", fontsize=9.2, color=INK_2, linespacing=1.6,
 )
 fig.text(

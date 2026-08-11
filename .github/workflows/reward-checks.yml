@@ -1,0 +1,42 @@
+# The reward's consistency checks, run on every push.
+#
+# `common/sync.py --check` has carried the comment "the form worth wiring into
+# CI" since it was written, and there was no CI to wire it into. These three
+# checks need no GPU, no fixtures and no third-party packages -- they read only
+# committed JSON, TOML and Python -- so there is no reason for them to be manual.
+#
+# What each one catches, and why it is worth a job:
+#
+#   sync.py --check       an edit to common/verifier_core.py that never reached a
+#                         task's tests/ directory. The image would then grade with
+#                         the old code while the repo shows the new code.
+#   check_reward.py       two files making different claims about the same reward:
+#                         a shipped anchor that no longer matches its measurement,
+#                         a figure that hardcodes a value instead of reading it.
+#   shipping.py           informational: prints every eval set against the current
+#                         bar, including the ones that shipped before it existed.
+name: reward-checks
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  consistency:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          # 3.11 for tomllib. Nothing here needs a third-party package, which is
+          # what makes this job take seconds rather than building an image.
+          python-version: "3.11"
+
+      - name: shared grader modules have not drifted
+        run: python common/sync.py --check
+
+      - name: the reward says the same thing in every file that states it
+        run: python common/check_reward.py
+
+      - name: shipping criterion, applied to every task
+        run: python common/shipping.py

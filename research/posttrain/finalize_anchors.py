@@ -152,6 +152,16 @@ def main() -> None:
             continue
         data = json.loads(path.read_text())
         out = derive(track, data)
+        # Clear last run's derived keys before merging this run's in. `update`
+        # merges, so anything the previous pipeline wrote and this one no longer
+        # writes survives forever: both files carried a `criteria` block from a
+        # pre-4.0 run -- min_band_sigma 3.0 and the `min_band` test that
+        # common/shipping.py records as removed -- sitting one character away from
+        # the live `criterion` key, read by nothing. The measurement (`config`,
+        # `arms`) is what must be preserved across a re-derivation; the verdict
+        # must not be.
+        for stale in ("anchors", "screened", "rejected", "criterion", "criteria"):
+            data.pop(stale, None)
         data.update(out)
         path.write_text(json.dumps(data, indent=2))
 
