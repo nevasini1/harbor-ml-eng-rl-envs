@@ -6,7 +6,7 @@ record of the measurements behind it.
 
 | | |
 |---|---|
-| [`SPIKE_RESULTS.md`](SPIKE_RESULTS.md) | the original screen: Hydro (killed), protein (shelved), molecular property (shipped) |
+| [`SPIKE_RESULTS.md`](SPIKE_RESULTS.md) | the original screen: Hydro (killed), protein (shelved here, later re-measured on-contract and found repairable), molecular property (shipped) |
 | [`posttrain/RESULTS.md`](posttrain/RESULTS.md) | the two post-training tracks — screening, Gate A, anchor derivation, verifier costs |
 | `posttrain/` | corpora, splits, effort ladders, GPU measurement and the anchor derivation |
 | `results/` | measured anchors and ladders, as JSON, per track |

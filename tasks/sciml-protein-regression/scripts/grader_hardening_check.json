@@ -48,7 +48,7 @@
     {
       "check": "legit records uncapped recovery_raw",
       "pass": true,
-      "detail": "recovery_raw=-1.841622 recovery=0.0"
+      "detail": "recovery_raw=-2.043643 recovery=0.0"
     },
     {
       "check": "NaN weight is rejected",
@@ -98,15 +98,17 @@
             "arch_sha256": "4d1045c1456b732ac4dadad9a099c2ebcd7419b05b60a974bee78432208ab667",
             "public_checkpoint_matches": 0,
             "min_tensor_cosine": 1.0,
-            "min_tensor_name": "encoder.layer.0.output.dense.bias",
+            "min_tensor_name": "encoder.layer.0.attention.output.dense.weight",
+            "min_vector_cosine": 1.0,
+            "min_vector_name": "encoder.layer.0.output.dense.bias",
             "tensors_compared": 53,
-            "auc": 0.509238,
+            "auc": 0.495541,
             "n_test": 1566,
             "n_tasks_scored": 12,
             "artifact_molecules_seen": 0,
             "private_test_overlap": 0,
             "recovery": 0.0,
-            "recovery_raw": -1.841622,
+            "recovery_raw": -2.043643,
             "status": "ok"
           },
           "bbbp": {
@@ -116,15 +118,17 @@
             "arch_sha256": "4d1045c1456b732ac4dadad9a099c2ebcd7419b05b60a974bee78432208ab667",
             "public_checkpoint_matches": 0,
             "min_tensor_cosine": 1.0,
-            "min_tensor_name": "encoder.layer.0.output.dense.bias",
+            "min_tensor_name": "encoder.layer.0.attention.output.dense.weight",
+            "min_vector_cosine": 1.0,
+            "min_vector_name": "encoder.layer.0.output.dense.bias",
             "tensors_compared": 53,
-            "auc": 0.470407,
+            "auc": 0.309365,
             "n_test": 407,
             "n_tasks_scored": 1,
             "artifact_molecules_seen": 0,
             "private_test_overlap": 0,
             "recovery": 0.0,
-            "recovery_raw": -29.887622,
+            "recovery_raw": -41.149301,
             "status": "ok"
           }
         },
@@ -155,15 +159,17 @@
             "arch_sha256": "4d1045c1456b732ac4dadad9a099c2ebcd7419b05b60a974bee78432208ab667",
             "public_checkpoint_matches": 0,
             "min_tensor_cosine": 1.0,
-            "min_tensor_name": "encoder.layer.0.output.dense.bias",
+            "min_tensor_name": "encoder.layer.0.attention.output.dense.weight",
+            "min_vector_cosine": 1.0,
+            "min_vector_name": "encoder.layer.0.output.dense.bias",
             "tensors_compared": 53,
-            "auc": 0.627573,
+            "auc": 0.613111,
             "n_test": 407,
             "n_tasks_scored": 1,
             "artifact_molecules_seen": 0,
             "private_test_overlap": 0,
             "recovery": 0.0,
-            "recovery_raw": -18.896993,
+            "recovery_raw": -19.908322,
             "status": "ok"
           }
         },
@@ -194,15 +200,17 @@
             "arch_sha256": "4d1045c1456b732ac4dadad9a099c2ebcd7419b05b60a974bee78432208ab667",
             "public_checkpoint_matches": 0,
             "min_tensor_cosine": 1.0,
-            "min_tensor_name": "encoder.layer.0.output.dense.bias",
+            "min_tensor_name": "encoder.layer.0.attention.output.dense.weight",
+            "min_vector_cosine": 1.0,
+            "min_vector_name": "encoder.layer.0.output.dense.bias",
             "tensors_compared": 53,
-            "auc": 0.676303,
+            "auc": 0.331775,
             "n_test": 407,
             "n_tasks_scored": 1,
             "artifact_molecules_seen": 0,
             "private_test_overlap": 0,
             "recovery": 0.0,
-            "recovery_raw": -15.489301,
+            "recovery_raw": -39.582168,
             "status": "ok"
           }
         },
@@ -220,9 +228,9 @@
       "metrics.json": {
         "eval_sets": {},
         "status": "grader_error",
+        "reward": 0.0,
         "reason": "RuntimeError: anchors.json missing at /grader/private/anchors.json; verifier image is broken",
-        "traceback": "Traceback (most recent call last):\n  File \"/tests/grade.py\", line 470, in main\n    anchors = load_anchors(Path(args.anchors))\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tests/grade.py\", line 430, in load_anchors\n    raise RuntimeError(f\"anchors.json missing at {path}; verifier image is broken\")\nRuntimeError: anchors.json missing at /grader/private/anchors.json; verifier image is broken\n",
-        "reward": 0.0
+        "traceback": "Traceback (most recent call last):\n  File \"/tests/grade.py\", line 265, in main\n    anchors = load_anchors(Path(args.anchors), \"auc\", (\"n_tasks\",),\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tests/verifier_core.py\", line 385, in load_anchors\n    raise RuntimeError(f\"anchors.json missing at {path}; verifier image is broken\")\nRuntimeError: anchors.json missing at /grader/private/anchors.json; verifier image is broken\n"
       },
       "stderr_tail": ""
     },
@@ -241,9 +249,11 @@
             "arch_sha256": "4d1045c1456b732ac4dadad9a099c2ebcd7419b05b60a974bee78432208ab667",
             "public_checkpoint_matches": 0,
             "min_tensor_cosine": 1.0,
-            "min_tensor_name": "encoder.layer.0.output.dense.bias",
+            "min_tensor_name": "encoder.layer.2.attention.output.dense.weight",
+            "min_vector_cosine": 1.0,
+            "min_vector_name": "encoder.layer.0.output.dense.bias",
             "tensors_compared": 53,
-            "auc": 0.50841,
+            "auc": 0.510368,
             "n_test": 1566,
             "n_tasks_scored": 12,
             "recovery": 0.0,
@@ -257,9 +267,11 @@
             "arch_sha256": "4d1045c1456b732ac4dadad9a099c2ebcd7419b05b60a974bee78432208ab667",
             "public_checkpoint_matches": 0,
             "min_tensor_cosine": 1.0,
-            "min_tensor_name": "encoder.layer.0.output.dense.bias",
+            "min_tensor_name": "encoder.layer.2.attention.output.dense.weight",
+            "min_vector_cosine": 1.0,
+            "min_vector_name": "encoder.layer.0.output.dense.bias",
             "tensors_compared": 53,
-            "auc": 0.349463,
+            "auc": 0.275489,
             "n_test": 407,
             "n_tasks_scored": 1,
             "recovery": 0.0,
@@ -281,9 +293,9 @@
       "metrics.json": {
         "eval_sets": {},
         "status": "grader_error",
+        "reward": 0.0,
         "reason": "RuntimeError: test_inchikeys.json missing at /grader/private/test_inchikeys.json; the contamination check instruction.md promises cannot run and the verifier image is broken",
-        "traceback": "Traceback (most recent call last):\n  File \"/tests/grade.py\", line 471, in main\n    private_keys = load_private_keys(Path(args.test_keys))\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tests/grade.py\", line 320, in load_private_keys\n    raise RuntimeError(\nRuntimeError: test_inchikeys.json missing at /grader/private/test_inchikeys.json; the contamination check instruction.md promises cannot run and the verifier image is broken\n",
-        "reward": 0.0
+        "traceback": "Traceback (most recent call last):\n  File \"/tests/grade.py\", line 267, in main\n    private_keys = load_private_keys(Path(args.test_keys))\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tests/grade.py\", line 152, in load_private_keys\n    raise RuntimeError(\nRuntimeError: test_inchikeys.json missing at /grader/private/test_inchikeys.json; the contamination check instruction.md promises cannot run and the verifier image is broken\n"
       },
       "stderr_tail": ""
     }

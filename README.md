@@ -25,7 +25,7 @@ docs/       background reading
 | [`mol-property-adapt`](tasks/mol-property-adapt/) | encoder adaptation on molecules | 8 CPU, 4 h | 6.5σ / 4.1σ | 0.9097 | **1.0** |
 | [`qa-sft-adapt`](tasks/qa-sft-adapt/) | supervised fine-tuning of a 135M causal LM | 8 CPU, 4 h | 6.0σ / 16.0σ / 5.6σ | 1.0 | **0.734** |
 | [`pref-reward-model`](tasks/pref-reward-model/) | reward modelling on human preferences | 1 GPU, 4 h | 3.1σ — **fails the bar** | 0.5828 | **0.865** † |
-| [`sciml-protein-regression`](tasks/sciml-protein-regression/) | **shelved** — proteins; the negative result | 1 GPU, 4 h | inverted | 1.0 | 1.0 — and so does a frozen probe |
+| [`sciml-protein-regression`](tasks/sciml-protein-regression/) | **repairable** — proteins; the task discriminates, the reward does not | 1 GPU, 4 h | 3.9σ (re-measured) | 1.0 | 1.0 — and so does a frozen probe |
 
 All four have been run end to end through Harbor, by their own shipped oracle **and** by a
 real agent (`codex`, gpt-5.6-sol). † `pref-reward-model` was graded 0.0 at the time by a
@@ -38,7 +38,8 @@ false reject in the verifier and is 0.865 after the fix — see
 - **0.58** on `pref-reward-model` — it landed 1.3σ under a reference that is a five-seed
   *mean*, which a single seed does about half the time.
 - **1.0** on the protein task means nothing at all, because a submission that never touches
-  the encoder scores 1.0 there too.
+  the encoder scores 1.0 there too — its three fixed tiers both sit below the frozen ceiling,
+  so a real 0.0375 difference between the oracle and a frozen probe quantizes away.
 
 The agent rewards are the more useful signal, because an oracle never reads
 `instruction.md`. `qa-sft-adapt` is the one that behaved best as an *evaluation*: it

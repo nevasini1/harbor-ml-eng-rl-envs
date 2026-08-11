@@ -9,7 +9,7 @@ between them.
 | [`mol-property-adapt`](mol-property-adapt/) | encoder adaptation on molecules | 8 CPU, 4 h | recovery between measured anchors | 6.5σ / 4.1σ | 0.9097 | **1.0** |
 | [`qa-sft-adapt`](qa-sft-adapt/) | supervised fine-tuning of a 135M causal LM | 8 CPU, 4 h | same | 6.0σ / 16.0σ / 5.6σ | 1.0 | **0.734** |
 | [`pref-reward-model`](pref-reward-model/) | **provisional** — reward modelling on human preferences | 1 GPU, 4 h | same | 3.1σ, fails the 4.0σ bar | 0.5828 | **0.865** |
-| [`sciml-protein-regression`](sciml-protein-regression/) | **shelved** — encoder adaptation on proteins | 1 GPU, 4 h | 3 fixed tiers | inverted | 1.0 | 1.0, and so does a frozen probe |
+| [`sciml-protein-regression`](sciml-protein-regression/) | **repairable** — encoder adaptation on proteins | 1 GPU, 4 h | 3 fixed tiers | 3.9σ (re-measured) | 1.0 | 1.0, and so does a frozen probe |
 
 `separation` is `band_sigma`: the base→reference band divided by seed noise. Whether that
 is good enough is decided by [`common/shipping.py`](../common/shipping.py), which derives

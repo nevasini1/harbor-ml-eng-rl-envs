@@ -11,6 +11,8 @@ import math
 import traceback
 from pathlib import Path
 
+from verifier_core import Reject, check_lineage
+
 import numpy as np
 import pandas as pd
 import torch
@@ -134,97 +136,39 @@ def check_forbidden_hashes(model_dir: Path) -> str | None:
 
 
 def overlapping_backbone_cosine(sub_dir: Path, base_dir: Path) -> tuple[float, int]:
-    """Min per-tensor cosine over shared non-classifier tensors (float64)."""
-    from safetensors import safe_open
+    """Min per-tensor cosine over the shared backbone, via common/verifier_core.py.
 
-    sub_files = sorted(sub_dir.glob("*.safetensors"))
-    base_files = sorted(base_dir.glob("*.safetensors"))
-    if not sub_files or not base_files:
-        # Fall back to pytorch_model.bin via torch if needed.
-        return _torch_cosine(sub_dir, base_dir)
+    This used to be ~90 lines of its own implementation, and it carried a bug the
+    shared version has since fixed: the floor was applied to the minimum over ALL
+    shared tensors, including 1-D biases. A bias whose entries are near zero
+    rotates a long way under a functionally irrelevant update, so an honest
+    fine-tune can be rejected on a vector that does not affect the model's output.
+    That cost a real agent trial on pref-reward-model a reward of 0.0 where 0.86
+    was earned (commit 8d42c88). The runs recorded for this task pass at
+    cosine_min 0.992-1.000, so here it was latent rather than active -- which is
+    luck, not safety.
 
-    def tensors(path: Path) -> dict[str, torch.Tensor]:
-        out = {}
-        with safe_open(str(path), framework="pt", device="cpu") as f:
-            for k in f.keys():
-                if k.startswith("classifier.") or k.startswith("score."):
-                    continue
-                out[k] = f.get_tensor(k)
-        return out
+    `check_lineage` raises on failure and returns a dict; this file reports reasons
+    as strings and writes numeric-only rewards, so the contract is adapted here
+    rather than propagated. Returns (min weight-matrix cosine, tensors compared).
 
-    sub = {}
-    base = {}
-    for p in sub_files:
-        sub.update(tensors(p))
-    for p in base_files:
-        base.update(tensors(p))
-
-    # Map classification-wrapped names: EsmForSequenceClassification may prefix
-    # backbone keys with "esm." while the base MLM checkpoint does not.
-    def normalize(name: str) -> str:
-        if name.startswith("esm."):
-            return name[len("esm.") :]
-        if name.startswith("base_model."):
-            return name[len("base_model.") :]
-        return name
-
-    base_norm = {normalize(k): v for k, v in base.items()}
-    mins = []
-    for k, v in sub.items():
-        bk = base_norm.get(normalize(k))
-        if bk is None or tuple(bk.shape) != tuple(v.shape):
-            continue
-        a = v.detach().to(torch.float64).reshape(-1)
-        b = bk.detach().to(torch.float64).reshape(-1)
-        # A single non-finite element defeats the whole floor check: it makes the
-        # norm NaN, so the zero-norm guard below is False (NaN == 0.0 is False),
-        # and min() returns NaN whenever NaN sorts first -- and `NaN < COS_FLOOR`
-        # is also False, so the caller's floor never fires. safe_open() yields
-        # keys sorted, so an attacker just NaNs the alphabetically-first
-        # comparable tensor (esm.contact_head.*, unused at inference) and any
-        # unrelated same-architecture encoder passes provenance untouched.
-        # Reject non-finite weights outright rather than letting them propagate.
-        if not (torch.isfinite(a).all() and torch.isfinite(b).all()):
-            raise ValueError(f"non_finite_weights:{k}")
-        na = torch.linalg.vector_norm(a)
-        nb = torch.linalg.vector_norm(b)
-        if float(na) == 0.0 or float(nb) == 0.0:
-            continue
-        cos = float(torch.dot(a, b) / (na * nb))
-        if not math.isfinite(cos):
-            raise ValueError(f"non_finite_cosine:{k}")
-        mins.append(cos)
-    if not mins:
-        return 0.0, 0
-    return float(min(mins)), len(mins)
+    Not migrated: check_architecture and check_forbidden_hashes. The former returns
+    a reason string rather than raising, and the latter compares against a
+    hardcoded set of sibling sha256s rather than the public_hashes.json index the
+    shared layer expects -- so it never had the repo-prefix bug fixed in 8d42c88.
+    Migrating those means changing this grader's error contract, which its 16
+    hardening assertions are written against.
+    """
+    # Both gates are disabled here and left to the caller. check_lineage RAISES on
+    # a low tensor count and on a low cosine; this grader reports those as its own
+    # named reasons (`insufficient_backbone_overlap`, `low_backbone_cosine`) and
+    # its 16 hardening assertions are written against those strings. Letting the
+    # shared function raise first would silently rewrite them to
+    # `provenance_failed:Reject:...`.
+    info = check_lineage(sub_dir, base_dir, min_tensors=0, cos_floor=0.0)
+    return float(info["min_tensor_cosine"]), int(info["tensors_compared"])
 
 
-def _torch_cosine(sub_dir: Path, base_dir: Path) -> tuple[float, int]:
-    from transformers import AutoModel, AutoModelForSequenceClassification
-
-    sub = AutoModelForSequenceClassification.from_pretrained(sub_dir, torch_dtype=torch.float32)
-    base = AutoModel.from_pretrained(base_dir, torch_dtype=torch.float32)
-    sd, bd = sub.state_dict(), base.state_dict()
-    mins = []
-    for k, v in sd.items():
-        if k.startswith("classifier.") or k.startswith("score."):
-            continue
-        cand = k
-        if cand not in bd and cand.startswith("esm."):
-            cand = cand[len("esm.") :]
-        if cand not in bd or tuple(bd[cand].shape) != tuple(v.shape):
-            continue
-        a = v.detach().to(torch.float64).reshape(-1)
-        b = bd[cand].detach().to(torch.float64).reshape(-1)
-        na = torch.linalg.vector_norm(a)
-        nb = torch.linalg.vector_norm(b)
-        if float(na) == 0.0 or float(nb) == 0.0:
-            continue
-        mins.append(float(torch.dot(a, b) / (na * nb)))
-    return (float(min(mins)) if mins else 0.0), len(mins)
-
-
-@torch.no_grad()
 def predict(model_dir: Path, seqs: list[str], batch_size: int = 16) -> np.ndarray:
     from transformers import AutoModelForSequenceClassification, AutoTokenizer
 

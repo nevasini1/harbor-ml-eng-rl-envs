@@ -30,6 +30,10 @@ TARGETS = {
                                                      "textmatch.py"],
     ROOT / "tasks" / "qa-sft-adapt" / "tests": ["verifier_core.py",
                                                 "textmatch.py"],
+    # Partial: this grader uses the shared lineage check only. Its architecture
+    # and forbidden-hash checks keep their own implementations -- different error
+    # contract, and a hardcoded sha set rather than the public_hashes.json index.
+    ROOT / "tasks" / "sciml-protein-regression" / "tests": ["verifier_core.py"],
 }
 
 

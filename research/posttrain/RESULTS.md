@@ -26,7 +26,9 @@ GPU-free step (`finalize_anchors.py`) so the rules can be re-read and re-run.
 ## Gate A — do the pretrained weights do any work?
 
 Every arm is repeated with an identically-configured but **randomly initialized** model.
-This is the check that killed the Hydro track and shelved the protein one, and it is the
+This is the check that killed the Hydro track and shelved the protein one (a verdict later
+corrected: that task's fine-tune arm was pathological and its frozen baseline off-contract),
+and it is the
 one that is easiest to pass by accident: an eval set can show a clean band between "no
 adaptation" and "real adaptation" while the pretrained weights contribute nothing,
 because both arms are learning the same surface feature.
