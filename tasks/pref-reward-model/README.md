@@ -92,7 +92,7 @@ keeping the task at a scale where nothing separates the arms.
 ## Honest limits
 
 - **It fails the bar.** 3.10σ against 4.0σ; a third of the reward band would be seed noise.
-  For scale, `mol-property-adapt`'s `bbbp` passes at 4.09σ and a reward noise of 0.24.
+  For scale, `mol-property-adapt`'s `bbbp` passes at 6.81σ and a reward noise of 0.15.
 - **It was the best of four screened eval sets.** Taking the maximum of four marginal
   measurements inflates it, which is why the existence test is Bonferroni-corrected by four.
 - **An earlier, looser bar passed it.** The criterion used to be 3.0σ, chosen one notch below

@@ -26,8 +26,8 @@ Measured over 5 seeds on the private split
 
 | eval set | train | test | base | reference | band | separation |
 |---|---|---|---|---|---|---|
-| `tox21` (12 assays) | 2,000 | 1,566 | 0.6341 | 0.7019 | 0.0678 | **6.48σ** |
-| `bbbp` (1 label) | 1,631 | 407 | 0.8978 | 0.9121 | 0.0143 | **4.09σ** |
+| `tox21` (12 assays) | 2,000 | 1,566 | 0.6341 | 0.7019 | 0.0678 | **7.62σ** |
+| `bbbp` (1 label) | 1,631 | 407 | 0.8978 | 0.9121 | 0.0143 | **6.81σ** |
 
 `base` comes from a **different rung on each set** — a trained head on tox21 (0.6341,
 beating a 0.5822 probe), a logistic probe on bbbp (0.8978, beating a 0.8934 head). That is

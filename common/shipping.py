@@ -213,8 +213,16 @@ def report() -> int:
                 continue
             v = evaluate(band=band, base_std=sigma, ref_std=sigma,
                          n_seeds=a.get("n_seeds", 5),
-                         k_screened=K_SCREENED[task],
+                         k_screened=a.get("k_screened", K_SCREENED[task]),
                          random_init_gain=a.get("pretraining_gain"))
+            # Prefer what the assembler recorded. It had the true per-arm noise;
+            # this reconstruction has to assume both arms are as loose as the
+            # looser one, which understates z. Printing the reconstruction next to
+            # a file that already states the real number is two answers to one
+            # question -- the thing this criterion exists to stop.
+            v = {**v, **{k: a[k] for k in
+                         ("band_sigma", "reward_noise_on_rerun", "band_z")
+                         if k in a}}
             print(f"{task:<26}{name:<14}{v['band']:>8.4f}{v['band_sigma']:>7.2f}"
                   f"{v['reward_noise_on_rerun']:>7.2f}{v['band_z']:>7.2f}  "
                   + ("ships" if v["ships"] else "NO -- " + v["failed"][0][:60]))

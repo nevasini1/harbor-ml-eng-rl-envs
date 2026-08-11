@@ -6,8 +6,16 @@
     "t_implausible": 0.85,
     "base_definition": "encoder frozen, RobertaClassificationHead trained on the CLS embedding; 5-seed mean",
     "reference_definition": "full fine-tune through the CLS head, body lr 3e-5 + OneCycle, 20 epochs, best-val epoch; 5-seed mean",
+    "base_arm": "frozen_head_cls",
     "band": 0.0678,
-    "band_sigma": 6.48
+    "sigma": 0.0089,
+    "band_sigma": 7.62,
+    "reward_noise_on_rerun": 0.131,
+    "min_band_sigma": 4.0,
+    "band_z": 14.49,
+    "z_crit_bonferroni": 2.33,
+    "k_screened": 5,
+    "n_seeds": 5
   },
   "bbbp": {
     "n_tasks": 1,
@@ -16,7 +24,15 @@
     "t_implausible": 0.97,
     "base_definition": "ceiling of the frozen-encoder methods: logistic probe on the CLS embedding, 0.8978 (deterministic), which beats the trained head at 0.8934 +/- 0.0028",
     "reference_definition": "full fine-tune through the CLS head, body lr 3e-5 + OneCycle, 20 epochs, best-val epoch; 5-seed mean",
+    "base_arm": "frozen_logreg_cls",
     "band": 0.0143,
-    "band_sigma": 4.09
+    "sigma": 0.0021,
+    "band_sigma": 6.81,
+    "reward_noise_on_rerun": 0.147,
+    "min_band_sigma": 4.0,
+    "band_z": 15.23,
+    "z_crit_bonferroni": 2.33,
+    "k_screened": 5,
+    "n_seeds": 5
   }
 }

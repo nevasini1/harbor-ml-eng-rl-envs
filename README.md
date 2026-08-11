@@ -22,10 +22,10 @@ docs/       background reading
 
 | | tests | compute | separation | oracle | **agent** |
 |---|---|---|---|---|---|
-| [`mol-property-adapt`](tasks/mol-property-adapt/) | encoder adaptation on molecules | 8 CPU, 4 h | 6.5σ / 4.1σ | 0.9097 | **1.0** |
+| [`mol-property-adapt`](tasks/mol-property-adapt/) | encoder adaptation on molecules | 8 CPU, 4 h | 7.6σ / 6.8σ | 0.9097 | **1.0** |
 | [`qa-sft-adapt`](tasks/qa-sft-adapt/) | supervised fine-tuning of a 135M causal LM | 8 CPU, 4 h | 6.0σ / 16.0σ / 5.6σ | 1.0 | **0.734** |
 | [`pref-reward-model`](tasks/pref-reward-model/) | reward modelling on human preferences | 1 GPU, 4 h | 3.1σ — **fails the bar** | 0.5828 | **0.865** † |
-| [`sciml-protein-regression`](tasks/sciml-protein-regression/) | **repairable** — proteins; the task discriminates, the reward does not | 1 GPU, 4 h | 3.9σ (re-measured) | 1.0 | 1.0 — and so does a frozen probe |
+| [`sciml-protein-regression`](tasks/sciml-protein-regression/) | **repairable** — proteins; the task discriminates, the reward does not | 1 GPU, 4 h | 4.8σ (re-measured) | 1.0 | 1.0 — and so does a frozen probe |
 
 All four have been run end to end through Harbor, by their own shipped oracle **and** by a
 real agent (`codex`, gpt-5.6-sol). † `pref-reward-model` was graded 0.0 at the time by a
@@ -91,8 +91,8 @@ sigma. `python common/shipping.py` prints the verdict for every task.
 
 | task | eval set | band σ | reward noise on a rerun | verdict |
 |---|---|---|---|---|
-| mol-property-adapt | `tox21` | 6.48σ | 0.15 | ships |
-| mol-property-adapt | `bbbp` | 4.09σ | 0.24 | ships |
+| mol-property-adapt | `tox21` | 7.62σ | 0.13 | ships |
+| mol-property-adapt | `bbbp` | 6.81σ | 0.15 | ships |
 | qa-sft-adapt | `sciq` | 15.98σ | 0.06 | ships |
 | qa-sft-adapt | `arc_easy` | 6.02σ | 0.17 | ships |
 | qa-sft-adapt | `openbookqa` | 5.63σ | 0.18 | ships |
@@ -111,6 +111,20 @@ The earlier bar was `band_sigma >= 3.0`, picked by going one notch below what th
 already shipped, and a second criterion was **removed after it excluded the eval set I
 wanted to keep**. `pref-reward-model` passed under that and does not pass now. That is the
 point of deriving the bar instead of choosing it.
+
+**σ used to mean two things.** The mol figures above were 6.48σ and 4.09σ until
+`research/assemble_task.py` was put on `common/shipping.py`. They divided the band by the
+two arms' noise **added in quadrature**, where the shared rule takes **the larger of them** —
+and on `bbbp` the quadrature used the frozen *head*'s noise even though the shipped `base` is
+the deterministic logistic probe. Nothing shipped or failed differently, because quadrature
+is the more conservative of the two and both cleared 4.0 either way; what was broken was
+comparison, and these numbers are compared against each other constantly. The band, the
+anchors and every reward are unchanged. `common/check_reward.py` now fails if the two ever
+diverge again.
+
+The protein task's re-measured band carries the same correction: `scripts/lpft.json` records
+3.92σ by quadrature, which is **4.84σ** under the shared rule — so that band clears the bar
+on its own. It is not shipped as a reward, because that task scores by three fixed tiers.
 
 ---
 

@@ -8,11 +8,26 @@ check go exclusively into the verifier build context.
 
 import json
 import shutil
+import sys
 from pathlib import Path
 
 HERE = Path(__file__).parent
 TASK = HERE.parent / "tasks" / "mol-property-adapt"
 EVAL_SETS = ["tox21", "bbbp"]
+
+sys.path.insert(0, str(HERE.parent / "common"))
+from shipping import criterion_record, evaluate  # noqa: E402
+
+# The ladder behind these anchors, lowest rung first. `base` is whichever of the
+# no-adaptation arms is the ceiling -- the trained head on tox21, the logistic
+# probe on bbbp -- so it is recovered by matching the measured means rather than
+# nominated here.
+LADDER = ("frozen_logreg_cls", "frozen_head_cls", "finetune_cls")
+REFERENCE_ARM = "finetune_cls"
+
+# How many eval sets this track screened before shipping two. The selection
+# correction needs it and it is not recoverable from the anchors themselves.
+K_SCREENED = 5  # bbbp, tox21, clintox, bace, sider (research/SPIKE_RESULTS.md)
 
 
 def main() -> None:
@@ -37,8 +52,16 @@ def main() -> None:
     # here and drifted: they still said "logistic probe on mean-pooled
     # embeddings" long after both anchors had been re-measured on the CLS head
     # the verifier actually accepts.
+    # `band` and `band_sigma` are deliberately NOT carried: they are derived below
+    # through common/shipping.py, the same rule every other task is judged by. The
+    # numbers in anchors_private.json predate that rule and divide the band by the
+    # two arms' noise added in quadrature, where shipping.py takes the larger of
+    # them -- and on bbbp the quadrature used the frozen *head*'s noise even though
+    # the shipped base is the deterministic logistic probe. Deriving here means a
+    # sigma from this task and a sigma from the post-training tracks are finally
+    # the same quantity.
     carry = ("n_tasks", "base_auc", "reference_auc", "t_implausible",
-             "base_definition", "reference_definition", "band", "band_sigma")
+             "base_definition", "reference_definition")
     anchors = {}
     for name in EVAL_SETS:
         m = measured[name]
@@ -78,8 +101,42 @@ def main() -> None:
                 "Without it there is nothing to distinguish a contract-legal anchor "
                 "from a discarded one.")
 
+        # Judge this eval set by the shared criterion, from the measured arms.
+        arms = m["measured_arms_n5_legal"]
+        base, ref = m["base_auc"], m["reference_auc"]
+        base_arm = min(LADDER, key=lambda a: abs(arms[a]["mean"] - base))
+        verdict = evaluate(band=ref - base,
+                           base_std=arms[base_arm].get("std", 0.0),
+                           ref_std=arms[REFERENCE_ARM].get("std", 0.0),
+                           # The block is `measured_arms_n5_legal`; the count is in
+                           # the key rather than in a field, so it is asserted here
+                           # instead of silently defaulted.
+                           n_seeds=5,
+                           k_screened=K_SCREENED)
+        if not verdict["ships"]:
+            raise SystemExit(
+                f"REFUSING: {name} does not pass common/shipping.py:\n  "
+                + "\n  ".join(verdict["failed"])
+                + "\nAn eval set that cannot carry a reward must not be assembled "
+                  "into one.")
+
         anchors[name] = {k: m[k] for k in carry if k in m}
+        anchors[name]["base_arm"] = base_arm
+        anchors[name].update({k: verdict[k] for k in (
+            "band", "sigma", "band_sigma", "reward_noise_on_rerun",
+            "min_band_sigma", "band_z", "z_crit_bonferroni", "k_screened",
+            "n_seeds")})
+        print(f"    {name}: band {verdict['band']:.4f} at "
+              f"{verdict['band_sigma']:.2f} sigma (bar {verdict['min_band_sigma']}), "
+              f"rerun moves the reward by {verdict['reward_noise_on_rerun']:.2f}")
+
+    # Every top-level key must be an eval set: verifier_core.load_anchors iterates
+    # this mapping and requires base_/reference_ on each value, so a sidecar
+    # "_criterion" block here would fail the verifier closed. The rule travels in
+    # each anchor's min_band_sigma instead, matching the post-training tasks.
     (priv / "anchors.json").write_text(json.dumps(anchors, indent=2))
+    print(f"    criterion: {criterion_record()['min_band_sigma']} sigma, derived "
+          f"from max_reward_noise {criterion_record()['max_reward_noise']}")
 
     shutil.copy2(HERE / "results" / "public_hashes.json", grader / "public_hashes.json")
 

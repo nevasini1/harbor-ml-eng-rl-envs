@@ -5,8 +5,6 @@
     "n_tasks": 12,
     "base_auc": 0.6341,
     "reference_auc": 0.7019,
-    "band": 0.0678,
-    "band_sigma": 6.48,
     "base_definition": "encoder frozen, RobertaClassificationHead trained on the CLS embedding; 5-seed mean",
     "reference_definition": "full fine-tune through the CLS head, body lr 3e-5 + OneCycle, 20 epochs, best-val epoch; 5-seed mean",
     "contract": "RobertaForSequenceClassification + .logits (CLS head). Every arm below is a legal submission; mean-pooled arms are not and were discarded.",
@@ -47,7 +45,8 @@
     "open_issues": [
       "frozen_head noise is 13.1% of band; separation is 6.48 sigma, which is the criterion that governs"
     ],
-    "t_implausible": 0.85
+    "t_implausible": 0.85,
+    "_derived_note": "band, sigma and band_sigma are NOT stored here. They are derived at assembly time by research/assemble_task.py through common/shipping.py, from base_auc/reference_auc and measured_arms_n5_legal, and written into the shipped anchors.json. The copies that used to sit here divided by the two arms' noise added in quadrature rather than the larger of them, which is not the rule any other task is judged by."
   },
   "bbbp": {
     "n_train": 1631,
@@ -55,8 +54,6 @@
     "n_tasks": 1,
     "base_auc": 0.8978,
     "reference_auc": 0.9121,
-    "band": 0.0143,
-    "band_sigma": 4.09,
     "base_definition": "ceiling of the frozen-encoder methods: logistic probe on the CLS embedding, 0.8978 (deterministic), which beats the trained head at 0.8934 +/- 0.0028",
     "reference_definition": "full fine-tune through the CLS head, body lr 3e-5 + OneCycle, 20 epochs, best-val epoch; 5-seed mean",
     "split": "Tanimoto anchor-region holdout; anchor selected on band/pooled-noise among candidates with >= 100 minority-class test molecules, all survivors fine-tuned",
@@ -99,7 +96,8 @@
       "band_sigma": 5.34,
       "why": "used the trained head alone; the logistic probe scores higher on this split"
     },
-    "t_implausible": 0.97
+    "t_implausible": 0.97,
+    "_derived_note": "band, sigma and band_sigma are NOT stored here. They are derived at assembly time by research/assemble_task.py through common/shipping.py, from base_auc/reference_auc and measured_arms_n5_legal, and written into the shipped anchors.json. The copies that used to sit here divided by the two arms' noise added in quadrature rather than the larger of them, which is not the rule any other task is judged by."
   },
-  "_note": "band_sigma is the criterion. Per-arm 'noise as % of band' is not independent of it -- sigma = band / pooled noise -- so requiring both sigma >= 3 and per-arm <= 10% implicitly demands sigma >= 7, which tox21 itself does not meet at 6.48."
+  "_note": "band_sigma is the criterion, and it is derived rather than stored: research/assemble_task.py runs common/shipping.py over base_auc, reference_auc and measured_arms_n5_legal at assembly time. This note previously argued against a bar of sigma >= 3 combined with a per-arm 'noise <= 10% of band' test, using tox21's 6.48. Both are retired: the bar is now 4.0, derived from MAX_REWARD_NOISE = 0.25, and the second test was removed (see common/shipping.py). Under the shared rule -- sigma is the LARGER of the two arms defining the band, not the two added in quadrature -- tox21 is 7.62 sigma and bbbp is 6.81."
 }

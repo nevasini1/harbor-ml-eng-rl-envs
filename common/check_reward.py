@@ -297,24 +297,7 @@ CHECKS = (
 # This mirrors the `provisional` stamp on `pref-reward-model`: shipping something
 # known-imperfect is allowed, on purpose, with the reason recorded next to it.
 # The goal is an empty dict.
-KNOWN = {
-    "sigma-convention: mol-property-adapt/tox21":
-        "mol's anchors predate common/shipping.py and combine the two arms' noise "
-        "in quadrature rather than taking the larger. Quadrature is the more "
-        "conservative of the two and the verdict is unchanged (6.48 vs 7.62, bar "
-        "4.0). Resolve by re-deriving mol through the shared criterion.",
-    "sigma-convention: mol-property-adapt/bbbp":
-        "Same convention gap, and bbbp additionally uses the frozen *head*'s noise "
-        "while its shipped base is the deterministic logistic probe: 4.09 recorded "
-        "against 6.81 under the shared rule. This is the figure the READMEs quote "
-        "repo-wide as the tightest band that ships, so re-deriving it moves prose "
-        "in several files.",
-    "criterion-stamped: mol-property-adapt/tox21":
-        "Stamping the bar onto anchors computed under a different sigma convention "
-        "would assert a comparability that does not hold yet. Fix with the above.",
-    "criterion-stamped: mol-property-adapt/bbbp":
-        "As above.",
-}
+KNOWN: dict[str, str] = {}
 
 
 def _key(message: str) -> str:
