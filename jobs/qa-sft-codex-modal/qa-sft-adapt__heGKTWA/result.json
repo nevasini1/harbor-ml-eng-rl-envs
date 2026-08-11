@@ -1,0 +1,113 @@
+{
+    "id": "bb63492e-c2f4-4eb3-893f-51dceaeb98ba",
+    "task_name": "mleval/qa-sft-adapt",
+    "trial_name": "qa-sft-adapt__heGKTWA",
+    "trial_uri": "file:///Users/jalajupadhyay/Documents/final/jobs/qa-sft-codex-modal/qa-sft-adapt__heGKTWA",
+    "task_id": {
+        "path": "tasks/qa-sft-adapt"
+    },
+    "source": null,
+    "task_checksum": "2f1e83c4c17721c4398b73c8b2beb94acd5c303c11bb64322f12350537ba5570",
+    "config": {
+        "task": {
+            "path": "tasks/qa-sft-adapt",
+            "git_url": null,
+            "git_commit_id": null,
+            "name": null,
+            "ref": null,
+            "overwrite": false,
+            "download_dir": null,
+            "source": null
+        },
+        "trial_name": "qa-sft-adapt__heGKTWA",
+        "trials_dir": "jobs/qa-sft-codex-modal",
+        "install_only": false,
+        "timeout_multiplier": 1.0,
+        "agent_timeout_multiplier": null,
+        "verifier_timeout_multiplier": null,
+        "agent_setup_timeout_multiplier": null,
+        "environment_build_timeout_multiplier": null,
+        "agent": {
+            "name": "codex",
+            "import_path": null,
+            "model_name": "openai/gpt-5.6-sol",
+            "n_concurrent": null,
+            "concurrency_group": null,
+            "skills": [],
+            "override_timeout_sec": null,
+            "override_setup_timeout_sec": null,
+            "max_timeout_sec": null,
+            "resume_trajectory": false,
+            "load_trajectory": null,
+            "extra_allowed_hosts": [],
+            "kwargs": {},
+            "mcp_servers": []
+        },
+        "environment": {
+            "type": "modal",
+            "import_path": null,
+            "force_build": false,
+            "delete": true,
+            "cpu_enforcement_policy": "auto",
+            "memory_enforcement_policy": "auto",
+            "override_cpus": null,
+            "override_memory_mb": null,
+            "override_storage_mb": null,
+            "override_gpus": null,
+            "override_tpu": null,
+            "mounts": null,
+            "extra_docker_compose": [],
+            "kwargs": {},
+            "extra_allowed_hosts": []
+        },
+        "verifier": {
+            "override_timeout_sec": null,
+            "max_timeout_sec": null,
+            "disable": false
+        },
+        "artifacts": [],
+        "extra_instruction_paths": [],
+        "job_id": "9d313d95-18cf-4473-80d7-e029771aceb5"
+    },
+    "agent_info": {
+        "name": "codex",
+        "version": "0.147.0",
+        "model_info": {
+            "name": "gpt-5.6-sol",
+            "provider": "openai"
+        }
+    },
+    "agent_result": {
+        "n_input_tokens": 17812428,
+        "n_cache_tokens": 17743363,
+        "n_output_tokens": 39107,
+        "cost_usd": 10.390216500000001,
+        "rollout_details": null,
+        "metadata": null
+    },
+    "verifier_result": {
+        "rewards": {
+            "reward": 0.734115
+        }
+    },
+    "exception_info": null,
+    "started_at": "2026-08-11T06:49:46.168295Z",
+    "finished_at": "2026-08-11T08:55:14.631725Z",
+    "environment_setup": {
+        "started_at": "2026-08-11T06:49:46.448313Z",
+        "finished_at": "2026-08-11T06:49:48.020744Z"
+    },
+    "agent_setup": {
+        "started_at": "2026-08-11T06:49:48.020849Z",
+        "finished_at": "2026-08-11T06:50:01.744646Z"
+    },
+    "agent_execution": {
+        "started_at": "2026-08-11T06:50:01.744790Z",
+        "finished_at": "2026-08-11T08:46:45.123604Z"
+    },
+    "verifier": {
+        "started_at": "2026-08-11T08:47:20.357629Z",
+        "finished_at": "2026-08-11T08:55:14.631663Z"
+    },
+    "step_results": null
+}

@@ -113,5 +113,33 @@ The oracle scored **reward 0.5828** through Harbor (`jobs/rm-oracle-modal/`). Th
 expected shape, not a defect: 0.6189 is −1.29σ on the reference arm's seed spread, and
 `reference` is a five-seed *mean*, which a single seed lands under about half the time.
 
+## An agent run — and the false reject it exposed
+
+`codex` (gpt-5.6-sol), 49m 31s (`jobs/rm-codex-modal/`). It was graded **0.0** and should
+have been graded **0.864497** (acc 0.6242, recovery 0.8645). The original result and the
+regrade are both kept, in `verifier/` and `regrade/`.
+
+```
+encoder lineage check failed: min per-tensor cosine 0.8541 < 0.9
+  on encoder.layer.0.attention.self.key.bias
+```
+
+The submission was an honest fine-tune of the provided base: **51 weight matrices at cosine
+≥ 0.9999** (median 1.0000), with exactly **1 of 100** tensors under the floor — a
+768-element attention key bias whose near-zero entries rotate a long way under a
+functionally irrelevant update. The agent's own transcript: *"build a validation split by
+prompt… fine-tuning experiments that exactly match the verifier's 256-token left-truncated
+input format… full encoder fine-tuning is practical."*
+
+Fixed in `common/verifier_core.py` — the cosine floor now applies to weight matrices only.
+The bug was **intermittent**: the mol agent's 1-D minimum was 0.9998 and passed, while this
+agent trained a fresh scalar head through a ranking loss on a GPU and moved that bias far.
+
+It also did **not** write `train_log.txt`, despite rule 4 asking for one. So the
+contamination scan saw only the model directory, not the log it deliberately scans first.
+
+At 0.8645 the agent recovered 86% of a band that is itself too thin to ship — which does not
+rescue the task. The reward still fails `common/shipping.py`.
+
 Measurement and anchor derivation live in
 [`research/posttrain/`](../../research/posttrain/RESULTS.md).

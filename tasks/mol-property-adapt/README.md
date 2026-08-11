@@ -68,6 +68,27 @@ the reference by 26%, and the capped `recovery` of 1.0000 hides that completely.
 the uncapped value is how a mis-set anchor becomes visible instead of silently flattening
 to 1.0.
 
+## An agent run, and what it says about the reference
+
+`codex` (gpt-5.6-sol) scored **reward 1.0** in 1h 22m, reading only `instruction.md`
+(`jobs/mol-codex-modal/`):
+
+| eval set | AUC | base | reference | recovery | **raw** |
+|---|---|---|---|---|---|
+| `tox21` | 0.7209 | 0.6341 | 0.7019 | 1.0 | **1.280** |
+| `bbbp` | 0.9188 | 0.8978 | 0.9121 | 1.0 | **1.472** |
+
+It beat the reference on both sets, and its tox21 score exceeds the best of the 25 seeds
+(0.7111) that set that anchor. Contamination overlap 0 — the InChIKey scan parsed one
+molecule out of its output and correctly did not flag it. It wrote `train_log.txt`, so
+rule 4 is followable.
+
+**This is a problem for the task, not a triumph.** Both eval sets clipped at recovery 1.0,
+so the reward no longer discriminates at the top: a stronger agent and this one score
+identically. The `raw` column is the only reason that is visible at all. The reference wants
+re-measuring against a better recipe — tracked as open question 3 in the root
+[README](../../README.md#open-questions).
+
 ## Known issue
 
 `tox21`'s oracle does not reproduce its own anchor: 0.6896 against `reference_auc = 0.7019`,

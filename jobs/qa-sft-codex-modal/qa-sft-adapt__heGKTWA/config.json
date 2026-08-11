@@ -1,0 +1,15 @@
+{
+    "task": {
+        "path": "tasks/qa-sft-adapt"
+    },
+    "trial_name": "qa-sft-adapt__heGKTWA",
+    "trials_dir": "jobs/qa-sft-codex-modal",
+    "agent": {
+        "name": "codex",
+        "model_name": "openai/gpt-5.6-sol"
+    },
+    "environment": {
+        "type": "modal"
+    },
+    "job_id": "9d313d95-18cf-4473-80d7-e029771aceb5"
+}

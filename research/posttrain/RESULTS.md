@@ -240,6 +240,25 @@ $V research/posttrain/assemble_tasks.py                              # populate 
 $V research/posttrain/verify_graders.py                              # verifier regression suite
 ```
 
+### What only a real agent caught
+
+The fixture suite below passes, and it still missed a false reject that zeroed an honest
+submission. `codex` fine-tuned the provided base on `pref-reward-model` and was graded 0.0
+on `min per-tensor cosine 0.8541` — a 768-element attention key bias, while all 51 weight
+matrices sat at cosine >= 0.9999.
+
+The reason the suite could not see it: its fixtures are the two *extremes* — an untouched
+base at cosine 1.0 and a shuffled embedding at 0.007. Nothing in it was an honest fine-tune
+trained harder than the oracle, because I wrote both the oracle and the fixtures. The floor
+now applies to weight matrices only; 1-D cosines are reported, not gated.
+
+Agent trial results, one trial each, `codex` (gpt-5.6-sol) on Modal:
+
+| task | reward | runtime |
+|---|---|---|
+| `qa-sft-adapt` | 0.734115 | 2h 05m |
+| `pref-reward-model` | 0.0 as graded, **0.864497** regraded | 49m 31s |
+
 ### Verifier regression suites
 
 `verify_graders.py` builds each real image and runs it under `--network none` against

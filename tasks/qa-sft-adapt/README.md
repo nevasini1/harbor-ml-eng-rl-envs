@@ -76,5 +76,34 @@ The oracle scored **reward 1.0** through Harbor (`jobs/qa-sft-oracle-modal/`), a
 recovery 1.0104 / 1.0738 / 1.0848 — the shipped `solution/` reproduces the `reference_acc`
 it claims. Agent phase: 945 s of the 4-hour budget.
 
+## An agent run
+
+`codex` (gpt-5.6-sol) scored **reward 0.734115** in 2h 05m (`jobs/qa-sft-codex-modal/`):
+
+| eval set | accuracy | base → reference | recovery |
+|---|---|---|---|
+| `arc_easy` | 0.6833 | 0.603 → 0.6957 | 0.867 |
+| `sciq` | 0.8150 | 0.696 → 0.827 | 0.908 |
+| `openbookqa` | 0.3367 | 0.315 → 0.3657 | **0.427** |
+
+This is the task behaving as an evaluation should: it neither clipped to 1.0 nor floored to
+0, and the shortfall is concentrated on the hardest eval set, where the base model is barely
+above chance.
+
+The agent also **out-designed the shipped oracle** without being told to. `train_reference.py`
+holds back 398 items at random; the agent chose **598, source-stratified** — directly
+addressing the selection noise that makes the oracle's best-epoch choice a 0.23σ coin flip.
+It then ran a real ablation and rejected three ideas on evidence: distractor-ranking (a
+0.0008 tie), MMLU science pre-training (hurt validation), and OpenBookQA-only continuation
+(overfit).
+
+It trained in **bf16**, which is worth noting: before `load_tensors` was switched to read
+safetensors through torch, that submission would have crashed the grader with
+`TypeError: data type 'bfloat16' not understood` rather than scoring anything.
+
+Its holdout scores came in **below** its own local validation on two of three sets
+(ARC 0.733 → 0.683, OBQA 0.416 → 0.337), so the private split is genuinely harder than a
+local one.
+
 Measurement and anchor derivation live in
 [`research/posttrain/`](../../research/posttrain/RESULTS.md).

@@ -1,0 +1,27 @@
+{
+  "eval_sets": {
+    "helpful_rs": {
+      "base_acc": 0.6079,
+      "reference_acc": 0.6268,
+      "submission_bytes": 333305896,
+      "arch_sha256": "3832ebe9410fd043c79a263fa0ac9a9d96f68a576e891ada5bad9caedd63d33b",
+      "public_checkpoint_matches": 0,
+      "min_tensor_cosine": 0.999883,
+      "min_tensor_name": "encoder.layer.0.attention.output.dense.weight",
+      "min_vector_cosine": 0.854111,
+      "min_vector_name": "encoder.layer.0.attention.self.key.bias",
+      "tensors_compared": 100,
+      "acc": 0.624239,
+      "n_test": 3944,
+      "ties": 0,
+      "score_std": 1.110723,
+      "artifact_shingles_seen": 0,
+      "private_shingle_overlap": 0,
+      "recovery": 0.864497,
+      "recovery_raw": 0.864497,
+      "status": "ok"
+    }
+  },
+  "status": "ok",
+  "reward": 0.864497
+}

@@ -1,0 +1,13 @@
+CPU science-QA post-training log
+
+- Loaded only /app/base_model (SmolLM2-135M base) as the ancestry checkpoint.
+- Used an exact verifier-matched prompt and answer-token loss with left truncation at 160 tokens.
+- Fixed source-stratified 15% local validation split (598 items, seed 31415).
+- Base validation: ARC Easy 0.5500, SciQ 0.6071, OpenBookQA 0.3803; macro 0.5125.
+- Tested source-balanced vs natural-frequency correct-answer SFT. Natural sampling was better.
+- Selected validation recipe: AdamW, lr 5e-5, batch 16, bf16, two epochs, cosine schedule with a three-epoch horizon, 5% warmup. Validation: ARC Easy 0.7333, SciQ 0.7857, OpenBookQA 0.4155; macro 0.6448.
+- Tested mean-token-likelihood ranking over all distractors. Conservative ranking was a near tie (best macro 0.6456) and balanced ranking did not change predictions, so it was excluded from the final recipe.
+- Tested permitted MMLU science pretraining; it reduced validation macro to 0.6375 and was excluded.
+- Tested OpenBookQA-only continuation; conservative tuning changed no predictions and stronger tuning overfit, so it was excluded.
+- Retrained the selected SFT recipe from /app/base_model on all 3,986 provided rows (500 steps total). Final epoch losses: 3.2865, 2.9452.
+- Saved model and tokenizer to /app/final_model.

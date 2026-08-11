@@ -20,22 +20,30 @@ docs/       background reading
 
 ## The tasks
 
-| | tests | compute | separation | oracle |
-|---|---|---|---|---|
-| [`mol-property-adapt`](tasks/mol-property-adapt/) | encoder adaptation on molecules | 8 CPU, 4 h | 6.5σ / 4.1σ | 0.9097 |
-| [`qa-sft-adapt`](tasks/qa-sft-adapt/) | supervised fine-tuning of a 135M causal LM | 8 CPU, 4 h | 6.0σ / 16.0σ / 5.6σ | **1.0** |
-| [`pref-reward-model`](tasks/pref-reward-model/) | reward modelling on human preferences | 1 GPU, 4 h | 3.1σ — **fails the bar** | 0.5828 |
-| [`sciml-protein-regression`](tasks/sciml-protein-regression/) | **shelved** — proteins; the negative result | 1 GPU, 4 h | inverted | 1.0, and so does a frozen probe |
+| | tests | compute | separation | oracle | **agent** |
+|---|---|---|---|---|---|
+| [`mol-property-adapt`](tasks/mol-property-adapt/) | encoder adaptation on molecules | 8 CPU, 4 h | 6.5σ / 4.1σ | 0.9097 | **1.0** |
+| [`qa-sft-adapt`](tasks/qa-sft-adapt/) | supervised fine-tuning of a 135M causal LM | 8 CPU, 4 h | 6.0σ / 16.0σ / 5.6σ | 1.0 | **0.734** |
+| [`pref-reward-model`](tasks/pref-reward-model/) | reward modelling on human preferences | 1 GPU, 4 h | 3.1σ — **fails the bar** | 0.5828 | **0.865** † |
+| [`sciml-protein-regression`](tasks/sciml-protein-regression/) | **shelved** — proteins; the negative result | 1 GPU, 4 h | inverted | 1.0 | 1.0 — and so does a frozen probe |
 
-All four have been run end to end through Harbor with their own shipped oracle — agent
-container, artifact hand-off, verifier, reward. **The three oracle rewards differ for
-reasons worth understanding rather than fixing:**
+All four have been run end to end through Harbor, by their own shipped oracle **and** by a
+real agent (`codex`, gpt-5.6-sol). † `pref-reward-model` was graded 0.0 at the time by a
+false reject in the verifier and is 0.865 after the fix — see
+[What the agent trials found](#what-the-agent-trials-found).
+
+**The oracle rewards differ for reasons worth understanding rather than fixing:**
 
 - **1.0** on `qa-sft-adapt` — the oracle cleared its reference on every eval set.
 - **0.58** on `pref-reward-model` — it landed 1.3σ under a reference that is a five-seed
   *mean*, which a single seed does about half the time.
 - **1.0** on the protein task means nothing at all, because a submission that never touches
   the encoder scores 1.0 there too.
+
+The agent rewards are the more useful signal, because an oracle never reads
+`instruction.md`. `qa-sft-adapt` is the one that behaved best as an *evaluation*: it
+neither clipped to 1.0 nor floored to 0, landing at 0.734 with the shortfall
+concentrated on its hardest eval set.
 
 Each task's README carries its measured ladder, its integrity layers and its honest limits.
 
@@ -135,6 +143,88 @@ reject is indistinguishable in the reward from an agent that did nothing.
 
 ---
 
+## What the agent trials found
+
+Every result above the agent column is from `codex` (gpt-5.6-sol) on Modal, one trial each,
+reading only `instruction.md`. Until these ran, the three active tasks had **only ever seen
+`--agent oracle`** — which executes `solution/solve.sh` and therefore tests the plumbing,
+not the task. Three trials changed more than fifty measurements had.
+
+| task | reward | runtime | eval-set detail |
+|---|---|---|---|
+| `mol-property-adapt` | **1.0** | 1h 22m | tox21 0.7209 (raw recovery **1.280**), bbbp 0.9188 (raw **1.472**) |
+| `qa-sft-adapt` | **0.734** | 2h 05m | arc_easy 0.683 → 0.867, sciq 0.815 → 0.908, openbookqa 0.337 → **0.427** |
+| `pref-reward-model` | 0.0 → **0.865** | 49m | helpful_rs 0.6242 → 0.8645, after the fix below |
+
+### A false reject, and it was intermittent
+
+`pref-reward-model`'s agent read the contract, built a prompt-level validation split,
+fine-tuned the provided base — and was scored **0.0**:
+
+```
+encoder lineage check failed: min per-tensor cosine 0.8541 < 0.9
+  on encoder.layer.0.attention.self.key.bias
+```
+
+Measured over that submission: **51 weight matrices at cosine ≥ 0.9999** (median 1.0000),
+and exactly **1 of 100** tensors under the floor — a 768-element attention key bias whose
+entries are near zero, so a functionally irrelevant update rotates it a long way. Key
+biases are inert enough that several implementations omit them entirely.
+
+The floor now applies to **weight matrices only**; 1-D cosines are reported as
+`min_vector_cosine` and no longer reject. Verified afterwards: the mol oracle still
+regrades to 0.909654 with identical metrics, and `shuffled`, `nan`, `truncated`,
+`public_twin` and `contaminated` are all still rejected.
+
+Two things make this worth recording rather than just fixing:
+
+- **It was intermittent.** The mol agent's 1-D minimum was 0.9998 and it sailed through; the
+  reward-model agent trained a fresh scalar head through a ranking loss on a GPU and moved
+  that bias far. A verifier that zeroes *some* honest submissions, on a vector that does not
+  affect the model's output, corrupts the score distribution quietly instead of failing loudly.
+- **My own fixtures could not have caught it.** I tested the two extremes — an untouched base
+  at cosine 1.0 and a shuffled embedding at 0.007 — and never an honest fine-tune trained
+  harder than my own oracle. This is precisely the failure the grader's docstring warns
+  about: a false reject is indistinguishable, in the reward, from an agent that did nothing.
+
+### `qa-sft-adapt` is the one that behaved like an evaluation
+
+It neither clipped to 1.0 nor floored to 0. It landed at 0.734 with the shortfall
+concentrated on `openbookqa` — the hardest set, where the base is barely above chance — and
+recovered 0.87 and 0.91 on the other two. That is discrimination, which is what an eval set
+is for.
+
+Its agent also **out-designed my oracle**, unprompted. My `train_reference.py` holds back
+398 items at random, and I showed earlier that its epoch-2-vs-3 choice was a 0.23σ coin
+flip. The agent chose **598 items, source-stratified**, and ran a real ablation: it measured
+the untouched base, compared source-balanced against natural-frequency sampling, then tested
+and *rejected* three things on evidence — distractor-ranking (a 0.0008 tie), MMLU science
+pre-training (hurt validation), and OpenBookQA-only continuation (overfit). Excluding three
+ideas with the measurement for each is better discipline than the shipped oracle's.
+
+It also came in **below** its own local validation on two of three sets (ARC 0.733 → 0.683,
+OBQA 0.416 → 0.337), so the region-holdout split is genuinely harder than a local one — the
+split design is doing work.
+
+### What else the trials established
+
+- **The submission contract is followable from the prose.** Three agents, three valid
+  `save_pretrained` submissions, zero shape or contract failures.
+- **No contamination false positives.** Overlap 0 everywhere. The mol InChIKey scan parsed
+  one molecule out of real agent output and correctly did not flag it.
+- **Rule 4 is followable but not reliable.** mol and QA wrote `train_log.txt`; the
+  reward-model agent did not. When it is skipped, the contamination scan sees only the model
+  directory — and `/logs/agent` is the surface it deliberately scans *first*.
+- **bf16 matters.** The QA agent trained in bf16. Without the earlier switch of
+  `load_tensors` to read safetensors through torch, that trial would have died with
+  `TypeError: data type 'bfloat16' not understood` instead of scoring 0.734.
+- **mol's reference now looks soft.** An agent beat a 25-seed-calibrated reference by 28% of
+  the band on tox21 and 47% on bbbp, and its 0.7209 exceeds the best of the 25 seeds
+  (0.7111) that set the anchor. A task where a first attempt clips the ceiling has lost its
+  headroom; that anchor wants re-measuring.
+
+---
+
 ## What this repo learned about reward design
 
 Ten eval sets across four tracks failed in different ways, and the failures rhyme.
@@ -174,7 +264,12 @@ Ten eval sets across four tracks failed in different ways, and the failures rhym
 11. **Fail closed on your own configuration.** Missing anchors, held-out keys or sibling
     checkpoints are a broken image, not a default. Robustness to *agent* input and to *your
     own* config are different problems.
-12. **Separate measuring from deciding.** `modal_measure.py` records what every arm scored;
+12. **An oracle validates the plumbing; only an agent validates the task.** Three agent
+    trials found a false reject that fifty measurements and a purpose-built adversarial
+    fixture suite had missed — because I had only ever tested the extremes, never an honest
+    fine-tune trained harder than my own reference. Run an agent before believing an
+    environment works.
+13. **Separate measuring from deciding.** `modal_measure.py` records what every arm scored;
     `finalize_anchors.py` turns that into anchors by stated rules. That is the difference
     between an anchor that is measured and one chosen once in a session nobody kept.
 
@@ -219,18 +314,24 @@ measurements are in [`research/SPIKE_RESULTS.md`](research/SPIKE_RESULTS.md).
 2. **`pref-reward-model` ships on one eval set at 3.10σ, chosen as the best of four.** A
    third of that reward band is seed noise, and taking the maximum of four marginal
    measurements inflates the figure — read it as "around 3σ". It is the weakest thing here.
-3. **`base` is a max over noisy means, which biases it upward.** On `arc_easy` the two
+3. **mol's reference is too soft.** An agent's first attempt beat it by 28% of the band on
+   tox21 and 47% on bbbp, and its 0.7209 exceeds the best of the 25 seeds (0.7111) that set
+   the anchor. Both eval sets clipped at recovery 1.0, so the task no longer discriminates at
+   the top. The anchor wants re-measuring against a stronger reference recipe.
+4. **`base` is a max over noisy means, which biases it upward.** On `arc_easy` the two
    no-adaptation arms are 0.0013 apart with σ 0.0154, so which one wins is near a coin flip.
    The bias is in the safe direction; a proper treatment would use an upper confidence bound.
-4. **The protein task's GPU oracle beat its frozen probe** — 0.5733 against 0.5358, the
+5. **The protein task's GPU oracle beat its frozen probe** — 0.5733 against 0.5358, the
    opposite of the multi-seed result the shelving verdict rests on. One seed is not enough
    to reopen it, but the ordering should be re-measured multi-seed on GPU.
-5. **The agent gets one shot at a final artifact.** RE-Bench scores the best entry in an
+6. **The agent gets one shot at a final artifact.** RE-Bench scores the best entry in an
    intermediate score log; that is not portable here without exposing the held-out set. So
-   these tasks partly measure "did you select on validation" alongside "can you post-train".
-6. **The shingle fingerprint is subsampled 1-in-4** to keep it under 4 MB in the verifier
+   these tasks partly measure "did you select on validation" alongside "can you post-train" —
+   and the QA agent's run is evidence it matters: it chose a 598-item stratified split where
+   the shipped oracle uses 398 at random.
+7. **The shingle fingerprint is subsampled 1-in-4** to keep it under 4 MB in the verifier
    image. A 30-token leak is caught with probability 99.6%; a one-sentence leak is not.
-7. **`MIN_ENCODER_TENSORS = 50` is still hardcoded in the mol grader.** The newer tasks take
+8. **`MIN_ENCODER_TENSORS = 50` is still hardcoded in the mol grader.** The newer tasks take
    90% of the base's own body-tensor count, which survives a model swap.
 
 ---
