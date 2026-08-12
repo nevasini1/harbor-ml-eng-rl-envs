@@ -18,12 +18,13 @@ stale or a supersession link is one-sided. Wired into CI.
 | 0005 | [Shipping bar set at band_sigma >= 3.0 with an absolute band floor](0005-shipping-bar-chosen-at-3-sigma.md) | ~~superseded~~ | 2026-08-09 | **superseded by [0006](0006-shipping-bar-derived-from-tolerance.md)** |
 | 0006 | [Shipping bar derived from a stated reward-noise tolerance](0006-shipping-bar-derived-from-tolerance.md) | accepted | 2026-08-10 | supersedes [0005](0005-shipping-bar-chosen-at-3-sigma.md) |
 | 0007 | [The protein task scores three fixed tiers instead of normalized recovery](0007-protein-scores-three-fixed-tiers.md) | accepted (repairable) | 2026-08-09 | — |
-| 0008 | [reward.json carries exactly one key, and is written on every path](0008-reward-json-single-key.md) | accepted | 2026-08-09 | — |
+| 0008 | [reward.json carries exactly one key, and is written on every path](0008-reward-json-single-key.md) | ~~superseded~~ | 2026-08-09 | **superseded by [0014](0014-reward-json-carries-per-eval-set-scores.md)** |
 | 0009 | [The lineage cosine floor applies to weight matrices only](0009-lineage-floor-applies-to-weight-matrices-only.md) | accepted | 2026-08-11 | — |
 | 0010 | [band_sigma divides by the larger arm, not by the two added in quadrature](0010-band-sigma-divides-by-the-larger-arm.md) | accepted | 2026-08-11 | — |
 | 0011 | [The contamination tripwire is derived by rule, not hand-picked](0011-contamination-tripwire-is-derived.md) | accepted | 2026-08-12 | — |
 | 0012 | [The integrity gate is per submission, not per eval set](0012-integrity-gate-is-per-submission.md) | accepted | 2026-08-12 | — |
 | 0013 | [Anchors carry the rule version that screened them and the commit that wrote them](0013-anchors-carry-a-rule-version-and-provenance.md) | accepted | 2026-08-12 | — |
+| 0014 | [reward.json carries the aggregate plus one score per eval set](0014-reward-json-carries-per-eval-set-scores.md) | accepted | 2026-08-12 | supersedes [0008](0008-reward-json-single-key.md) |
 
 ## Which of these moved a number that had already shipped
 

@@ -25,8 +25,8 @@ what makes this grader trustworthy):
     unmodified encoder: freezing the backbone and training only a head is a
     legitimate strategy, so "weights must have moved" is not a valid requirement.
 
-  * reward.json carries exactly one key. Harbor's default dataset metric raises
-    on a multi-key reward dict, so per-eval-set detail goes to metrics.json.
+  * reward.json carries the aggregate plus one score per eval set, the shape
+    Harbor aggregates. Diagnostics go to metrics.json.
 """
 
 from __future__ import annotations

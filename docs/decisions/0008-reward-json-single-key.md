@@ -1,10 +1,10 @@
 ---
 id: 0008
 title: reward.json carries exactly one key, and is written on every path
-status: accepted
+status: superseded
 date: 2026-08-09
 supersedes: []
-superseded_by: null
+superseded_by: 0014
 affects: [mol-property-adapt, qa-sft-adapt, pref-reward-model, sciml-protein-regression]
 commits: [3e6ceb1, 7528241]
 ---
@@ -40,3 +40,10 @@ process never reached Python.
 ## Confirmation
 
 `common/verifier_core.py::grade_eval_sets` and each task's `tests/test.sh`.
+
+## Superseded
+
+The single-key half of this decision was wrong, and [0014](0014-reward-json-carries-per-eval-set-scores.md)
+replaces it. The always-write half still holds and is restated there, which is why
+this record is superseded whole rather than amended: a reader should land on one
+current record, not two half-current ones.

@@ -450,8 +450,12 @@ def grade_eval_sets(
     -- missing, malformed, hostile, non-finite, or a model that raises at
     inference -- floors that eval set to 0.0 and the run continues.
 
-    reward.json carries exactly one key: Harbor's default dataset metric raises
-    on a multi-key reward dict, so per-eval-set detail goes to metrics.json.
+    reward.json carries the aggregate plus one score per eval set. It used to carry
+    exactly one key, on the belief that "Harbor's default dataset metric raises on a
+    multi-key reward dict" -- which the vendored Harbor contradicts: its
+    `_parse_reward_json` is a bare `json.loads` and `aggregate_reward_dicts` has an
+    explicit multi-key branch that preserves every key. Per-eval-set DIAGNOSTICS
+    still go to metrics.json; only scores belong in the reward channel.
     """
     out, metrics_out = Path(out), Path(metrics_out)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -492,7 +496,28 @@ def grade_eval_sets(
         reward = 0.0
 
     metrics["reward"] = round(reward, 6)
-    out.write_text(json.dumps({"reward": round(reward, 6)}))
+
+    # reward.json is the aggregate PLUS one score per eval set, which is the shape
+    # Harbor aggregates: `aggregate_reward_dicts` keeps every key and means each
+    # across trials, so `reward` stays primary and the per-eval-set scores become
+    # additional metrics. Single-key output collapsed to `{"mean": 0.734}` in the
+    # job record, which threw away the most interesting thing a multi-eval-set task
+    # produces -- qa-sft-adapt's 0.867 / 0.908 / 0.427, where the shortfall is
+    # concentrated on the hardest set, was invisible to anything reading Harbor.
+    #
+    # Scores only, all on the reward's own [0,1] scale. Diagnostics -- raw metrics,
+    # cosines, tensor counts, shingle overlap, status and reason -- stay in
+    # metrics.json. This is the distinction the earlier single-key rule missed: what
+    # broke was putting COUNTS here (an `n_test` of 3427 aggregated as a metric),
+    # not carrying more than one key.
+    payload = {"reward": round(reward, 6)}
+    for name, entry in metrics["eval_sets"].items():
+        if name == "reward":
+            raise RuntimeError(
+                "an eval set is named 'reward', which would overwrite the aggregate "
+                "in reward.json; rename it")
+        payload[name] = round(float(entry.get("recovery", 0.0)), 6)
+    out.write_text(json.dumps(payload))
     metrics_out.parent.mkdir(parents=True, exist_ok=True)
     metrics_out.write_text(json.dumps(metrics, indent=2))
     print(json.dumps(metrics, indent=2))
