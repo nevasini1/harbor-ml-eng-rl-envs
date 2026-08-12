@@ -38,5 +38,8 @@ jobs:
       - name: the reward says the same thing in every file that states it
         run: python common/check_reward.py
 
+      - name: the decision log's index and supersession links resolve
+        run: python common/decisions.py --check
+
       - name: shipping criterion, applied to every task
         run: python common/shipping.py

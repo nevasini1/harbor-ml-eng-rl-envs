@@ -71,10 +71,22 @@ TRACKS = {
 # One eval set is ~966s of verifier time for this task; test.sh allows 3,000s.
 PROVISIONAL_MAX_EVAL_SETS = 1
 
+# `sigma`, `n_seeds`, `k_screened`, `band_z` and `z_crit_bonferroni` are carried
+# because common/shipping.py's report() needs them and, without them, substitutes:
+# `n_seeds` defaulted to 5, `k_screened` fell back to a hardcoded table, and `sigma`
+# was reconstructed as band/band_sigma with both arms assumed equally noisy. The mol
+# assembler carries them, so one printed table mixed mol's recorded z-values with
+# reconstructed ones for these two tracks, in the same column, unmarked. report()'s
+# own docstring calls printing a reconstruction beside a file that states the real
+# number "two answers to one question -- the thing this criterion exists to stop".
+#
+# `gate_a` is carried so an eval set that shipped without a random-init control says
+# so in the file rather than only in the report.
 CARRY = ("base_acc", "reference_acc", "t_implausible", "base_arm",
          "base_definition", "reference_definition", "band", "band_sigma",
-         "reward_noise_on_rerun", "min_band_sigma", "pretraining_gain",
-         "provisional", "provisional_reason")
+         "sigma", "n_seeds", "k_screened", "band_z", "z_crit_bonferroni",
+         "reward_noise_on_rerun", "min_band_sigma", "pretraining_gain", "gate_a",
+         "best_observed", "provisional", "provisional_reason")
 
 
 def download(repo: str, revision: str, dest: Path, patterns: list[str]) -> None:

@@ -10,7 +10,13 @@
     "band_sigma": 6.02,
     "reward_noise_on_rerun": 0.166,
     "min_band_sigma": 4.0,
-    "pretraining_gain": 0.452
+    "pretraining_gain": 0.452,
+    "sigma": 0.0154,
+    "n_seeds": 5,
+    "k_screened": 3,
+    "band_z": 12.22,
+    "z_crit_bonferroni": 2.13,
+    "best_observed": 0.705
   },
   "sciq": {
     "base_acc": 0.696,
@@ -23,7 +29,13 @@
     "band_sigma": 15.98,
     "reward_noise_on_rerun": 0.063,
     "min_band_sigma": 4.0,
-    "pretraining_gain": 0.588
+    "pretraining_gain": 0.588,
+    "sigma": 0.0082,
+    "n_seeds": 5,
+    "k_screened": 3,
+    "band_z": 27.66,
+    "z_crit_bonferroni": 2.13,
+    "best_observed": 0.8367
   },
   "openbookqa": {
     "base_acc": 0.315,
@@ -36,7 +48,13 @@
     "band_sigma": 5.63,
     "reward_noise_on_rerun": 0.178,
     "min_band_sigma": 4.0,
-    "pretraining_gain": 0.146
+    "pretraining_gain": 0.146,
+    "sigma": 0.009,
+    "n_seeds": 5,
+    "k_screened": 3,
+    "band_z": 12.6,
+    "z_crit_bonferroni": 2.13,
+    "best_observed": 0.3733
   },
   "_criterion": {
     "rule_id": "shipping/band-sigma-from-reward-noise",

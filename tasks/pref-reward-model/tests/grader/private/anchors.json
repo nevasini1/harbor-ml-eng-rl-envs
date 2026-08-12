@@ -12,7 +12,13 @@
     "min_band_sigma": 4.0,
     "pretraining_gain": 0.0743,
     "provisional": true,
-    "provisional_reason": "imprecise: band_sigma 3.10 < 4.00, so a rerun of the same submission moves the reward by 0.32 against a tolerance of 0.25"
+    "provisional_reason": "imprecise: band_sigma 3.10 < 4.00, so a rerun of the same submission moves the reward by 0.32 against a tolerance of 0.25",
+    "sigma": 0.0061,
+    "n_seeds": 5,
+    "k_screened": 4,
+    "band_z": 5.53,
+    "z_crit_bonferroni": 2.24,
+    "best_observed": 0.6334
   },
   "_criterion": {
     "rule_id": "shipping/band-sigma-from-reward-noise",

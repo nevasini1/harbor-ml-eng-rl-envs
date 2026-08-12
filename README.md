@@ -13,8 +13,14 @@ tasks/      the four tasks, one directory each        -> tasks/README.md
 common/     the verifier core all of them share
 research/   how the splits were cut, how the anchors were measured
 jobs/       Harbor run outputs — the record of what was actually run
-docs/       background reading
+docs/       background reading, and the reward's decision log
+              -> docs/decisions/  (13 records, superseded ones kept and marked)
 ```
+
+Every claim below about how the reward is computed has a record behind it in
+[`docs/decisions/`](docs/decisions/) saying when it was decided, what it replaced, and
+what moved as a result. Seven of the thirteen moved a number that had already shipped;
+[the index](docs/decisions/) lists which, and the reader impact of each.
 
 ---
 
@@ -65,6 +71,13 @@ reward   = integrity_gate × mean(recovery over eval sets)
 - **`reference`** earns **1**: a tuned, deliberately ordinary adaptation.
 - **`integrity_gate`** is 0 if provenance, contamination or shape checks fail, so a zero
   always carries an attributable reason instead of being indistinguishable from a weak model.
+  It is not a variable: it is the `Reject` path in [`common/verifier_core.py`](common/verifier_core.py),
+  which floors an eval set to 0 and records `status` and `reason` in `metrics.json`. The gate is
+  **per submission, not per eval set** — `mol-property-adapt` accepts a separate model per eval
+  set and checks all of them before scoring any, so substituting one earns nothing on the
+  others. It used to be checked per eval set there, which paid mean(0, 1) = 0.5 for a
+  half-substituted submission. Note a 0 does not only mean rejection: a model that raises at
+  inference also floors to 0, recorded as `status: "error"` rather than `"rejected"`.
 
 Both anchors are **measurements** over 5 seeds on the private split, each re-derivable from
 a committed script. The uncapped `recovery_raw` is recorded beside the capped value,

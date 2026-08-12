@@ -228,8 +228,31 @@ def mean_auc(y_true, y_score) -> tuple[float, int]:
     return float(np.mean(aucs)), len(aucs)
 
 
+def integrity_checks(sub: Path, base: Path, public: dict, base_repo: str) -> dict:
+    """The three anti-substitution layers for one submitted model directory.
+
+    Split out of `score_eval_set` so it can run as a pre-pass over EVERY eval set
+    before any of them is scored. This task is the only one that accepts a separate
+    model per eval set (`/app/final_model/<eval_set>/`), and it used to check each
+    one only as that eval set was scored -- so substituting a public checkpoint for
+    tox21 alone got tox21 rejected at 0 and bbbp scored normally, for a reward of
+    mean(0.0, 1.0) = 0.5 rather than 0.
+
+    The other two anchor-scored tasks cache a single model, so any integrity failure
+    floors every eval set and the reward really is 0. README.md's
+    `reward = integrity_gate x mean(recovery)` described their shape, not this one.
+    Partial credit for a partially substituted submission is not defensible, so the
+    gate is now global here too: one failure rejects the whole submission.
+    """
+    info = {"submission_bytes": scan_dir(sub)}
+    info |= check_architecture(sub, base)
+    info |= check_not_other_public(sub, public, base_repo)
+    info |= check_lineage(sub, base, MIN_ENCODER_TENSORS)
+    return info
+
+
 def score_eval_set(sub: Path, base: Path, test_csv: Path, public: dict,
-                   base_repo: str, n_tasks: int) -> dict:
+                   base_repo: str, n_tasks: int, info: dict | None = None) -> dict:
     import numpy as np
     import pandas as pd
     import torch
@@ -238,10 +261,10 @@ def score_eval_set(sub: Path, base: Path, test_csv: Path, public: dict,
     torch.set_num_threads(int(os.environ.get("OMP_NUM_THREADS", "1")))
     torch.use_deterministic_algorithms(True)
 
-    info = {"submission_bytes": scan_dir(sub)}
-    info |= check_architecture(sub, base)
-    info |= check_not_other_public(sub, public, base_repo)
-    info |= check_lineage(sub, base, MIN_ENCODER_TENSORS)
+    # Pre-computed by the global gate in main(). Recomputed here only if this
+    # function is called directly, which the regrade helpers do.
+    info = dict(info) if info is not None else integrity_checks(
+        sub, base, public, base_repo)
 
     df = pd.read_csv(test_csv)
     labels = [c for c in df.columns if c != "smiles"]
@@ -316,12 +339,34 @@ def main() -> int:
         print(f"grader_error: {type(exc).__name__}: {exc}")
         return 0
 
-    grade_eval_sets(
-        anchors,
-        lambda name, anc: score_eval_set(
+    # Global integrity gate. Every submitted model is checked BEFORE any eval set is
+    # scored, and one failure rejects all of them -- otherwise substituting a single
+    # eval set's checkpoint earns full credit on the others. The reason names the
+    # eval set that failed, so the zero stays attributable.
+    integrity: dict[str, dict] = {}
+    gate_failure: str | None = None
+    for name in anchors:
+        try:
+            integrity[name] = integrity_checks(
+                Path(args.submission) / name, Path(args.base), public,
+                args.base_repo)
+        except Reject as exc:
+            gate_failure = f"integrity gate failed on eval set {name}: {exc}"
+            break
+    if gate_failure:
+        print(f"integrity gate: REJECT -- {gate_failure}")
+
+    def score_one(name: str, anc: dict) -> dict:
+        if gate_failure:
+            raise Reject(gate_failure)
+        return score_eval_set(
             Path(args.submission) / name, Path(args.base),
             Path(args.private) / f"{name}_test.csv", public, args.base_repo,
-            anc["n_tasks"]),
+            anc["n_tasks"], info=integrity[name])
+
+    grade_eval_sets(
+        anchors,
+        score_one,
         metric="auc",
         out=out,
         metrics_out=metrics_out,
