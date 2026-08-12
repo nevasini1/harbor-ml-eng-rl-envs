@@ -41,5 +41,8 @@ jobs:
       - name: the decision log's index and supersession links resolve
         run: python common/decisions.py --check
 
+      - name: the verifier's calibration ordering still holds
+        run: python common/calibration.py --check
+
       - name: shipping criterion, applied to every task
         run: python common/shipping.py

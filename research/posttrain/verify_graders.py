@@ -48,6 +48,7 @@ from pathlib import Path
 
 HERE = Path(__file__).parent
 ROOT = HERE.parent.parent
+RESULTS = HERE / "results"
 
 TRACKS = {
     "rm": {
@@ -217,6 +218,7 @@ def main() -> int:
     args = ap.parse_args()
 
     failures = []
+    recorded: dict[str, dict] = {}
     for track, cfg in TRACKS.items():
         if args.track not in (track, "both"):
             continue
@@ -264,6 +266,18 @@ def main() -> int:
                 detail = "  ".join(
                     f"{k}={v.get('acc')}/{v.get('recovery')}" for k, v in sets.items())
             print(f"  {mark} {name:<16} reward={reward:<10} {verdict:<7} {detail}")
+            # Recorded, not just printed. These results are the §4 calibration
+            # evidence -- "report the reward each produced and confirm the ordering
+            # matches expectation" -- and for a long time the only committed trace
+            # of them was a hand-written table in RESULTS.md, which no tool could
+            # check and nothing kept in step with a re-run.
+            recorded.setdefault(cfg["task"].name, {})[name] = {
+                "verdict": verdict, "reward": reward,
+                "eval_sets": {k: {"metric": v.get("acc"),
+                                  "recovery": v.get("recovery"),
+                                  "status": v.get("status")}
+                              for k, v in sets.items()},
+            }
             if name in expect_accept and reward is not None:
                 metric_vals = [v.get("acc") for v in sets.values() if v.get("acc")]
                 if name == "base_unchanged" and reward > 0.25:
@@ -284,7 +298,18 @@ def main() -> int:
         print(f"  {'ok ' if rejected else 'FAIL'} contaminated     "
               f"rejected={rejected or 'none'}")
 
-    print()
+    out = RESULTS / "verifier_fixtures.json"
+    out.write_text(json.dumps({
+        "_provenance": {
+            "source": "research/posttrain/verify_graders.py",
+            "measured": True,
+            "regenerate_with": "python research/posttrain/verify_graders.py",
+        },
+        "tracks": recorded,
+    }, indent=2) + "\n")
+    print(f"\nwrote {out.relative_to(ROOT)} "
+          f"({sum(len(v) for v in recorded.values())} fixture results)")
+
     if failures:
         print(f"{len(failures)} FAILURE(S):")
         for f in failures:

@@ -181,6 +181,16 @@ honest base, shuffled tensor, NaN'd tensor, deleted config, bit-identical public
 laundered sibling, contaminated log. **The accept path is asserted first**, because a false
 reject is indistinguishable in the reward from an agent that did nothing.
 
+What each verifier actually scored on those inputs, and whether the ordering came out as
+expected, is assembled in **[`docs/calibration.md`](docs/calibration.md)** — 29 recorded
+inputs across the four tasks, generated from the committed records rather than retyped.
+Three tasks order correctly: every broken or substituted input scores 0, and every
+no-adaptation input scores below the oracle. **`sciml-protein-regression` does not** — its
+frozen probe ties its oracle at 1.0, which is what the tiered reward in
+[decision 0007](docs/decisions/0007-protein-scores-three-fixed-tiers.md) costs. That
+failure is visible only when the rows are put side by side, which is the argument for
+having the table at all.
+
 ---
 
 ## What the agent trials found

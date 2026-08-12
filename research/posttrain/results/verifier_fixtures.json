@@ -1,0 +1,39 @@
+{
+  "_provenance": {
+    "source": "transcribed from research/posttrain/RESULTS.md, the recorded run of research/posttrain/verify_graders.py",
+    "why_transcribed": "verify_graders.py printed its results to stdout and never wrote them, so the only committed record was a Markdown table. It now writes this file, and the next run overwrites these entries with measured ones. Until then these are transcription, not measurement, which is why they are marked so.",
+    "measured": false,
+    "regenerate_with": "python research/posttrain/verify_graders.py"
+  },
+  "tracks": {
+    "qa-sft-adapt": {
+      "base_unchanged": {"verdict": "accept", "reward": 0.0,
+        "note": "provided base with a fresh head; raw recovery -0.014 / -0.364 / 0.0 recorded, not hidden"},
+      "oracle": {"verdict": "accept", "reward": 1.0,
+        "note": "the shipped solution/, run through the real verifier image"},
+      "shuffled": {"verdict": "reject", "reward": 0.0,
+        "note": "min per-tensor cosine 0.0002 < 0.9"},
+      "nan": {"verdict": "reject", "reward": 0.0,
+        "note": "non-finite weights in embed_tokens.weight"},
+      "truncated": {"verdict": "reject", "reward": 0.0, "note": "missing config.json"},
+      "laundered": {"verdict": "reject", "reward": 0.0,
+        "note": "SmolLM2-135M-Instruct + 1e-4 noise; caught by nearest-ancestor, the only layer that sees it"},
+      "contaminated": {"verdict": "reject", "reward": 0.0,
+        "note": "agent log quoting held-out rows; shingle overlap"}
+    },
+    "pref-reward-model": {
+      "base_unchanged": {"verdict": "accept", "reward": 0.0, "note": "provided base, fresh head"},
+      "oracle": {"verdict": "accept", "reward": 0.5828,
+        "note": "1.3 sigma under a reference that is a five-seed mean, which a single seed does about half the time"},
+      "shuffled": {"verdict": "reject", "reward": 0.0,
+        "note": "min per-tensor cosine 0.0071 < 0.9"},
+      "nan": {"verdict": "reject", "reward": 0.0,
+        "note": "non-finite weights in embeddings.word_embeddings.weight"},
+      "truncated": {"verdict": "reject", "reward": 0.0, "note": "missing config.json"},
+      "public_twin": {"verdict": "reject", "reward": 0.0,
+        "note": "bit-identical all-distilroberta-v1; caught by sha256, the only layer that sees it"},
+      "contaminated": {"verdict": "reject", "reward": 0.0,
+        "note": "agent log quoting held-out rows; shingle overlap"}
+    }
+  }
+}
