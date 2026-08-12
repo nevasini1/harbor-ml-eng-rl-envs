@@ -37,5 +37,38 @@
     "reward_noise_on_rerun": 0.178,
     "min_band_sigma": 4.0,
     "pretraining_gain": 0.146
+  },
+  "_criterion": {
+    "rule_id": "shipping/band-sigma-from-reward-noise",
+    "rule_version": 2,
+    "max_reward_noise": 0.25,
+    "min_band_sigma": 4.0,
+    "alpha_one_sided": 0.05,
+    "selection_correction": "bonferroni over screened eval sets",
+    "tests": [
+      "band positive",
+      "precision: band_sigma >= min_band_sigma",
+      "existence: band significantly > 0 after correction",
+      "gate A: reference beats random_init by >1 sigma, significantly"
+    ],
+    "sigma_definition": "max(base_std, ref_std) over the two arms defining the band",
+    "supersedes": [
+      1
+    ],
+    "source": "common/shipping.py"
+  },
+  "_provenance": {
+    "assembled_at": "2026-08-12T15:48:15Z",
+    "script": "research/posttrain/assemble_tasks.py",
+    "git": {
+      "commit": "43efaba",
+      "dirty": true,
+      "branch": "main"
+    },
+    "source": "research/posttrain/results/qa_anchors.json",
+    "measured_by": "research/posttrain/modal_measure.py",
+    "derived_by": "research/posttrain/finalize_anchors.py",
+    "backfilled": true,
+    "backfill_note": "BACKFILL. The commit recorded here is the one that added provenance, NOT the one that assembled these anchors -- that assembly predates this field and its commit is not recoverable from the file. The anchor values are unchanged and still match their measurement record (common/check_reward.py::anchors-match-upstream). Re-running assemble_tasks.py replaces this with a real stamp."
   }
 }
