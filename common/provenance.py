@@ -63,12 +63,19 @@ def git_revision() -> dict:
     commit = _git("rev-parse", "--short", "HEAD")
     if commit is None:
         return {"available": False}
-    status = _git("status", "--porcelain")
+
+    # `dirty` means TRACKED files were modified, so `commit` does not identify the
+    # code that ran. Untracked files are counted separately rather than folded in:
+    # a bare `git status --porcelain` also lists them, and this repo normally has
+    # stray untracked run output under `jobs/`, which would have marked every stamp
+    # dirty and made the field useless -- a check that always fires is a check
+    # nobody reads.
+    tracked = _git("status", "--porcelain", "--untracked-files=no")
+    untracked = _git("ls-files", "--others", "--exclude-standard")
     return {
         "commit": commit,
-        # True means the working tree had uncommitted changes when this was
-        # written, so `commit` alone does not identify the code that ran.
-        "dirty": bool(status) if status is not None else None,
+        "dirty": bool(tracked) if tracked is not None else None,
+        "untracked_files": len(untracked.splitlines()) if untracked else 0,
         "branch": _git("rev-parse", "--abbrev-ref", "HEAD"),
     }
 
