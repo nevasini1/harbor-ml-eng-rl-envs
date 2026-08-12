@@ -63,10 +63,19 @@ MIN_TENSOR_RATIO = 0.9
 # Pairwise accuracy above which a score indicates the held-out pairs were seen
 # rather than skill. Published reward-model accuracies on hh-rlhf sit near
 # 0.65-0.72 for models 10-100x this size, the measured reference here is 0.63,
-# and a model trained on the recovered test rows scores >0.95. 0.85 is far above
-# anything an honest run at this scale has produced. A tripwire for a human to
-# review, not proof.
-DEFAULT_T_IMPLAUSIBLE = 0.85
+# and a model trained on the recovered test rows scores >0.95. The tripwire the
+# anchors carry sits far above anything an honest run at this scale has produced --
+# it is derived in finalize_anchors.py rather than stated here, so re-measuring the
+# ceiling moves it. A tripwire for a human to review, not proof.
+#
+# No default for the contamination tripwire. Every anchor this grader is built
+# with carries `t_implausible` -- the post-training tracks derive it in
+# finalize_anchors.py and the mol assembler derives it in assemble_task.py, both by
+# the same stated rule -- so a missing key means a malformed anchors.json, not a
+# case to paper over. Passing None makes load_anchors raise with
+# "the contamination tripwire would silently not run" instead of scoring the whole
+# field against a literal nobody chose in this file.
+DEFAULT_T_IMPLAUSIBLE = None
 
 # The agent log is scanned FIRST. A save_pretrained dump carries a multi-megabyte
 # tokenizer.json, which is ~1M normalized tokens of machine-generated vocabulary;

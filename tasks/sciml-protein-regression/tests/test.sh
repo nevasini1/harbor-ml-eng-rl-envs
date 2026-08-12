@@ -4,7 +4,19 @@ set +e
 
 mkdir -p /logs/verifier && chmod 700 /logs/verifier
 
-python /tests/grade.py \
+# Discard any reward file the agent may have planted. The other three tasks have
+# carried this line since they were written; this one did not, and the guard below
+# is a *presence* test -- `[ ! -f ... ]` is false for a planted file, so on the
+# killed-grader path a leftover reward.json would be the score Harbor reads.
+# `/logs/verifier` is not in this task's `artifacts`, so that path is not currently
+# open; this is the defence-in-depth the other graders already have, not a live
+# hole being closed.
+rm -f /logs/verifier/reward.json /logs/verifier/reward.txt /logs/verifier/reward_meta.json
+
+# `timeout` matched to the other three. Without it the only thing that ends a
+# runaway grade is the harness SIGKILL, which is precisely the case the net below
+# has to catch; with it, the overrun is this script's own catchable exit code.
+timeout 3000 python /tests/grade.py \
   --submission /app/final_model \
   --base /grader/base_model \
   --test /tests/private_test/test.csv.gz \

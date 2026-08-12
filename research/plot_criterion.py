@@ -64,20 +64,33 @@ TASKS = [
     ("qa-sft-adapt", "acc"),
     ("pref-reward-model", "acc"),
 ]
-# random_init measured on the *shipped* split, per eval set. The mol task's
-# random-init arm was measured on the original scaffold split, not the private
-# one, so it is deliberately absent rather than plotted at a value that came from
-# different data.
-RANDOM_INIT = {
-    "arc_easy": 0.2437, "sciq": 0.2390, "openbookqa": 0.2197,
-    "helpful_base": 0.5496, "helpful_rs": 0.5525,
-    "online": 0.5174, "harmless": 0.4649,
-}
+# Which ladder record holds each track's random_init arm. The values themselves are
+# READ from it (see random_init_means) rather than restated here: the seven means
+# used to be typed into this file as a dict, under a docstring promising they were
+# not, in the script the root README cites as the example of reading committed data.
+# common/check_reward.py now fails on a measured value typed into a constant here.
+#
+# The mol track has no entry on purpose: its random-init arm was measured on the
+# original scaffold split, not the shipped private one, so there is no value for
+# these eval sets that came from the same data. That absence is Gate A being
+# unmeasured for mol, which `common/shipping.py` now reports rather than skipping.
+RANDOM_INIT_LADDERS = ("qa_anchors.json", "rm_anchors.json")
+
+
+def random_init_means() -> dict[str, float]:
+    """eval set -> random-init mean, from the committed ladders."""
+    out: dict[str, float] = {}
+    for fname in RANDOM_INIT_LADDERS:
+        doc = json.loads((HERE / "posttrain" / "results" / fname).read_text())
+        for name, arm in doc.get("arms", {}).get("random_init", {}).items():
+            out[name] = arm["mean"]
+    return out
 
 
 def load_rows() -> list[dict]:
     """One row per eval set, from the committed anchors plus the ladder records."""
     rows = []
+    random_init = random_init_means()
     for task, metric in TASKS:
         anchors_path = (ROOT / "tasks" / task / "tests" / "grader" / "private"
                         / "anchors.json")
@@ -98,7 +111,7 @@ def load_rows() -> list[dict]:
             rows.append({
                 "task": task, "name": name,
                 "base": a[f"base_{metric}"], "reference": a[f"reference_{metric}"],
-                "random_init": RANDOM_INIT.get(name),
+                "random_init": random_init.get(name),
                 "band_sigma": v["band_sigma"], "noise": v["reward_noise_on_rerun"],
                 "ships": v["ships"],
             })

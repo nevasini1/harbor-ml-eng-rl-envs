@@ -32,6 +32,7 @@ what makes this grader trustworthy):
 from __future__ import annotations
 
 import argparse
+import gzip
 import json
 import os
 import re
@@ -56,20 +57,38 @@ BATCH_SIZE = 64
 # unrelated checkpoint carrying a handful of copied embedding tensors cleared it.
 MIN_ENCODER_TENSORS = 50
 
-# AUC above which a score indicates test-set contamination rather than skill.
-# Anchors here are base 0.6341 / reference 0.7019 and the best fine-tune observed
-# across 25 seeded runs is 0.7111, while published ChemBERTa numbers on tox21 sit
-# near 0.74-0.78 on easier splits. A model trained on the recovered test rows
-# scores ~0.99. 0.85 therefore sits far above anything an honest run has produced
-# and far below contamination. It is a tripwire for a human to review, not proof.
-DEFAULT_T_IMPLAUSIBLE = 0.85
+# The AUC above which a score indicates test-set contamination rather than skill
+# is a tripwire for a human to review, not proof. It is no longer stated here: the
+# rule is `min(0.98, max(best_observed + 0.15, 0.85))` in research/assemble_task.py,
+# the same one research/posttrain/finalize_anchors.py applies to the other tracks,
+# and the derived value travels in anchors.json. This comment used to justify a
+# hardcoded 0.85 by citing the anchors and the best of 25 seeded runs (0.7111) --
+# a justification that would have gone stale the moment either was re-measured,
+# which they since were.
+#
+# No default for the contamination tripwire. Every anchor this grader is built
+# with carries `t_implausible` -- the post-training tracks derive it in
+# finalize_anchors.py and the mol assembler derives it in assemble_task.py, both by
+# the same stated rule -- so a missing key means a malformed anchors.json, not a
+# case to paper over. Passing None makes load_anchors raise with
+# "the contamination tripwire would silently not run" instead of scoring the whole
+# field against a literal nobody chose in this file.
+DEFAULT_T_IMPLAUSIBLE = None
 
 
 # ------------------------------------------------- test-set contamination
 
 # Artifacts the agent ships that could carry molecules. task.toml copies exactly
 # these two paths across, so this is the whole reachable surface.
-ARTIFACT_ROOTS = ("/app/final_model", "/logs/agent")
+#
+# The agent log is scanned FIRST, the same ordering the two post-training graders
+# carry with the note "Order is the whole fix". It matters more here, not less:
+# MAX_TOKENS_SCANNED is 500,000 against textmatch's 4,000,000, `.json` is in
+# SCANNABLE_SUFFIXES, and this task ships TWO submission directories -- so
+# scanning `final_model` first spends the whole budget on two copies of
+# `tokenizer.json`, `vocab.json` and `merges.txt` before reaching `train_log.txt`,
+# which is where a leak is actually likely to be. Both roots are still scanned.
+ARTIFACT_ROOTS = ("/logs/agent", "/app/final_model")
 SCANNABLE_SUFFIXES = {".csv", ".tsv", ".txt", ".json", ".jsonl", ".smi", ".md"}
 MAX_SCAN_BYTES = 64 << 20
 MAX_TOKENS_SCANNED = 500_000
@@ -106,13 +125,24 @@ def artifact_inchikeys() -> set[str]:
                 break
             if p.is_symlink() or not p.is_file():
                 continue
-            if "".join(p.suffixes[-2:]) not in SCANNABLE_SUFFIXES and \
-               p.suffix not in SCANNABLE_SUFFIXES:
+            # Look THROUGH a .gz suffix, not past it. `p.suffix` for `leak.csv.gz`
+            # is ".gz", which is in no suffix set, so a gzipped molecule dump used
+            # to skip this scan entirely -- and gzip is the format this repo hands
+            # data out in. The `suffixes[-2:]` join above looks like it covers
+            # ".csv.gz" but that string is not in SCANNABLE_SUFFIXES either, so it
+            # never matched.
+            gzipped = p.suffix.lower() == ".gz"
+            inner = Path(p.stem).suffix.lower() if gzipped else p.suffix.lower()
+            if inner not in SCANNABLE_SUFFIXES:
                 continue
             try:
                 if p.stat().st_size > MAX_SCAN_BYTES:
                     continue
-                text = p.read_text(errors="ignore")
+                if gzipped:
+                    with gzip.open(p, "rt", errors="ignore") as fh:
+                        text = fh.read(MAX_SCAN_BYTES)
+                else:
+                    text = p.read_text(errors="ignore")
             except Exception:
                 continue
             for tok in re.split(r"[\s,;\"'\[\]{}]+", text):

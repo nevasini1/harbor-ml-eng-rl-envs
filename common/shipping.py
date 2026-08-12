@@ -90,8 +90,25 @@ def evaluate(*, band: float, base_std: float, ref_std: float, n_seeds: int,
     `sigma` is the conservative per-submission seed spread: the larger of the two
     arms that define the band. Using the larger rather than a pooled value means a
     noisy `base` cannot be averaged away by a tight `reference`.
+
+    Absent noise is a refusal, not a floor. This used to read
+    `max(base_std, ref_std, 1e-9)`, which turned "no seed spread was recorded" into
+    `band_sigma` of order 1e7 and a rerun noise of ~0 -- a malformed measurement
+    passed the precision and existence tests by seven orders of magnitude and read
+    as the most precise eval set in the repo. One arm being deterministic is
+    legitimate and still works, because `max` takes the other one; both being zero
+    means nothing was measured. `verifier_core.load_anchors` states the policy for
+    the whole package: "There is deliberately no fallback. A silent default would
+    regrade the whole field against a bar nobody chose while still reporting status
+    ok."
     """
-    sigma = max(base_std, ref_std, 1e-9)
+    if base_std <= 0.0 and ref_std <= 0.0:
+        raise ValueError(
+            f"no seed spread recorded for either arm (base_std={base_std}, "
+            f"ref_std={ref_std}); band_sigma divides by this, so a missing "
+            "measurement cannot be defaulted. Re-measure, or pass the arm's real "
+            "standard deviation.")
+    sigma = max(base_std, ref_std)
     bar = min_band_sigma(max_reward_noise)
     band_sigma = band / sigma
     reward_noise = sigma / band if band > 0 else float("inf")
@@ -131,14 +148,32 @@ def evaluate(*, band: float, base_std: float, ref_std: float, n_seeds: int,
         se_gain = math.sqrt((ref_std ** 2 + ri_std ** 2) / max(n_seeds, 1)) or 1e-9
         z_gain = random_init_gain / se_gain
         out["gain_z"] = round(z_gain, 2)
+        out["gate_a"] = "passed"
         if random_init_gain < sigma:
+            out["gate_a"] = "failed"
             fails.append(
                 f"pretrained weights do too little work: gain {random_init_gain:+.4f} "
                 f"is under one sigma ({sigma:.4f})")
         elif z_gain < z_crit:
+            out["gate_a"] = "failed"
             fails.append(f"pretraining gain not significant: z {z_gain:.2f} < {z_crit:.2f}")
+    else:
+        # Not measured is its own state, and it is recorded rather than inferred.
+        # This branch used to be absent entirely, so an eval set with no
+        # random-init arm ran three of the four tests `criterion_record()`
+        # advertises and still printed a bare "ships". "We could not check this"
+        # and "this passed" are different claims and the output now distinguishes
+        # them. It is deliberately NOT a failure: mol's random-init arm exists but
+        # was measured on a superseded split, and refusing to assemble over a
+        # missing measurement would take a shipped task offline rather than
+        # describe it accurately. `ships_caveats` is what carries it forward.
+        out["gate_a"] = "not measured"
 
     out["ships"] = not fails
+    out["ships_caveats"] = ([] if out["gate_a"] != "not measured" else
+                            ["gate A not measured: no random-init control on this "
+                             "split, so whether the pretrained weights do the work "
+                             "is unverified rather than confirmed"])
     out["failed"] = fails
     return out
 
@@ -193,13 +228,15 @@ def report() -> int:
           f"existence at alpha {c['alpha_one_sided']} Bonferroni-corrected\n")
     print(f"{'task':<26}{'eval set':<14}{'band':>8}{'b_sig':>7}{'noise':>7}"
           f"{'z':>7}  verdict")
-    worst = 0
+    worst = provisional = caveated = 0
+    seen: set[str] = set()
     for task in sorted(K_SCREENED):
         path = root / "tasks" / task / "tests" / "grader" / "private" / "anchors.json"
         if not path.exists():
             print(f"{task:<26}{'(no anchors — tiered or unassembled reward)':<14}")
             continue
         anchors = json.loads(path.read_text())
+        seen.add(task)
         for name, a in anchors.items():
             metric = next((m for m in ("auc", "acc", "spearman")
                            if f"base_{m}" in a), None)
@@ -223,12 +260,40 @@ def report() -> int:
             v = {**v, **{k: a[k] for k in
                          ("band_sigma", "reward_noise_on_rerun", "band_z")
                          if k in a}}
+            if v["ships"]:
+                verdict = "ships"
+                if v.get("gate_a") == "not measured":
+                    verdict = "ships (gate A NOT MEASURED)"
+                    caveated += 1
+            elif a.get("provisional"):
+                # Acknowledged in the shipped file itself. Still printed as a
+                # failure, but it does not fail the build -- the same allowance
+                # `--allow-provisional` grants at assembly time.
+                verdict = "NO (provisional, acknowledged) -- " + v["failed"][0][:40]
+                provisional += 1
+            else:
+                verdict = "NO -- " + v["failed"][0][:60]
+                worst += 1
             print(f"{task:<26}{name:<14}{v['band']:>8.4f}{v['band_sigma']:>7.2f}"
-                  f"{v['reward_noise_on_rerun']:>7.2f}{v['band_z']:>7.2f}  "
-                  + ("ships" if v["ships"] else "NO -- " + v["failed"][0][:60]))
-            worst += 0 if v["ships"] else 1
-    print(f"\n{worst} shipped eval set(s) would not pass the current criterion")
-    return 0
+                  f"{v['reward_noise_on_rerun']:>7.2f}{v['band_z']:>7.2f}  " + verdict)
+
+    if not seen:
+        print("\nno anchors found for any task -- this report checked nothing")
+        return 1
+
+    print(f"\n{worst} unacknowledged failure(s), {provisional} acknowledged as "
+          f"provisional, {caveated} shipping with gate A unmeasured, "
+          f"{len(seen)} eval set(s) examined")
+    for task in sorted(K_SCREENED):
+        if task not in seen:
+            print(f"  NOT EXAMINED: {task} -- no anchors.json. A tiered or "
+                  "unassembled reward is exempt from this criterion, which is a "
+                  "gap in the criterion rather than a property of the task.")
+    # Exit non-zero only for failures nobody has acknowledged. This used to be an
+    # unconditional `return 0`, so the report printed "1 shipped eval set would not
+    # pass" and exited green -- the one rule whose job is to reject an eval set had
+    # no enforcement surface anywhere, including in CI.
+    return 1 if worst else 0
 
 
 if __name__ == "__main__":

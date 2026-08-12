@@ -128,7 +128,15 @@ def file_sha256(path: Path) -> str:
 
 
 def check_forbidden_hashes(model_dir: Path) -> str | None:
-    for p in model_dir.rglob("*.safetensors"):
+    """Reject a submission that is a byte-identical public checkpoint.
+
+    Both weight formats are globbed. This used to scan `*.safetensors` only, while
+    `verifier_core.load_tensors` accepts `pytorch_model.bin` -- so shipping the
+    forbidden weights under the .bin name walked straight past this layer. The
+    shared `check_not_other_public` in the module this grader already imports
+    globs both, and is the reason the gap was visible at all.
+    """
+    for p in sorted(model_dir.rglob("*.safetensors")) + sorted(model_dir.rglob("*.bin")):
         digest = file_sha256(p)
         if digest in FORBIDDEN_WEIGHT_SHA256:
             return f"forbidden_public_checkpoint:{p.name}:{digest[:12]}"
@@ -208,6 +216,25 @@ def load_tiers() -> dict:
     t_weak, t_strong = float(tiers["t_weak"]), float(tiers["t_strong"])
     if not 0.0 < t_weak < t_strong < 1.0:
         raise RuntimeError(f"implausible tiers: t_weak={t_weak} t_strong={t_strong}")
+
+    # The tripwire is validated here too, for the same reason the tiers are. It
+    # used to be read with `tiers.get("t_implausible", 0.75)` further down, so a
+    # tiers.json that lost the key -- which `scripts/calibrate_tiers.py` produces,
+    # since the dict it writes has no `t_implausible` at all -- kept scoring
+    # against a literal nobody chose in this file, reporting reason "ok". That is
+    # exactly the failure this docstring describes for t_weak.
+    if "t_implausible" not in tiers:
+        raise RuntimeError(
+            f"tiers.json at {path} has no t_implausible; the contamination "
+            "tripwire would silently not run. Note that calibrate_tiers.py does "
+            "not emit this key -- it must be carried across deliberately.")
+    t_imp = float(tiers["t_implausible"])
+    # The analogue of load_anchors' `t_imp <= ref` check: a tripwire at or below
+    # the top tier fires on legitimate top-tier work and scores it 0.
+    if t_imp <= t_strong:
+        raise RuntimeError(
+            f"t_implausible={t_imp} is not above t_strong={t_strong}; the tripwire "
+            "would fire on submissions the top tier is meant to reward")
     return tiers
 
 
@@ -228,8 +255,18 @@ def implausibility_ceiling(tiers: dict) -> float:
 
     This is a tripwire, not proof: it flags a score no honest run has produced,
     for a human to review. Keep the margin large so it never fires on skill.
+
+    Caveat on the numbers above: the 0.546 +/- 0.005 (n=8) frozen probe cited here
+    is the *mean-pooled* arm, which README.md establishes is not expressible in a
+    legal submission -- citing it was the original defect on this task. The
+    on-contract CLS frozen head is 0.5332 +/- 0.0044 (scripts/lpft.json). The
+    margin to 0.75 is wide under either figure, so the tripwire's value does not
+    change, but the justification should not rest on a retracted measurement.
+
+    `load_tiers` has already asserted the key exists and sits above t_strong, so
+    this is a plain read.
     """
-    return float(tiers.get("t_implausible", 0.75))
+    return float(tiers["t_implausible"])
 
 
 def reward_from_spearman(rho: float, t_weak: float, t_strong: float) -> float:

@@ -15,7 +15,7 @@
     "max": 0.5726
   },
   "band": 0.0295,
-  "band_sigma": 3.92,
+  "band_sigma": 4.84,
   "noise_as_pct_of_band": {
     "frozen": 14.9,
     "lpft": 20.7
@@ -106,5 +106,8 @@
       "val": 0.5843197163862677,
       "head_val": 0.5469019207452044
     }
-  ]
+  ],
+  "band_sigma_note": "band / max(frozen_std, lpft_std) = 4.84, the rule in common/shipping.py that every task is judged by. This field previously read 3.92, which divided by the two arms' noise added in quadrature -- the convention the mol anchors also used before they were re-derived. Nothing about the measurement changed. Under the shared rule this band CLEARS the 4.0 bar; the blocker on this task is the tiered reward, not separation.",
+  "reward_noise_on_rerun": 0.207,
+  "min_band_sigma": 4.0
 }

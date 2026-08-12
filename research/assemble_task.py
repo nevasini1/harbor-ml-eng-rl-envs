@@ -29,6 +29,13 @@ REFERENCE_ARM = "finetune_cls"
 # correction needs it and it is not recoverable from the anchors themselves.
 K_SCREENED = 5  # bbbp, tox21, clintox, bace, sider (research/SPIKE_RESULTS.md)
 
+# The contamination tripwire's rule, matching research/posttrain/finalize_anchors.py
+# so the two tracks derive it the same way. A tripwire, not proof: it flags a score
+# no honest run has produced, for a human to review.
+T_IMPLAUSIBLE_MARGIN = 0.15
+T_IMPLAUSIBLE_FLOOR = 0.85
+T_IMPLAUSIBLE_CAP = 0.98
+
 
 def main() -> None:
     agent_data = TASK / "environment" / "data"
@@ -60,7 +67,7 @@ def main() -> None:
     # the shipped base is the deterministic logistic probe. Deriving here means a
     # sigma from this task and a sigma from the post-training tracks are finally
     # the same quantity.
-    carry = ("n_tasks", "base_auc", "reference_auc", "t_implausible",
+    carry = ("n_tasks", "base_auc", "reference_auc",
              "base_definition", "reference_definition")
     anchors = {}
     for name in EVAL_SETS:
@@ -120,7 +127,27 @@ def main() -> None:
                 + "\nAn eval set that cannot carry a reward must not be assembled "
                   "into one.")
 
+        # The contamination tripwire, by the same stated rule the post-training
+        # tracks use (research/posttrain/finalize_anchors.py): a fixed margin over
+        # the best score any arm has actually produced, floored so a low-ceiling
+        # eval set still gets a usable bar, capped below 1.0. It was a hand-written
+        # 0.85 / 0.97 in anchors_private.json -- values that happen to be right,
+        # both within 0.01 of what this rule gives, but chosen rather than derived.
+        # Deriving it means a re-measurement moves the tripwire with it instead of
+        # leaving it pinned to whatever the ceiling was when someone last typed it.
+        best_observed = max(a.get("max", a["mean"]) for a in arms.values())
+        t_implausible = round(min(T_IMPLAUSIBLE_CAP,
+                                  max(best_observed + T_IMPLAUSIBLE_MARGIN,
+                                      T_IMPLAUSIBLE_FLOOR)), 2)
+        if t_implausible <= ref:
+            raise SystemExit(
+                f"REFUSING: derived t_implausible {t_implausible} for {name} is not "
+                f"above reference {ref}; the tripwire would fire on the recipe the "
+                "reward is normalized against.")
+
         anchors[name] = {k: m[k] for k in carry if k in m}
+        anchors[name]["t_implausible"] = t_implausible
+        anchors[name]["best_observed"] = round(best_observed, 4)
         anchors[name]["base_arm"] = base_arm
         anchors[name].update({k: verdict[k] for k in (
             "band", "sigma", "band_sigma", "reward_noise_on_rerun",

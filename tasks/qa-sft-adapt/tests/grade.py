@@ -55,7 +55,17 @@ MIN_TENSOR_RATIO = 0.9
 # knowledge. The measured reference is 0.55-0.60 depending on the eval set and a
 # model trained on the recovered test rows scores >0.95; models 50x this size
 # report 0.75-0.85 on these corpora. A tripwire for a human to review, not proof.
-DEFAULT_T_IMPLAUSIBLE = 0.90
+# It is derived in finalize_anchors.py and travels in anchors.json rather than being
+# stated here, so re-measuring the ceiling moves it.
+#
+# No default for the contamination tripwire. Every anchor this grader is built
+# with carries `t_implausible` -- the post-training tracks derive it in
+# finalize_anchors.py and the mol assembler derives it in assemble_task.py, both by
+# the same stated rule -- so a missing key means a malformed anchors.json, not a
+# case to paper over. Passing None makes load_anchors raise with
+# "the contamination tripwire would silently not run" instead of scoring the whole
+# field against a literal nobody chose in this file.
+DEFAULT_T_IMPLAUSIBLE = None
 
 # The agent log is scanned FIRST. A save_pretrained dump carries a multi-megabyte
 # tokenizer.json, which is ~1M normalized tokens of machine-generated vocabulary;

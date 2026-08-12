@@ -145,10 +145,22 @@ refactored grader returns **0.909654** with byte-identical per-eval-set metrics.
 recorded 0.909661 came from x86 Modal; the 7×10⁻⁶ difference is arm64 float, and the
 *original* grader reproduces it too.)
 
-**Four integrity layers, failing on disjoint inputs:** architecture-config hash; sha256 vs
-pinned public checkpoints, comparing the repo for *equality* not prefix; per-tensor float64
-cosine vs the base body; and nearest-ancestor, which is the only one that catches a
-laundered instruct checkpoint. The cosine layer deliberately **allows** an unmodified body
+**Four integrity layers, failing on disjoint inputs** — but not four on every task, which the
+plain sentence used to imply:
+
+| | mol | pref | qa | protein |
+|---|---|---|---|---|
+| architecture-config hash | ✓ | ✓ | ✓ | ✓ |
+| per-tensor float64 cosine vs the base body | ✓ | ✓ | ✓ | ✓ |
+| sha256 vs pinned public checkpoints | ✓ | ✓ | ✓ | 2 hardcoded hashes |
+| **nearest-ancestor** | — | — | ✓ | — |
+| contamination scan | ✓ | ✓ | ✓ | score tripwire only |
+
+Nearest-ancestor is the only layer that catches a laundered instruct checkpoint, and it runs on
+one task, because `qa-sft-adapt` is the only one with a `siblings/` fixture. That is a fixture
+gap, not a design decision — `distilroberta-base` in particular has many public fine-tunes to
+launder. The protein grader has no shingle or fingerprint scan at all; its only contamination
+defence is the implausible-score tripwire. The cosine layer deliberately **allows** an unmodified body
 — freezing the backbone is legitimate, and the anchors are what make it score zero.
 
 Verifier suites run each real image under `--network none` against constructed fixtures —

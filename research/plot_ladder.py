@@ -26,6 +26,7 @@ Sources:
 """
 
 import json
+import sys
 from pathlib import Path
 
 import matplotlib
@@ -49,7 +50,16 @@ C_PROBE, C_HEAD, C_FT = "#2a78d6", "#eb6834", "#1baf7a"
 RUNGS = ["frozen probe\n(logreg / ridge)", "frozen backbone\n+ trained head", "fine-tune"]
 COLORS = [C_PROBE, C_HEAD, C_FT]
 
-NOISE_LIMIT = 10.0  # % of band; above this, rerunning the same submission regrades it
+# % of band above which rerunning the same submission meaningfully regrades it.
+# Derived from the one knob in common/shipping.py rather than chosen here: this was
+# a hardcoded 10.0 while the criterion's tolerance is 0.25, so the figure painted
+# tox21 (13%), bbbp (15%) and openbookqa (18%) red as "over limit" while
+# shipping.py and the README table called all three "ships". One threshold, one
+# definition -- change MAX_REWARD_NOISE and this moves with it.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "common"))
+from shipping import MAX_REWARD_NOISE  # noqa: E402
+
+NOISE_LIMIT = MAX_REWARD_NOISE * 100.0
 
 ROOT = Path(__file__).resolve().parent.parent
 
