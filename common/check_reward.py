@@ -23,9 +23,22 @@ What it checks
                           measurement record it was derived from. This is the one
                           that matters most: the shipped file is what divides.
 
-  sigma-convention        `band_sigma` means the same thing in every task that
-                          reports one. It currently does not, and the READMEs
-                          compare the two tracks' figures as though it does.
+  sigma-convention        `band_sigma` means the same thing everywhere it is
+                          reported -- `band / max(base_std, ref_std)`. It did not
+                          for a working day, while the READMEs compared the two
+                          tracks' figures as though it did. Covers measurement
+                          records without shipped anchors too, which is the only
+                          reason the protein track is checked at all.
+
+  retired-criterion       no measurement record states two bars at once. A
+                          regression guard: this has been fixed at the write site.
+
+  provenance-recorded     every shipped anchor set names the rule version that
+                          screened it and the script and commit that wrote it, and
+                          that rule version is the current one. Without it, an
+                          anchor screened under the retired 3.0 bar and one
+                          screened under the derived 4.0 bar are indistinguishable
+                          inside the file.
 
   criterion-stamped       every shipped anchor records the bar it passed, so an
                           anchor measured under the old `band_sigma >= 3.0` rule
@@ -34,9 +47,9 @@ What it checks
   reward-declared         every task.toml declares `reward_definition`, so the
                           reward shape is readable without opening the grader.
 
-  figures-read-their-data no plotting script hardcodes a value that lives in a
-                          committed anchor or tier file. Reading the file is the
-                          only way a figure stays true after a re-measurement.
+  figures-read-their-data no plotting script has a measured value typed into a
+                          module-level constant. Reading the file is the only way
+                          a figure stays true after a re-measurement.
 
 A failure here is not necessarily a bug in the reward. It is a claim that two
 files disagree, printed with both sides, so the disagreement gets resolved on
@@ -51,6 +64,8 @@ import json
 import re
 import tomllib
 from pathlib import Path
+
+from shipping import criterion_record
 
 ROOT = Path(__file__).resolve().parent.parent
 TASKS = ROOT / "tasks"
@@ -294,6 +309,63 @@ def check_no_retired_criterion(fails: list[str]) -> None:
                 "differ by one character.")
 
 
+def check_provenance_recorded(fails: list[str]) -> None:
+    """Every shipped anchor set says which rule screened it and what wrote it.
+
+    Without this, an anchor screened under the retired `band_sigma >= 3.0` bar and
+    one screened under the derived 4.0 bar are indistinguishable inside the file --
+    the only way to tell was to date the commit. `_criterion` carries the rule and
+    its version, `_provenance` the script and commit.
+
+    The rule version is compared against the current one rather than merely being
+    required to exist, because a stale version is the interesting case: it means
+    the file was written under a rule that has since changed and needs re-deriving.
+    """
+    current = criterion_record()
+    for task in sorted(d.name for d in TASKS.iterdir() if d.is_dir()):
+        path, doc = _shipped(task)
+        if not doc or path.name == "tiers.json":
+            continue
+        rel = path.relative_to(ROOT)
+
+        crit = doc.get("_criterion")
+        if not crit:
+            fails.append(f"provenance-recorded: {rel} has no _criterion block, so "
+                         "which bar these anchors passed is not in the file")
+        elif crit.get("rule_version") != current["rule_version"]:
+            fails.append(
+                f"provenance-recorded: {rel} was screened by "
+                f"{crit.get('rule_id')} v{crit.get('rule_version')} but the current "
+                f"rule is v{current['rule_version']}. Re-derive, or record why these "
+                "anchors are exempt.")
+
+        prov = doc.get("_provenance")
+        if not prov:
+            fails.append(f"provenance-recorded: {rel} has no _provenance block, so "
+                         "the commit and script behind it are unrecorded")
+            continue
+        if not prov.get("script"):
+            fails.append(f"provenance-recorded: {rel} _provenance names no script")
+        git = prov.get("git") or {}
+        if git.get("available") is False:
+            fails.append(f"provenance-recorded: {rel} was written outside a git "
+                         "checkout, so no commit identifies the code that ran")
+        elif git.get("dirty") and not prov.get("backfilled"):
+            # A hard failure, and the comment here used to say it was not while the
+            # code appended it to `fails` anyway. A shipped anchor written from a
+            # dirty tree has a commit that does not identify its own code, which is
+            # the one thing this block exists to provide. The fix is to commit, then
+            # re-run the assembler, so the stamp names committed code.
+            #
+            # `backfilled` records are exempt because they already say, in the file,
+            # that their commit is not the assembly commit -- that is the whole
+            # content of the acknowledgement, so flagging it twice adds nothing.
+            fails.append(f"provenance-recorded: {rel} was written from a DIRTY tree "
+                         f"at {git.get('commit')}, so that commit does not identify "
+                         "the code that produced these anchors. Commit first, then "
+                         "re-run the assembler.")
+
+
 def check_reward_declared(fails: list[str]) -> None:
     for toml_path in sorted(TASKS.glob("*/task.toml")):
         meta = tomllib.loads(toml_path.read_text()).get("metadata", {})
@@ -396,6 +468,7 @@ CHECKS = (
     ("anchors-match-upstream", check_anchors_match_upstream),
     ("sigma-convention", check_sigma_convention),
     ("retired-criterion", check_no_retired_criterion),
+    ("provenance-recorded", check_provenance_recorded),
     ("criterion-stamped", check_criterion_stamped),
     ("reward-declared", check_reward_declared),
     ("figures-read-their-data", check_figures_read_their_data),

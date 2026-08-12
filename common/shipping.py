@@ -178,9 +178,43 @@ def evaluate(*, band: float, base_std: float, ref_std: float, n_seeds: int,
     return out
 
 
+# The rule's own identity. `criterion_record()` was already "stamped into every
+# results file so the rule cannot move silently" -- but it recorded the rule's
+# *parameters*, not its version, so an anchor screened under the retired bar and one
+# screened under the current bar were distinguishable only by dating the commit that
+# wrote them. Bump RULE_VERSION whenever a test is added, removed, or redefined, and
+# append the outgoing rule to SUPERSEDED. Changing MAX_REWARD_NOISE alone is not a
+# version bump: the whole point is that the bar follows the tolerance, and the
+# tolerance is already recorded.
+RULE_ID = "shipping/band-sigma-from-reward-noise"
+RULE_VERSION = 2
+
+# Retired rules, newest last. Kept rather than deleted: it is still relevant to
+# know that a number was once judged this way, which is the whole reason an anchor
+# needs a rule version at all.
+SUPERSEDED = (
+    {
+        "rule_version": 1,
+        "min_band_sigma": 3.0,
+        "tests": ["band positive",
+                  "precision: band_sigma >= 3.0",
+                  "absolute floor: band >= 0.02"],
+        "retired_because":
+            "3.0 was picked by going one notch below what the repo had already "
+            "shipped, which calibrates a threshold against a previous decision "
+            "rather than deriving it; and the `band >= 0.02` floor was removed "
+            "after it excluded an eval set the author wanted to keep, which is "
+            "motivated reasoning. Replaced by a bar derived from a stated "
+            "tolerance on reward noise.",
+    },
+)
+
+
 def criterion_record(max_reward_noise: float = MAX_REWARD_NOISE) -> dict:
     """Stamped into every results file so the rule cannot move silently."""
     return {
+        "rule_id": RULE_ID,
+        "rule_version": RULE_VERSION,
         "max_reward_noise": max_reward_noise,
         "min_band_sigma": round(min_band_sigma(max_reward_noise), 2),
         "alpha_one_sided": ALPHA,
@@ -189,6 +223,8 @@ def criterion_record(max_reward_noise: float = MAX_REWARD_NOISE) -> dict:
                   "precision: band_sigma >= min_band_sigma",
                   "existence: band significantly > 0 after correction",
                   "gate A: reference beats random_init by >1 sigma, significantly"],
+        "sigma_definition": "max(base_std, ref_std) over the two arms defining the band",
+        "supersedes": [r["rule_version"] for r in SUPERSEDED],
         "source": "common/shipping.py",
     }
 

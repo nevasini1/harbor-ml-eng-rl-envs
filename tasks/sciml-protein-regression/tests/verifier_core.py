@@ -384,8 +384,18 @@ def load_anchors(path: Path, metric: str, extra_required: tuple[str, ...] = (),
     if not path.exists():
         raise RuntimeError(f"anchors.json missing at {path}; verifier image is broken")
     anchors = json.loads(path.read_text())
+    # Keys beginning with "_" are sidecar metadata, not eval sets: `_criterion`
+    # records the rule these anchors were screened by and `_provenance` records the
+    # commit and script that wrote them. They are separated here, at the one place
+    # that reads this file, so that provenance can live beside the numbers it
+    # describes instead of in a second file that can drift from them. Every
+    # remaining key must be a real eval set and is validated as one.
+    sidecar = {k: v for k, v in anchors.items() if k.startswith("_")}
+    anchors = {k: v for k, v in anchors.items() if not k.startswith("_")}
     if not anchors:
-        raise RuntimeError(f"anchors.json at {path} defines no eval sets")
+        raise RuntimeError(
+            f"anchors.json at {path} defines no eval sets"
+            + (f" (only sidecar keys {sorted(sidecar)})" if sidecar else ""))
     bk, rk = f"base_{metric}", f"reference_{metric}"
     for name, anc in anchors.items():
         for field in (bk, rk, *extra_required):

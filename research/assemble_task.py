@@ -16,6 +16,7 @@ TASK = HERE.parent / "tasks" / "mol-property-adapt"
 EVAL_SETS = ["tox21", "bbbp"]
 
 sys.path.insert(0, str(HERE.parent / "common"))
+from provenance import stamp  # noqa: E402
 from shipping import criterion_record, evaluate  # noqa: E402
 
 # The ladder behind these anchors, lowest rung first. `base` is whichever of the
@@ -157,13 +158,26 @@ def main() -> None:
               f"{verdict['band_sigma']:.2f} sigma (bar {verdict['min_band_sigma']}), "
               f"rerun moves the reward by {verdict['reward_noise_on_rerun']:.2f}")
 
-    # Every top-level key must be an eval set: verifier_core.load_anchors iterates
-    # this mapping and requires base_/reference_ on each value, so a sidecar
-    # "_criterion" block here would fail the verifier closed. The rule travels in
-    # each anchor's min_band_sigma instead, matching the post-training tasks.
+    # `_`-prefixed keys are sidecar metadata; verifier_core.load_anchors separates
+    # them from the eval sets. They live in this file rather than beside it so the
+    # rule an anchor was screened by, and the commit that wrote it, cannot drift
+    # away from the anchor itself.
+    c = criterion_record()
+    anchors["_criterion"] = c
+    anchors["_provenance"] = stamp(
+        "research/assemble_task.py",
+        source="research/results/anchors_private.json",
+        n_seeds=5,
+        note="assembled_at is when these anchors were written into the task tree. "
+             "The seed runs behind them predate this field and their date is not "
+             "recoverable, so it is not claimed here.")
     (priv / "anchors.json").write_text(json.dumps(anchors, indent=2))
-    print(f"    criterion: {criterion_record()['min_band_sigma']} sigma, derived "
-          f"from max_reward_noise {criterion_record()['max_reward_noise']}")
+    print(f"    criterion: {c['rule_id']} v{c['rule_version']}, "
+          f"{c['min_band_sigma']} sigma from max_reward_noise "
+          f"{c['max_reward_noise']}")
+    g = anchors["_provenance"]["git"]
+    print(f"    provenance: {g.get('commit', 'no git')}"
+          + (" (DIRTY TREE)" if g.get("dirty") else ""))
 
     shutil.copy2(HERE / "results" / "public_hashes.json", grader / "public_hashes.json")
 

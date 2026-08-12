@@ -27,6 +27,10 @@ ROOT = HERE.parent.parent
 SPLIT = HERE / "split"
 RESULTS = HERE / "results"
 
+sys.path.insert(0, str(ROOT / "common"))
+from provenance import stamp  # noqa: E402
+from shipping import criterion_record  # noqa: E402
+
 TRACKS = {
     "rm": {
         "task": ROOT / "tasks" / "pref-reward-model",
@@ -144,7 +148,25 @@ def assemble(track: str, cfg: dict, allow_provisional: bool = False) -> None:
         shutil.copy2(SPLIT / "private" / f"{name}_test.csv", priv / f"{name}_test.csv")
         print(f"    private: {name}_test.csv  base={m['base_acc']} "
               f"reference={m['reference_acc']}")
+    # Sidecar metadata, separated from the eval sets by verifier_core.load_anchors.
+    # It lives in this file rather than beside it so the rule an anchor was screened
+    # by, and the commit that wrote it, cannot drift away from the anchor.
+    c = criterion_record()
+    anchors["_criterion"] = c
+    anchors["_provenance"] = stamp(
+        "research/posttrain/assemble_tasks.py",
+        source=f"research/posttrain/results/{cfg['anchors']}",
+        measured_by="research/posttrain/modal_measure.py",
+        derived_by="research/posttrain/finalize_anchors.py",
+        note="assembled_at is when these anchors were written into the task tree, "
+             "not when the seed runs happened; that date predates this field and is "
+             "not recoverable, so it is not claimed here.")
     (priv / "anchors.json").write_text(json.dumps(anchors, indent=2))
+    print(f"    criterion: {c['rule_id']} v{c['rule_version']}, "
+          f"{c['min_band_sigma']} sigma")
+    g = anchors["_provenance"]["git"]
+    print(f"    provenance: {g.get('commit', 'no git')}"
+          + (" (DIRTY TREE)" if g.get("dirty") else ""))
 
     # Prune held-out CSVs for eval sets that are no longer shipped. Without this,
     # tightening the criterion leaves the previous run's private rows inside the
