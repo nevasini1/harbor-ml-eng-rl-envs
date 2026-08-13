@@ -46,6 +46,9 @@ import sys
 import tempfile
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "common"))
+from verifier_core import eval_set_items  # noqa: E402
+
 HERE = Path(__file__).parent
 ROOT = HERE.parent.parent
 RESULTS = HERE / "results"
@@ -196,7 +199,11 @@ def contaminated_log(cfg: dict, work: Path) -> Path:
     import pandas as pd
 
     priv_dir = cfg["task"] / "tests" / "grader" / "private"
-    shipped = sorted(json.loads((priv_dir / "anchors.json").read_text()))
+    # Sidecar keys (_criterion, _provenance) are not eval sets. This used to be
+    # `sorted(json.loads(...))`, which fed "_criterion" downstream as an eval set
+    # name and died on a missing _criterion_test.csv.
+    shipped = sorted(eval_set_items(
+        json.loads((priv_dir / "anchors.json").read_text())))
     if not shipped:
         raise SystemExit(f"no shipped eval sets in {priv_dir}/anchors.json")
     df = pd.read_csv(priv_dir / f"{shipped[0]}_test.csv").head(5)

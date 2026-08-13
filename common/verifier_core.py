@@ -367,6 +367,22 @@ def count_body_tensors(base: Path,
 
 # ------------------------------------------------------------------- anchors
 
+def eval_set_items(doc: dict) -> dict:
+    """The eval sets in an anchors document, with sidecar metadata removed.
+
+    `anchors.json` carries `_criterion` and `_provenance` alongside its eval sets.
+    Anything reading the file directly -- rather than through `load_anchors`, which
+    filters them itself -- must go through this, or it treats `_criterion` as an eval
+    set. That is not hypothetical: adding those two keys broke
+    `research/posttrain/verify_graders.py`, which did
+    `sorted(json.loads(...))` and then looked for `_criterion_test.csv`, and
+    `research/plot_criterion.py`, which indexed `a["reference_auc"]` on the
+    criterion block. Both failures were mine, both shipped, and neither was caught
+    by a checker that only reads these files without running their consumers.
+    """
+    return {k: v for k, v in doc.items() if not k.startswith("_")}
+
+
 def load_anchors(path: Path, metric: str, extra_required: tuple[str, ...] = (),
                  default_t_implausible: float | None = None) -> dict:
     """Read the anchors, failing closed.

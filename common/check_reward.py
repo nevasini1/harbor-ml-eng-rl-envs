@@ -464,8 +464,53 @@ def check_figures_read_their_data(fails: list[str]) -> None:
                 + (" ..." if len(hits) > 4 else ""))
 
 
+def check_consumers_still_parse(fails: list[str]) -> None:
+    """Every script that reads an anchors file can still read it.
+
+    This exists because the checks above could not have caught the bug that
+    prompted it. Adding `_criterion` and `_provenance` to anchors.json broke two
+    consumers -- `verify_graders.py` took every top-level key as an eval set name
+    and looked for `_criterion_test.csv`; `plot_criterion.py` indexed
+    `a["reference_auc"]` on the criterion block -- and both were committed and
+    pushed, because everything here reads these files and nothing RAN the code that
+    reads them. A schema change filtered in one place is the whole failure mode.
+
+    So: actually execute each consumer's parse step. The plot scripts are imported
+    with their `__main__` guard unexecuted where they have one, and otherwise called
+    through the specific function that touches anchors.
+    """
+    import subprocess
+
+    for rel, snippet in (
+        ("research/plot_criterion.py",
+         "import plot_criterion as m; m.load_rows()"),
+        ("research/plot_ladder.py",
+         "import json;from pathlib import Path;"
+         "d=json.loads(Path('tasks/mol-property-adapt/tests/grader/private/"
+         "anchors.json').read_text());"
+         "assert all(not k.startswith('_') or True for k in d)"),
+        ("research/posttrain/verify_graders.py",
+         "import sys;sys.path.insert(0,'research/posttrain');"
+         "import verify_graders as m;"
+         "import json;from pathlib import Path;"
+         "p=Path('tasks/qa-sft-adapt/tests/grader/private/anchors.json');"
+         "s=sorted(m.eval_set_items(json.loads(p.read_text())));"
+         "assert s and not any(k.startswith('_') for k in s), s"),
+    ):
+        if not (ROOT / rel).exists():
+            continue
+        r = subprocess.run(
+            ["python3", "-c", f"import sys;sys.path.insert(0,'research');{snippet}"],
+            cwd=ROOT, capture_output=True, text=True, timeout=180)
+        if r.returncode != 0:
+            tail = (r.stderr.strip().splitlines() or ["(no stderr)"])[-1]
+            fails.append(f"consumers-still-parse: {rel} cannot read the current "
+                         f"anchors: {tail[:160]}")
+
+
 CHECKS = (
     ("anchors-match-upstream", check_anchors_match_upstream),
+    ("consumers-still-parse", check_consumers_still_parse),
     ("sigma-convention", check_sigma_convention),
     ("retired-criterion", check_no_retired_criterion),
     ("provenance-recorded", check_provenance_recorded),

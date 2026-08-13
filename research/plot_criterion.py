@@ -36,6 +36,7 @@ from matplotlib.lines import Line2D  # noqa: E402
 HERE = Path(__file__).parent
 ROOT = HERE.parent
 sys.path.insert(0, str(ROOT / "common"))
+from verifier_core import eval_set_items  # noqa: E402
 from shipping import K_SCREENED, criterion_record, evaluate  # noqa: E402
 
 # Surfaces and ink, matching research/plot_ladder.py.
@@ -94,7 +95,7 @@ def load_rows() -> list[dict]:
     for task, metric in TASKS:
         anchors_path = (ROOT / "tasks" / task / "tests" / "grader" / "private"
                         / "anchors.json")
-        anchors = json.loads(anchors_path.read_text())
+        anchors = eval_set_items(json.loads(anchors_path.read_text()))
         # The preference task ships one eval set provisionally; its other three
         # were screened and rejected, and the figure is about the criterion, so
         # they belong in it. Recover them from the measured ladder.
