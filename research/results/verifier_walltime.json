@@ -1,0 +1,33 @@
+{
+  "_provenance": {
+    "assembled_at": "2026-08-13T01:22:38Z",
+    "script": "regrade of recorded trials via tasks/*/scripts/regrade.sh",
+    "git": {
+      "commit": "2ae0bee",
+      "dirty": true,
+      "untracked_files": 7,
+      "branch": "main"
+    },
+    "note": "Local Docker, --network none, 8 CPU. Both verifiers are gpus=0 in production ([verifier.environment] in task.toml), so these are representative rather than an optimistic local figure."
+  },
+  "budget_note": "test.sh runs the grader under `timeout 3000`; task.toml allows 3600s.",
+  "measurements": {
+    "qa-sft-adapt": {
+      "seconds": 429,
+      "eval_sets": 3,
+      "timeout_s": 3000,
+      "fraction_of_budget": 0.14,
+      "trial": "jobs/qa-sft-codex-modal/qa-sft-adapt__heGKTWA",
+      "note": "~7,200 log-likelihood forwards through a 135M causal LM at <=160 tokens, plus check_closer_to_base loading submission + base + sibling."
+    },
+    "pref-reward-model": {
+      "seconds": 992,
+      "eval_sets": 1,
+      "timeout_s": 3000,
+      "fraction_of_budget": 0.33,
+      "trial": "jobs/rm-codex-modal/pref-reward-model__xicmHu5",
+      "note": "~7,900 forwards through an 82M encoder at <=256 tokens. The 1,933s recorded in posttrain/RESULTS.md was for two eval sets; this is one."
+    }
+  },
+  "conclusion": "Neither verifier is near its timeout. The concern was that qa -- three eval sets through a larger model -- would be worse than pref's recorded 1,933s for two. It is 4.5x faster per eval set, so the extrapolation from pref was wrong."
+}

@@ -234,6 +234,25 @@ def render(tasks: dict) -> str:
                          f"{_cell(r['note'])} |")
         lines += ["", "Sources: " + ", ".join(f"`{s}`" for s in t["sources"]), ""]
 
+    wt = ROOT / "research/results/verifier_walltime.json"
+    if wt.exists():
+        doc = json.loads(wt.read_text())
+        lines += [
+            "## Verifier wall time",
+            "",
+            "A verifier that overruns its timeout scores an honest submission 0, so how",
+            "close it runs to the limit is part of whether the reward is trustworthy.",
+            "",
+            "| task | measured | timeout | share of budget | eval sets |",
+            "|---|---|---|---|---|",
+        ]
+        for task, m in sorted(doc["measurements"].items()):
+            lines.append(f"| `{task}` | {m['seconds']}s | {m['timeout_s']}s | "
+                         f"{m['fraction_of_budget']:.0%} | {m['eval_sets']} |")
+        lines += ["", doc["conclusion"], "",
+                  f"Source: `{wt.relative_to(ROOT)}`. "
+                  + _cell(doc["_provenance"].get("note", "")), ""]
+
     lines += [
         "## What is not here",
         "",

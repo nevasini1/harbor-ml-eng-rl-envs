@@ -103,8 +103,15 @@ regrade_one() {
         return 0
     fi
 
-    rm -rf "$out"
+    # Clear the grader's own outputs, not the whole directory. `rm -rf "$out"`
+    # deleted everything here, which silently destroyed a hand-written
+    # regrade/README.md explaining why one trial's verifier/ says 0.0 and its
+    # regrade/ says 0.864497 -- the false-reject story from decision 0009. A stale
+    # reward.json from a previous regrade is what must not survive; prose a human
+    # put here to explain the evidence is not.
     mkdir -p "$out"
+    rm -f "$out/reward.json" "$out/reward.txt" "$out/reward_meta.json" \
+          "$out/metrics.json" "$out/test-stdout.txt"
 
     # --network none matches the production verifier, which is offline. Inputs
     # are read-only so a buggy grader cannot mutate the evidence it is scoring.

@@ -86,6 +86,20 @@ Sources: `jobs/`, `research/posttrain/results/verifier_fixtures.json`
 
 Sources: `jobs/`
 
+## Verifier wall time
+
+A verifier that overruns its timeout scores an honest submission 0, so how
+close it runs to the limit is part of whether the reward is trustworthy.
+
+| task | measured | timeout | share of budget | eval sets |
+|---|---|---|---|---|
+| `pref-reward-model` | 992s | 3000s | 33% | 1 |
+| `qa-sft-adapt` | 429s | 3000s | 14% | 3 |
+
+Neither verifier is near its timeout. The concern was that qa -- three eval sets through a larger model -- would be worse than pref's recorded 1,933s for two. It is 4.5x faster per eval set, so the extrapolation from pref was wrong.
+
+Source: `research/results/verifier_walltime.json`. Local Docker, --network none, 8 CPU. Both verifiers are gpus=0 in production ([verifier.environment] in task.toml), so these are representative rather than an optimistic local figure.
+
 ## What is not here
 
 - **The reference counterpart is not run as a submission on any task.** The
