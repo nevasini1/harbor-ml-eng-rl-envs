@@ -18,7 +18,7 @@ the bar (4.0σ) from a stated tolerance on reward noise (0.25) rather than choos
 `--allow-provisional`. `oracle` is the reward the
 task's own shipped `solution/` earned through Harbor; `agent` is what `codex` (gpt-5.6-sol)
 earned reading only `instruction.md` — see the root
-[README](../README.md#what-has-actually-been-run) for why those three numbers differ and
+[README](../README.md#what-the-agent-trials-found) for why those three numbers differ and
 why 1.0 is not always the good one.
 
 ## Layout of a task

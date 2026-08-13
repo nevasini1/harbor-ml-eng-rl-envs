@@ -19,8 +19,18 @@ docs/       background reading, and the reward's decision log
 
 Every claim below about how the reward is computed has a record behind it in
 [`docs/decisions/`](docs/decisions/) saying when it was decided, what it replaced, and
-what moved as a result. Seven of the thirteen moved a number that had already shipped;
-[the index](docs/decisions/) lists which, and the reader impact of each.
+what moved as a result. Seven of the fourteen moved a number that had already shipped;
+[the index](docs/decisions/) lists which, and the reader impact of each. What each verifier
+scored on inputs of known quality — base, oracle, broken checkpoint, substitution attempt —
+is in [`docs/calibration.md`](docs/calibration.md), with the ordering test applied.
+
+> **Read first, because it qualifies everything else:** this repo **publishes the private
+> seeds and the held-out rows**. Held-out data being unfetchable is a stated requirement,
+> and this deliberately does not meet it — the rows were included by request. The
+> in-container defences (no verifier network, contamination detection, the
+> implausible-score tripwire) all assume the agent cannot read this repository. **Do not
+> treat the reward as un-gameable against an agent that can.** Details in
+> [Note on private holdout](#note-on-private-holdout).
 
 ---
 
@@ -82,6 +92,27 @@ reward   = integrity_gate × mean(recovery over eval sets)
 Both anchors are **measurements** over 5 seeds on the private split, each re-derivable from
 a committed script. The uncapped `recovery_raw` is recorded beside the capped value,
 because the clip is what hides a mis-set anchor.
+
+Each anchor also carries the rule that screened it and the commit that wrote it —
+`_criterion` (`rule_id`, `rule_version`, `supersedes`) and `_provenance`
+(`assembled_at`, `script`, git `commit`/`dirty`) — so an anchor screened under the
+retired 3.0σ bar is distinguishable from one screened under the current 4.0σ bar without
+dating a commit. See [decision 0013](docs/decisions/0013-anchors-carry-a-rule-version-and-provenance.md).
+
+### What the verifier writes
+
+`/logs/verifier/reward.json` carries the aggregate plus one score per eval set, which is
+the shape Harbor aggregates — it preserves every key and means each across trials, so the
+per-eval-set detail survives into the job record instead of collapsing to a single number:
+
+```json
+{"reward": 0.734115, "arc_easy": 0.866591, "sciq": 0.908397, "openbookqa": 0.427357}
+```
+
+Scores only. Raw metrics, cosines, tensor counts, shingle overlap, status and reason go to
+`metrics.json` — a count in the reward channel gets aggregated as though it were a metric.
+Verified through the real verifier images on all three anchor-scored tasks; the aggregates
+are unchanged. See [decision 0014](docs/decisions/0014-reward-json-carries-per-eval-set-scores.md).
 
 ### Whether an eval set may ship
 
@@ -401,8 +432,25 @@ measurements are in [`research/SPIKE_RESULTS.md`](research/SPIKE_RESULTS.md).
    the shipped oracle uses 398 at random.
 7. **The shingle fingerprint is subsampled 1-in-4** to keep it under 4 MB in the verifier
    image. A 30-token leak is caught with probability 99.6%; a one-sentence leak is not.
-8. **`MIN_ENCODER_TENSORS = 50` is still hardcoded in the mol grader.** The newer tasks take
-   90% of the base's own body-tensor count, which survives a model swap.
+8. **The lineage tensor floor is hardcoded on two tasks.** `MIN_ENCODER_TENSORS = 50` in the
+   mol grader and `MIN_BACKBONE_TENSORS = 100` in the protein one. The post-training tasks
+   take 90% of the base's own body-tensor count, which survives a model swap;
+   `count_body_tensors` exists in the shared core for exactly this and both graders already
+   import from that module. Protein's is the weaker of the two: its comment asserts "every
+   real submission graded so far compared 108", and no script computes or asserts 108.
+9. **Gate A has never been run on mol's shipped split.** The random-init control exists but
+   was measured on the pre-rebuild splits (bbbp n_test 204 against the shipped 407; tox21
+   6,258/783 against 2,000/1,566), and lesson 8 says anchors are functions of the split.
+   `common/shipping.py` therefore prints `ships (gate A NOT MEASURED)` for both mol eval
+   sets rather than a bare `ships` — three of the four advertised tests ran. The recorded
+   gaps are large (+0.0425 tox21, +0.0745 bbbp), so this is unverified rather than
+   likely-false, and closing it needs a GPU run.
+10. **Nearest-ancestor runs on one task of four**, because `qa-sft-adapt` is the only one
+    with a `siblings/` fixture — a fixture gap, not a design decision. `distilroberta-base`
+    in particular has many public fine-tunes available to launder.
+11. **The protein grader's contamination defence is a score tripwire only** — no shingle or
+    fingerprint scan, and its `overlap_with_private: None` on a submission that leaves
+    nothing behind is indistinguishable from a check that ran clean.
 
 ---
 
