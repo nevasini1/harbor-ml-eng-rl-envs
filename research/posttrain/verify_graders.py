@@ -40,6 +40,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -48,6 +49,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "common"))
 from verifier_core import eval_set_items  # noqa: E402
+
+# verifier_core does `os.environ.setdefault("HF_HUB_OFFLINE", "1")` at import time --
+# correct for a grader running inside an offline verifier image, and inherited by
+# anything that imports it. This script is the opposite case: it BUILDS the fixtures,
+# and the `public_twin` one is a snapshot_download of a real Hub repo. Importing that
+# module for a one-line helper silently switched the Hub off and the download failed
+# with OfflineModeIsEnabled. Re-enabled explicitly, here, where the reason is visible.
+os.environ["HF_HUB_OFFLINE"] = "0"
 
 HERE = Path(__file__).parent
 ROOT = HERE.parent.parent
